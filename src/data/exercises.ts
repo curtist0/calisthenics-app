@@ -17,6 +17,8 @@ export const exercises: Exercise[] = [
     ],
     image: "💪",
     isHold: false,
+    supportsWeight: true,
+    videoUrl: "https://www.youtube.com/results?search_query=push+up+proper+form+tutorial",
     progressionTo: "diamond-push-up",
   },
   {
@@ -34,6 +36,8 @@ export const exercises: Exercise[] = [
     ],
     image: "💎",
     isHold: false,
+    supportsWeight: true,
+    videoUrl: "https://www.youtube.com/results?search_query=diamond+push+up+tutorial",
     progressionFrom: "push-up",
     progressionTo: "pike-push-up",
   },
@@ -52,6 +56,8 @@ export const exercises: Exercise[] = [
     ],
     image: "⛰️",
     isHold: false,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=pike+push+up+tutorial",
     progressionFrom: "diamond-push-up",
     progressionTo: "handstand-push-up",
   },
@@ -70,6 +76,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🏋️",
     isHold: false,
+    supportsWeight: true,
+    videoUrl: "https://www.youtube.com/results?search_query=parallel+bar+dips+tutorial",
   },
   {
     id: "handstand-push-up",
@@ -86,6 +94,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🤸",
     isHold: false,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=wall+handstand+push+up+tutorial",
     progressionFrom: "pike-push-up",
     progressionTo: "freestanding-hspu",
   },
@@ -104,6 +114,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🌟",
     isHold: false,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=freestanding+handstand+push+up+tutorial",
     progressionFrom: "handstand-push-up",
   },
   {
@@ -121,6 +133,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🔥",
     isHold: false,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=pseudo+planche+push+up+tutorial",
     progressionTo: "tuck-planche",
   },
 
@@ -140,6 +154,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🦘",
     isHold: false,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=australian+pull+up+inverted+row+tutorial",
     progressionTo: "pull-up",
   },
   {
@@ -157,6 +173,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🦍",
     isHold: false,
+    supportsWeight: true,
+    videoUrl: "https://www.youtube.com/results?search_query=pull+up+proper+form+tutorial",
     progressionFrom: "australian-pull-up",
     progressionTo: "muscle-up",
   },
@@ -175,6 +193,8 @@ export const exercises: Exercise[] = [
     ],
     image: "💪",
     isHold: false,
+    supportsWeight: true,
+    videoUrl: "https://www.youtube.com/results?search_query=chin+up+proper+form+tutorial",
   },
   {
     id: "muscle-up",
@@ -191,6 +211,8 @@ export const exercises: Exercise[] = [
     ],
     image: "⚡",
     isHold: false,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=bar+muscle+up+tutorial+progression",
     progressionFrom: "pull-up",
   },
 
@@ -210,6 +232,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🦵",
     isHold: false,
+    supportsWeight: true,
+    videoUrl: "https://www.youtube.com/results?search_query=bodyweight+squat+proper+form",
     progressionTo: "jump-squat",
   },
   {
@@ -227,6 +251,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🎯",
     isHold: false,
+    supportsWeight: true,
+    videoUrl: "https://www.youtube.com/results?search_query=pistol+squat+tutorial+progression",
   },
   {
     id: "lunge",
@@ -243,6 +269,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🚶",
     isHold: false,
+    supportsWeight: true,
+    videoUrl: "https://www.youtube.com/results?search_query=walking+lunge+proper+form",
   },
   {
     id: "calf-raise",
@@ -259,6 +287,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🦶",
     isHold: false,
+    supportsWeight: true,
+    videoUrl: "https://www.youtube.com/results?search_query=single+leg+calf+raise+tutorial",
   },
   {
     id: "jump-squat",
@@ -275,6 +305,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🦘",
     isHold: false,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=jump+squat+proper+form",
     progressionFrom: "squat",
   },
 
@@ -294,6 +326,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🧱",
     isHold: true,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=plank+proper+form+tutorial",
     progressionTo: "hollow-body-hold",
   },
   {
@@ -311,6 +345,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🌙",
     isHold: true,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=hollow+body+hold+tutorial",
     progressionFrom: "plank",
     progressionTo: "dragon-flag",
   },
@@ -329,6 +365,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🦎",
     isHold: false,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=hanging+leg+raise+tutorial",
     progressionTo: "dragon-flag",
   },
   {
@@ -346,6 +384,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🐉",
     isHold: false,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=dragon+flag+tutorial+progression",
     progressionFrom: "hanging-leg-raise",
   },
 
@@ -365,6 +405,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🔷",
     isHold: true,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=l+sit+tutorial+progression",
     progressionTo: "v-sit",
   },
   {
@@ -382,6 +424,8 @@ export const exercises: Exercise[] = [
     ],
     image: "✌️",
     isHold: true,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=v+sit+tutorial+calisthenics",
     progressionFrom: "l-sit",
     progressionTo: "manna",
   },
@@ -400,6 +444,8 @@ export const exercises: Exercise[] = [
     ],
     image: "👑",
     isHold: true,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=manna+tutorial+calisthenics",
     progressionFrom: "v-sit",
   },
   {
@@ -417,6 +463,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🔸",
     isHold: true,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=tuck+planche+tutorial+progression",
     progressionFrom: "pseudo-planche-push-up",
     progressionTo: "straddle-planche",
   },
@@ -435,6 +483,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🔶",
     isHold: true,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=straddle+planche+tutorial",
     progressionFrom: "tuck-planche",
     progressionTo: "full-planche",
   },
@@ -453,6 +503,8 @@ export const exercises: Exercise[] = [
     ],
     image: "⭐",
     isHold: true,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=full+planche+tutorial+progression",
     progressionFrom: "straddle-planche",
   },
   {
@@ -470,6 +522,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🔹",
     isHold: true,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=tuck+front+lever+tutorial",
     progressionTo: "front-lever",
   },
   {
@@ -487,6 +541,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🔷",
     isHold: true,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=front+lever+tutorial+progression",
     progressionFrom: "tuck-front-lever",
   },
   {
@@ -504,6 +560,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🔻",
     isHold: true,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=back+lever+tutorial+progression",
   },
   {
     id: "90-degree-hold",
@@ -520,6 +578,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🔥",
     isHold: true,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=90+degree+push+up+hold+tutorial",
   },
   {
     id: "human-flag",
@@ -536,6 +596,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🚩",
     isHold: true,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=human+flag+tutorial+progression",
   },
 
   // ──────── FULL-BODY ────────
@@ -554,6 +616,8 @@ export const exercises: Exercise[] = [
     ],
     image: "⚡",
     isHold: false,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=burpee+proper+form+tutorial",
   },
   {
     id: "bear-crawl",
@@ -570,6 +634,8 @@ export const exercises: Exercise[] = [
     ],
     image: "🐻",
     isHold: false,
+    supportsWeight: false,
+    videoUrl: "https://www.youtube.com/results?search_query=bear+crawl+exercise+tutorial",
   },
 ];
 
