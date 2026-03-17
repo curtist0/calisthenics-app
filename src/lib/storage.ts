@@ -10,6 +10,8 @@ import { getExerciseById } from "@/data/exercises";
 const LOGS_KEY = "calisthenics_logs";
 const STATS_KEY = "calisthenics_stats";
 const RECORDS_KEY = "calisthenics_records";
+const PLAN_KEY = "calisthenics_active_plan";
+const SELECTED_SKILLS_KEY = "calisthenics_selected_skills";
 
 function isBrowser(): boolean {
   return typeof window !== "undefined";
@@ -294,4 +296,35 @@ export function recalculateStats(): UserStats {
 
 export function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+}
+
+// ── Active Plan ──
+
+export function getActivePlan(): import("./types").WeeklyPlan | null {
+  if (!isBrowser()) return null;
+  const data = localStorage.getItem(PLAN_KEY);
+  return data ? JSON.parse(data) : null;
+}
+
+export function saveActivePlan(plan: import("./types").WeeklyPlan): void {
+  if (!isBrowser()) return;
+  localStorage.setItem(PLAN_KEY, JSON.stringify(plan));
+}
+
+export function clearActivePlan(): void {
+  if (!isBrowser()) return;
+  localStorage.removeItem(PLAN_KEY);
+}
+
+// ── Selected Skills ──
+
+export function getSelectedSkills(): string[] {
+  if (!isBrowser()) return [];
+  const data = localStorage.getItem(SELECTED_SKILLS_KEY);
+  return data ? JSON.parse(data) : [];
+}
+
+export function saveSelectedSkills(skillIds: string[]): void {
+  if (!isBrowser()) return;
+  localStorage.setItem(SELECTED_SKILLS_KEY, JSON.stringify(skillIds));
 }

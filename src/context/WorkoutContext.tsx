@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
-import { WorkoutLog, UserStats, PlateauInfo, ExerciseRecord, StrengthDataPoint } from "@/lib/types";
+import { WorkoutLog, UserStats, PlateauInfo, ExerciseRecord, StrengthDataPoint, WeeklyPlan } from "@/lib/types";
 import {
   getWorkoutLogs,
   saveWorkoutLog,
@@ -11,16 +11,24 @@ import {
   detectPlateaus,
   getExerciseRecords,
   getStrengthHistory,
+  getActivePlan,
+  saveActivePlan,
+  clearActivePlan,
+  getSelectedSkills,
+  saveSelectedSkills,
 } from "@/lib/storage";
-import { getPlanById } from "@/data/workouts";
 
 interface WorkoutContextType {
   logs: WorkoutLog[];
   stats: UserStats;
   plateaus: PlateauInfo[];
   records: ExerciseRecord[];
+  activePlan: WeeklyPlan | null;
+  selectedSkills: string[];
   activeWorkout: WorkoutLog | null;
-  startDayWorkout: (planId: string, dayIndex: number) => WorkoutLog;
+  setActivePlanFromGenerator: (plan: WeeklyPlan) => void;
+  updateSelectedSkills: (skillIds: string[]) => void;
+  startDayWorkout: (planId: string, dayIndex: number, plan?: WeeklyPlan) => WorkoutLog;
   completeSet: (
     exerciseIndex: number,
     setIndex: number,
@@ -46,6 +54,8 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   });
   const [plateaus, setPlateaus] = useState<PlateauInfo[]>([]);
   const [records, setRecords] = useState<ExerciseRecord[]>([]);
+  const [activePlan, setActivePlan] = useState<WeeklyPlan | null>(null);
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [activeWorkout, setActiveWorkout] = useState<WorkoutLog | null>(null);
 
   useEffect(() => {
@@ -53,6 +63,8 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     setStats(getUserStats());
     setPlateaus(detectPlateaus());
     setRecords(getExerciseRecords());
+    setActivePlan(getActivePlan());
+    setSelectedSkills(getSelectedSkills());
   }, []);
 
   const refreshStats = useCallback(() => {
@@ -62,10 +74,20 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     setRecords(getExerciseRecords());
   }, []);
 
-  const startDayWorkout = useCallback((planId: string, dayIndex: number): WorkoutLog => {
-    const plan = getPlanById(planId);
-    if (!plan) throw new Error(`Plan ${planId} not found`);
-    const day = plan.days[dayIndex];
+  const setActivePlanFromGenerator = useCallback((plan: WeeklyPlan) => {
+    setActivePlan(plan);
+    saveActivePlan(plan);
+  }, []);
+
+  const updateSelectedSkills = useCallback((skillIds: string[]) => {
+    setSelectedSkills(skillIds);
+    saveSelectedSkills(skillIds);
+  }, []);
+
+  const startDayWorkout = useCallback((planId: string, dayIndex: number, plan?: WeeklyPlan): WorkoutLog => {
+    const usePlan = plan || activePlan;
+    if (!usePlan) throw new Error("No active plan");
+    const day = usePlan.days[dayIndex];
     if (!day || day.isRest) throw new Error("Cannot start a rest day");
 
     const log: WorkoutLog = {
@@ -88,7 +110,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
 
     setActiveWorkout(log);
     return log;
-  }, []);
+  }, [activePlan]);
 
   const completeSet = useCallback(
     (
@@ -143,7 +165,11 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         stats,
         plateaus,
         records,
+        activePlan,
+        selectedSkills,
         activeWorkout,
+        setActivePlanFromGenerator,
+        updateSelectedSkills,
         startDayWorkout,
         completeSet,
         finishWorkout,

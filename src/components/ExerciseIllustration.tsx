@@ -3,399 +3,356 @@
 interface Props {
   exerciseId: string;
   size?: number;
+  className?: string;
 }
 
-export default function ExerciseIllustration({ exerciseId, size = 200 }: Props) {
-  const s = size;
-  const mid = s / 2;
+function Human({
+  cx,
+  cy,
+  scale = 1,
+  color = "#e2e8f0",
+  pose,
+}: {
+  cx: number;
+  cy: number;
+  scale?: number;
+  color?: string;
+  pose: string;
+}) {
+  const s = scale;
+  const headR = 6 * s;
+  const sw = 2.5 * s;
 
-  const illustrations: Record<string, () => React.ReactNode> = {
-    "push-up": () => (
+  const poses: Record<string, React.ReactNode> = {
+    "push-up-down": (
       <g>
-        <line x1={mid - 40} y1={mid + 10} x2={mid + 40} y2={mid + 10} stroke="#4ade80" strokeWidth="3" />
-        <circle cx={mid + 40} cy={mid + 5} r="8" fill="#4ade80" />
-        <line x1={mid - 40} y1={mid + 10} x2={mid - 45} y2={mid + 30} stroke="#4ade80" strokeWidth="3" />
-        <line x1={mid - 45} y1={mid + 30} x2={mid - 40} y2={mid + 40} stroke="#4ade80" strokeWidth="3" />
-        <line x1={mid + 35} y1={mid + 10} x2={mid + 30} y2={mid + 30} stroke="#4ade80" strokeWidth="3" />
-        <line x1={mid + 30} y1={mid + 30} x2={mid + 35} y2={mid + 40} stroke="#4ade80" strokeWidth="3" />
-        <text x={mid} y={mid - 20} textAnchor="middle" fill="#9ca3af" fontSize="11">arms extend → lower → push</text>
+        <circle cx={cx + 32 * s} cy={cy - 4 * s} r={headR} fill={color} />
+        <line x1={cx + 26 * s} y1={cy} x2={cx - 5 * s} y2={cy + 3 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 5 * s} y1={cy + 3 * s} x2={cx - 30 * s} y2={cy + 3 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx + 20 * s} y1={cy + 2 * s} x2={cx + 15 * s} y2={cy + 16 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx + 15 * s} y1={cy + 16 * s} x2={cx + 20 * s} y2={cy + 24 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 30 * s} y1={cy + 3 * s} x2={cx - 35 * s} y2={cy + 15 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 35 * s} y1={cy + 15 * s} x2={cx - 38 * s} y2={cy + 24 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "diamond-push-up": () => (
+    "push-up-up": (
       <g>
-        <line x1={mid - 40} y1={mid + 10} x2={mid + 40} y2={mid + 10} stroke="#4ade80" strokeWidth="3" />
-        <circle cx={mid + 40} cy={mid + 5} r="8" fill="#4ade80" />
-        <polygon points={`${mid - 5},${mid + 35} ${mid},${mid + 25} ${mid + 5},${mid + 35}`} fill="none" stroke="#facc15" strokeWidth="2" />
-        <text x={mid} y={mid - 20} textAnchor="middle" fill="#9ca3af" fontSize="11">hands form diamond</text>
+        <circle cx={cx + 32 * s} cy={cy - 12 * s} r={headR} fill={color} />
+        <line x1={cx + 26 * s} y1={cy - 7 * s} x2={cx - 10 * s} y2={cy - 3 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 10 * s} y1={cy - 3 * s} x2={cx - 35 * s} y2={cy - 3 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx + 20 * s} y1={cy - 5 * s} x2={cx + 20 * s} y2={cy + 14 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx + 20 * s} y1={cy + 14 * s} x2={cx + 20 * s} y2={cy + 24 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 35 * s} y1={cy - 3 * s} x2={cx - 35 * s} y2={cy + 10 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 35 * s} y1={cy + 10 * s} x2={cx - 38 * s} y2={cy + 24 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "pike-push-up": () => (
+    "pull-up": (
       <g>
-        <line x1={mid - 25} y1={mid + 30} x2={mid} y2={mid - 15} stroke="#4ade80" strokeWidth="3" />
-        <line x1={mid} y1={mid - 15} x2={mid + 25} y2={mid + 30} stroke="#4ade80" strokeWidth="3" />
-        <circle cx={mid} cy={mid - 22} r="8" fill="#4ade80" />
-        <text x={mid} y={mid + 50} textAnchor="middle" fill="#9ca3af" fontSize="11">inverted V position</text>
+        <line x1={cx - 20 * s} y1={cy - 28 * s} x2={cx + 20 * s} y2={cy - 28 * s} stroke="#4b5563" strokeWidth={3 * s} strokeLinecap="round" />
+        <circle cx={cx} cy={cy - 18 * s} r={headR} fill={color} />
+        <line x1={cx} y1={cy - 12 * s} x2={cx} y2={cy + 8 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy - 8 * s} x2={cx - 14 * s} y2={cy - 28 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy - 8 * s} x2={cx + 14 * s} y2={cy - 28 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 8 * s} x2={cx - 8 * s} y2={cy + 24 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 8 * s} x2={cx + 8 * s} y2={cy + 24 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "dips": () => (
+    "hanging": (
       <g>
-        <rect x={mid - 45} y={mid + 5} width="20" height="4" fill="#6b7280" rx="2" />
-        <rect x={mid + 25} y={mid + 5} width="20" height="4" fill="#6b7280" rx="2" />
-        <circle cx={mid} cy={mid - 20} r="8" fill="#4ade80" />
-        <line x1={mid} y1={mid - 12} x2={mid} y2={mid + 15} stroke="#4ade80" strokeWidth="3" />
-        <line x1={mid} y1={mid + 15} x2={mid - 10} y2={mid + 35} stroke="#4ade80" strokeWidth="3" />
-        <line x1={mid} y1={mid + 15} x2={mid + 10} y2={mid + 35} stroke="#4ade80" strokeWidth="3" />
-        <line x1={mid} y1={mid - 5} x2={mid - 25} y2={mid + 5} stroke="#4ade80" strokeWidth="3" />
-        <line x1={mid} y1={mid - 5} x2={mid + 25} y2={mid + 5} stroke="#4ade80" strokeWidth="3" />
-        <text x={mid} y={mid + 55} textAnchor="middle" fill="#9ca3af" fontSize="11">lower between bars</text>
+        <line x1={cx - 20 * s} y1={cy - 28 * s} x2={cx + 20 * s} y2={cy - 28 * s} stroke="#4b5563" strokeWidth={3 * s} strokeLinecap="round" />
+        <circle cx={cx} cy={cy - 12 * s} r={headR} fill={color} />
+        <line x1={cx} y1={cy - 6 * s} x2={cx} y2={cy + 12 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy - 4 * s} x2={cx - 8 * s} y2={cy - 28 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy - 4 * s} x2={cx + 8 * s} y2={cy - 28 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 12 * s} x2={cx - 6 * s} y2={cy + 28 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 12 * s} x2={cx + 6 * s} y2={cy + 28 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "handstand-push-up": () => (
+    "hanging-leg-raise": (
       <g>
-        <rect x={mid + 15} y={mid - 40} width="4" height="80" fill="#6b7280" rx="2" />
-        <circle cx={mid} cy={mid + 30} r="8" fill="#4ade80" />
-        <line x1={mid} y1={mid + 22} x2={mid} y2={mid - 10} stroke="#4ade80" strokeWidth="3" />
-        <line x1={mid} y1={mid - 10} x2={mid - 12} y2={mid - 30} stroke="#4ade80" strokeWidth="3" />
-        <line x1={mid} y1={mid - 10} x2={mid + 12} y2={mid - 30} stroke="#4ade80" strokeWidth="3" />
-        <line x1={mid} y1={mid + 15} x2={mid - 15} y2={mid + 35} stroke="#4ade80" strokeWidth="3" />
-        <line x1={mid} y1={mid + 15} x2={mid + 15} y2={mid + 35} stroke="#4ade80" strokeWidth="3" />
-        <text x={mid} y={mid + 55} textAnchor="middle" fill="#9ca3af" fontSize="11">press up in handstand</text>
+        <line x1={cx - 20 * s} y1={cy - 28 * s} x2={cx + 20 * s} y2={cy - 28 * s} stroke="#4b5563" strokeWidth={3 * s} strokeLinecap="round" />
+        <circle cx={cx} cy={cy - 12 * s} r={headR} fill={color} />
+        <line x1={cx} y1={cy - 6 * s} x2={cx} y2={cy + 10 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy - 4 * s} x2={cx - 8 * s} y2={cy - 28 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy - 4 * s} x2={cx + 8 * s} y2={cy - 28 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 10 * s} x2={cx + 20 * s} y2={cy + 5 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx + 20 * s} y1={cy + 5 * s} x2={cx + 30 * s} y2={cy + 5 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "freestanding-hspu": () => (
+    "dip": (
       <g>
-        <circle cx={mid} cy={mid + 30} r="8" fill="#f59e0b" />
-        <line x1={mid} y1={mid + 22} x2={mid} y2={mid - 10} stroke="#f59e0b" strokeWidth="3" />
-        <line x1={mid} y1={mid - 10} x2={mid - 12} y2={mid - 30} stroke="#f59e0b" strokeWidth="3" />
-        <line x1={mid} y1={mid - 10} x2={mid + 12} y2={mid - 30} stroke="#f59e0b" strokeWidth="3" />
-        <line x1={mid} y1={mid + 15} x2={mid - 15} y2={mid + 38} stroke="#f59e0b" strokeWidth="3" />
-        <line x1={mid} y1={mid + 15} x2={mid + 15} y2={mid + 38} stroke="#f59e0b" strokeWidth="3" />
-        <text x={mid} y={mid + 55} textAnchor="middle" fill="#9ca3af" fontSize="11">no wall support</text>
-        <circle cx={mid - 5} cy={mid - 35} r="2" fill="#f59e0b" opacity="0.5" />
-        <circle cx={mid + 8} cy={mid - 38} r="1.5" fill="#f59e0b" opacity="0.4" />
+        <rect x={cx - 30 * s} y={cy + 2 * s} width={14 * s} height={3 * s} rx={1} fill="#4b5563" />
+        <rect x={cx + 16 * s} y={cy + 2 * s} width={14 * s} height={3 * s} rx={1} fill="#4b5563" />
+        <circle cx={cx} cy={cy - 18 * s} r={headR} fill={color} />
+        <line x1={cx} y1={cy - 12 * s} x2={cx} y2={cy + 5 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy - 6 * s} x2={cx - 16 * s} y2={cy + 3 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy - 6 * s} x2={cx + 16 * s} y2={cy + 3 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 5 * s} x2={cx - 6 * s} y2={cy + 18 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 6 * s} y1={cy + 18 * s} x2={cx - 4 * s} y2={cy + 28 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 5 * s} x2={cx + 6 * s} y2={cy + 18 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx + 6 * s} y1={cy + 18 * s} x2={cx + 4 * s} y2={cy + 28 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "pseudo-planche-push-up": () => (
+    "handstand": (
       <g>
-        <line x1={mid - 40} y1={mid + 5} x2={mid + 40} y2={mid + 5} stroke="#4ade80" strokeWidth="3" />
-        <circle cx={mid + 40} cy={mid} r="8" fill="#4ade80" />
-        <line x1={mid - 10} y1={mid + 5} x2={mid - 15} y2={mid + 25} stroke="#4ade80" strokeWidth="3" />
-        <path d={`M${mid - 15},${mid + 25} L${mid - 5},${mid + 25}`} stroke="#facc15" strokeWidth="2" strokeDasharray="3" />
-        <text x={mid} y={mid - 20} textAnchor="middle" fill="#9ca3af" fontSize="11">lean forward past wrists</text>
-        <path d={`M${mid - 20},${mid + 15} L${mid - 5},${mid + 15}`} stroke="#facc15" strokeWidth="1" markerEnd="url(#arrow)" />
+        <circle cx={cx} cy={cy + 22 * s} r={headR} fill={color} />
+        <line x1={cx} y1={cy + 16 * s} x2={cx} y2={cy - 5 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy - 5 * s} x2={cx - 10 * s} y2={cy - 24 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy - 5 * s} x2={cx + 10 * s} y2={cy - 24 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 10 * s} x2={cx - 12 * s} y2={cy + 26 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 10 * s} x2={cx + 12 * s} y2={cy + 26 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "pull-up": () => (
+    "squat": (
       <g>
-        <line x1={mid - 35} y1={mid - 35} x2={mid + 35} y2={mid - 35} stroke="#6b7280" strokeWidth="4" />
-        <circle cx={mid} cy={mid - 15} r="8" fill="#a78bfa" />
-        <line x1={mid} y1={mid - 7} x2={mid} y2={mid + 15} stroke="#a78bfa" strokeWidth="3" />
-        <line x1={mid} y1={mid + 15} x2={mid - 10} y2={mid + 35} stroke="#a78bfa" strokeWidth="3" />
-        <line x1={mid} y1={mid + 15} x2={mid + 10} y2={mid + 35} stroke="#a78bfa" strokeWidth="3" />
-        <line x1={mid} y1={mid - 5} x2={mid - 18} y2={mid - 35} stroke="#a78bfa" strokeWidth="3" />
-        <line x1={mid} y1={mid - 5} x2={mid + 18} y2={mid - 35} stroke="#a78bfa" strokeWidth="3" />
-        <text x={mid} y={mid + 55} textAnchor="middle" fill="#9ca3af" fontSize="11">pull chin over bar</text>
+        <circle cx={cx} cy={cy - 16 * s} r={headR} fill={color} />
+        <line x1={cx} y1={cy - 10 * s} x2={cx} y2={cy + 4 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 4 * s} x2={cx - 12 * s} y2={cy + 14 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 12 * s} y1={cy + 14 * s} x2={cx - 12 * s} y2={cy + 28 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 4 * s} x2={cx + 12 * s} y2={cy + 14 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx + 12 * s} y1={cy + 14 * s} x2={cx + 12 * s} y2={cy + 28 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy - 4 * s} x2={cx + 16 * s} y2={cy - 2 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy - 4 * s} x2={cx - 16 * s} y2={cy - 2 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "chin-up": () => (
+    "lunge": (
       <g>
-        <line x1={mid - 35} y1={mid - 35} x2={mid + 35} y2={mid - 35} stroke="#6b7280" strokeWidth="4" />
-        <circle cx={mid} cy={mid - 15} r="8" fill="#a78bfa" />
-        <line x1={mid} y1={mid - 7} x2={mid} y2={mid + 15} stroke="#a78bfa" strokeWidth="3" />
-        <line x1={mid} y1={mid + 15} x2={mid - 10} y2={mid + 35} stroke="#a78bfa" strokeWidth="3" />
-        <line x1={mid} y1={mid + 15} x2={mid + 10} y2={mid + 35} stroke="#a78bfa" strokeWidth="3" />
-        <line x1={mid} y1={mid - 5} x2={mid - 15} y2={mid - 35} stroke="#a78bfa" strokeWidth="3" />
-        <line x1={mid} y1={mid - 5} x2={mid + 15} y2={mid - 35} stroke="#a78bfa" strokeWidth="3" />
-        <text x={mid} y={mid + 55} textAnchor="middle" fill="#9ca3af" fontSize="11">underhand grip</text>
-        <path d={`M${mid - 17},${mid - 32} Q${mid - 15},${mid - 28} ${mid - 13},${mid - 32}`} stroke="#facc15" strokeWidth="1.5" fill="none" />
-        <path d={`M${mid + 13},${mid - 32} Q${mid + 15},${mid - 28} ${mid + 17},${mid - 32}`} stroke="#facc15" strokeWidth="1.5" fill="none" />
+        <circle cx={cx} cy={cy - 18 * s} r={headR} fill={color} />
+        <line x1={cx} y1={cy - 12 * s} x2={cx} y2={cy + 2 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 2 * s} x2={cx - 14 * s} y2={cy + 12 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 14 * s} y1={cy + 12 * s} x2={cx - 14 * s} y2={cy + 28 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 2 * s} x2={cx + 14 * s} y2={cy + 14 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx + 14 * s} y1={cy + 14 * s} x2={cx + 20 * s} y2={cy + 28 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "australian-pull-up": () => (
+    "plank": (
       <g>
-        <line x1={mid - 35} y1={mid - 5} x2={mid + 35} y2={mid - 5} stroke="#6b7280" strokeWidth="4" />
-        <line x1={mid - 35} y1={mid + 30} x2={mid + 35} y2={mid + 30} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />
-        <circle cx={mid - 25} cy={mid + 5} r="7" fill="#a78bfa" />
-        <line x1={mid - 25} y1={mid + 12} x2={mid + 10} y2={mid + 26} stroke="#a78bfa" strokeWidth="3" />
-        <line x1={mid - 20} y1={mid + 7} x2={mid - 10} y2={mid - 5} stroke="#a78bfa" strokeWidth="3" />
-        <line x1={mid - 20} y1={mid + 7} x2={mid + 5} y2={mid - 5} stroke="#a78bfa" strokeWidth="3" />
-        <text x={mid} y={mid + 55} textAnchor="middle" fill="#9ca3af" fontSize="11">inverted row</text>
+        <circle cx={cx + 30 * s} cy={cy - 2 * s} r={headR} fill={color} />
+        <line x1={cx + 24 * s} y1={cy + 2 * s} x2={cx - 28 * s} y2={cy + 2 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx + 18 * s} y1={cy + 2 * s} x2={cx + 14 * s} y2={cy + 16 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 28 * s} y1={cy + 2 * s} x2={cx - 28 * s} y2={cy + 16 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 28 * s} y1={cy + 16 * s} x2={cx - 32 * s} y2={cy + 16 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "muscle-up": () => (
+    "hollow-body": (
       <g>
-        <line x1={mid - 35} y1={mid - 10} x2={mid + 35} y2={mid - 10} stroke="#6b7280" strokeWidth="4" />
-        <circle cx={mid} cy={mid - 25} r="8" fill="#f59e0b" />
-        <line x1={mid} y1={mid - 17} x2={mid} y2={mid + 5} stroke="#f59e0b" strokeWidth="3" />
-        <line x1={mid} y1={mid + 5} x2={mid - 10} y2={mid + 25} stroke="#f59e0b" strokeWidth="3" />
-        <line x1={mid} y1={mid + 5} x2={mid + 10} y2={mid + 25} stroke="#f59e0b" strokeWidth="3" />
-        <line x1={mid} y1={mid - 12} x2={mid - 20} y2={mid - 10} stroke="#f59e0b" strokeWidth="3" />
-        <line x1={mid} y1={mid - 12} x2={mid + 20} y2={mid - 10} stroke="#f59e0b" strokeWidth="3" />
-        <path d={`M${mid - 10},${mid + 35} L${mid},${mid + 30} L${mid + 10},${mid + 35}`} stroke="#facc15" strokeWidth="1.5" fill="none" />
-        <text x={mid} y={mid + 50} textAnchor="middle" fill="#9ca3af" fontSize="11">pull + transition + dip</text>
+        <circle cx={cx - 24 * s} cy={cy + 4 * s} r={headR} fill={color} />
+        <path d={`M${cx - 18 * s},${cy + 6 * s} Q${cx},${cy - 8 * s} ${cx + 22 * s},${cy + 4 * s}`} stroke={color} strokeWidth={sw} fill="none" strokeLinecap="round" />
+        <line x1={cx - 18 * s} y1={cy + 4 * s} x2={cx - 32 * s} y2={cy - 2 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx + 22 * s} y1={cy + 4 * s} x2={cx + 34 * s} y2={cy} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "squat": () => (
+    "l-sit": (
       <g>
-        <circle cx={mid} cy={mid - 25} r="8" fill="#fb923c" />
-        <line x1={mid} y1={mid - 17} x2={mid} y2={mid + 5} stroke="#fb923c" strokeWidth="3" />
-        <line x1={mid} y1={mid + 5} x2={mid - 15} y2={mid + 20} stroke="#fb923c" strokeWidth="3" />
-        <line x1={mid} y1={mid + 5} x2={mid + 15} y2={mid + 20} stroke="#fb923c" strokeWidth="3" />
-        <line x1={mid - 15} y1={mid + 20} x2={mid - 15} y2={mid + 38} stroke="#fb923c" strokeWidth="3" />
-        <line x1={mid + 15} y1={mid + 20} x2={mid + 15} y2={mid + 38} stroke="#fb923c" strokeWidth="3" />
-        <text x={mid} y={mid + 55} textAnchor="middle" fill="#9ca3af" fontSize="11">sit back and down</text>
+        <rect x={cx - 12 * s} y={cy + 8 * s} width={4 * s} height={16 * s} rx={1} fill="#4b5563" />
+        <rect x={cx + 8 * s} y={cy + 8 * s} width={4 * s} height={16 * s} rx={1} fill="#4b5563" />
+        <circle cx={cx} cy={cy - 12 * s} r={headR} fill={color} />
+        <line x1={cx} y1={cy - 6 * s} x2={cx} y2={cy + 8 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy - 2 * s} x2={cx - 10 * s} y2={cy + 8 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy - 2 * s} x2={cx + 10 * s} y2={cy + 8 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 8 * s} x2={cx + 26 * s} y2={cy + 8 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "pistol-squat": () => (
+    "planche": (
       <g>
-        <circle cx={mid - 5} cy={mid - 20} r="8" fill="#fb923c" />
-        <line x1={mid - 5} y1={mid - 12} x2={mid - 5} y2={mid + 5} stroke="#fb923c" strokeWidth="3" />
-        <line x1={mid - 5} y1={mid + 5} x2={mid - 15} y2={mid + 25} stroke="#fb923c" strokeWidth="3" />
-        <line x1={mid - 15} y1={mid + 25} x2={mid - 15} y2={mid + 40} stroke="#fb923c" strokeWidth="3" />
-        <line x1={mid - 5} y1={mid + 5} x2={mid + 30} y2={mid + 5} stroke="#fb923c" strokeWidth="3" />
-        <text x={mid} y={mid + 55} textAnchor="middle" fill="#9ca3af" fontSize="11">single leg, other extended</text>
+        <circle cx={cx + 28 * s} cy={cy - 2 * s} r={headR} fill={color} />
+        <line x1={cx + 22 * s} y1={cy + 2 * s} x2={cx - 26 * s} y2={cy + 2 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx + 4 * s} y1={cy + 2 * s} x2={cx + 2 * s} y2={cy + 18 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 4 * s} y1={cy + 2 * s} x2={cx - 6 * s} y2={cy + 18 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "lunge": () => (
+    "tuck-planche": (
       <g>
-        <circle cx={mid} cy={mid - 25} r="8" fill="#fb923c" />
-        <line x1={mid} y1={mid - 17} x2={mid} y2={mid + 5} stroke="#fb923c" strokeWidth="3" />
-        <line x1={mid} y1={mid + 5} x2={mid - 18} y2={mid + 25} stroke="#fb923c" strokeWidth="3" />
-        <line x1={mid - 18} y1={mid + 25} x2={mid - 18} y2={mid + 40} stroke="#fb923c" strokeWidth="3" />
-        <line x1={mid} y1={mid + 5} x2={mid + 18} y2={mid + 25} stroke="#fb923c" strokeWidth="3" />
-        <line x1={mid + 18} y1={mid + 25} x2={mid + 18} y2={mid + 40} stroke="#fb923c" strokeWidth="3" />
-        <text x={mid} y={mid + 55} textAnchor="middle" fill="#9ca3af" fontSize="11">step forward, both 90°</text>
+        <circle cx={cx + 10 * s} cy={cy - 6 * s} r={headR} fill={color} />
+        <line x1={cx + 5 * s} y1={cy} x2={cx - 6 * s} y2={cy + 4 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 6 * s} y1={cy + 4 * s} x2={cx + 4 * s} y2={cy + 14 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 2 * s} y1={cy + 2 * s} x2={cx - 8 * s} y2={cy + 18 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 2 * s} y1={cy + 2 * s} x2={cx + 6 * s} y2={cy + 18 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "calf-raise": () => (
+    "front-lever": (
       <g>
-        <rect x={mid - 20} y={mid + 25} width="40" height="6" fill="#6b7280" rx="2" />
-        <circle cx={mid} cy={mid - 25} r="8" fill="#fb923c" />
-        <line x1={mid} y1={mid - 17} x2={mid} y2={mid + 10} stroke="#fb923c" strokeWidth="3" />
-        <line x1={mid} y1={mid + 10} x2={mid} y2={mid + 22} stroke="#fb923c" strokeWidth="3" />
-        <path d={`M${mid},${mid + 10} L${mid - 12},${mid + 10}`} stroke="#fb923c" strokeWidth="2" />
-        <path d={`M${mid},${mid + 10} L${mid + 12},${mid + 10}`} stroke="#fb923c" strokeWidth="2" />
-        <path d={`M${mid - 2},${mid + 15} L${mid + 2},${mid + 15}`} stroke="#facc15" strokeWidth="4" />
-        <text x={mid} y={mid + 50} textAnchor="middle" fill="#9ca3af" fontSize="11">rise onto toes</text>
+        <line x1={cx - 20 * s} y1={cy - 20 * s} x2={cx + 20 * s} y2={cy - 20 * s} stroke="#4b5563" strokeWidth={3 * s} strokeLinecap="round" />
+        <circle cx={cx + 24 * s} cy={cy} r={headR} fill={color} />
+        <line x1={cx + 18 * s} y1={cy + 2 * s} x2={cx - 24 * s} y2={cy + 2 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 4 * s} y1={cy + 2 * s} x2={cx - 6 * s} y2={cy - 20 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx + 4 * s} y1={cy + 2 * s} x2={cx + 6 * s} y2={cy - 20 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "jump-squat": () => (
+    "back-lever": (
       <g>
-        <circle cx={mid} cy={mid - 30} r="8" fill="#fb923c" />
-        <line x1={mid} y1={mid - 22} x2={mid} y2={mid - 5} stroke="#fb923c" strokeWidth="3" />
-        <line x1={mid} y1={mid - 5} x2={mid - 12} y2={mid + 15} stroke="#fb923c" strokeWidth="3" />
-        <line x1={mid} y1={mid - 5} x2={mid + 12} y2={mid + 15} stroke="#fb923c" strokeWidth="3" />
-        <path d={`M${mid - 5},${mid + 25} L${mid},${mid + 20} L${mid + 5},${mid + 25}`} stroke="#facc15" strokeWidth="1.5" fill="none" />
-        <path d={`M${mid - 8},${mid + 30} L${mid},${mid + 25} L${mid + 8},${mid + 30}`} stroke="#facc15" strokeWidth="1" fill="none" opacity="0.5" />
-        <text x={mid} y={mid + 50} textAnchor="middle" fill="#9ca3af" fontSize="11">explode upward</text>
+        <line x1={cx - 20 * s} y1={cy - 20 * s} x2={cx + 20 * s} y2={cy - 20 * s} stroke="#4b5563" strokeWidth={3 * s} strokeLinecap="round" />
+        <circle cx={cx - 24 * s} cy={cy} r={headR} fill={color} />
+        <line x1={cx - 18 * s} y1={cy + 2 * s} x2={cx + 24 * s} y2={cy + 2 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 4 * s} y1={cy + 2 * s} x2={cx - 6 * s} y2={cy - 20 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx + 4 * s} y1={cy + 2 * s} x2={cx + 6 * s} y2={cy - 20 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "plank": () => (
+    "dragon-flag": (
       <g>
-        <line x1={mid - 40} y1={mid + 5} x2={mid + 40} y2={mid + 5} stroke="#ec4899" strokeWidth="3" />
-        <circle cx={mid + 40} cy={mid} r="7" fill="#ec4899" />
-        <line x1={mid - 40} y1={mid + 5} x2={mid - 45} y2={mid + 25} stroke="#ec4899" strokeWidth="3" />
-        <line x1={mid - 30} y1={mid + 5} x2={mid - 35} y2={mid + 25} stroke="#ec4899" strokeWidth="3" />
-        <text x={mid} y={mid - 20} textAnchor="middle" fill="#9ca3af" fontSize="11">hold rigid, forearms down</text>
+        <rect x={cx - 4 * s} y={cy + 14 * s} width={40 * s} height={4 * s} rx={2} fill="#4b5563" />
+        <circle cx={cx + 32 * s} cy={cy + 12 * s} r={headR} fill={color} />
+        <line x1={cx + 28 * s} y1={cy + 12 * s} x2={cx + 4 * s} y2={cy + 14 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx + 4 * s} y1={cy + 14 * s} x2={cx - 10 * s} y2={cy - 14 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 10 * s} y1={cy - 14 * s} x2={cx - 14 * s} y2={cy - 26 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "hollow-body-hold": () => (
+    "muscle-up": (
       <g>
-        <path d={`M${mid - 35},${mid + 10} Q${mid},${mid - 10} ${mid + 35},${mid + 10}`} stroke="#ec4899" strokeWidth="3" fill="none" />
-        <circle cx={mid - 30} cy={mid + 12} r="7" fill="#ec4899" />
-        <line x1={mid + 25} y1={mid + 12} x2={mid + 45} y2={mid + 5} stroke="#ec4899" strokeWidth="3" />
-        <line x1={mid - 25} y1={mid + 12} x2={mid - 42} y2={mid + 5} stroke="#ec4899" strokeWidth="3" />
-        <text x={mid} y={mid + 40} textAnchor="middle" fill="#9ca3af" fontSize="11">lower back pressed down</text>
+        <line x1={cx - 20 * s} y1={cy - 4 * s} x2={cx + 20 * s} y2={cy - 4 * s} stroke="#4b5563" strokeWidth={3 * s} strokeLinecap="round" />
+        <circle cx={cx} cy={cy - 18 * s} r={headR} fill={color} />
+        <line x1={cx} y1={cy - 12 * s} x2={cx} y2={cy + 4 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy - 8 * s} x2={cx - 16 * s} y2={cy - 4 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy - 8 * s} x2={cx + 16 * s} y2={cy - 4 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 4 * s} x2={cx - 8 * s} y2={cy + 22 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 4 * s} x2={cx + 8 * s} y2={cy + 22 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "hanging-leg-raise": () => (
+    "v-sit": (
       <g>
-        <line x1={mid - 35} y1={mid - 35} x2={mid + 35} y2={mid - 35} stroke="#6b7280" strokeWidth="4" />
-        <circle cx={mid} cy={mid - 18} r="7" fill="#ec4899" />
-        <line x1={mid} y1={mid - 11} x2={mid} y2={mid + 5} stroke="#ec4899" strokeWidth="3" />
-        <line x1={mid} y1={mid - 5} x2={mid - 12} y2={mid - 35} stroke="#ec4899" strokeWidth="3" />
-        <line x1={mid} y1={mid - 5} x2={mid + 12} y2={mid - 35} stroke="#ec4899" strokeWidth="3" />
-        <line x1={mid} y1={mid + 5} x2={mid - 25} y2={mid + 5} stroke="#ec4899" strokeWidth="3" />
-        <text x={mid} y={mid + 40} textAnchor="middle" fill="#9ca3af" fontSize="11">legs to 90° while hanging</text>
+        <circle cx={cx} cy={cy + 10 * s} r={headR} fill={color} />
+        <line x1={cx} y1={cy + 16 * s} x2={cx} y2={cy + 26 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 26 * s} x2={cx + 14 * s} y2={cy - 6 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 20 * s} x2={cx - 10 * s} y2={cy + 28 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 20 * s} x2={cx + 10 * s} y2={cy + 28 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "dragon-flag": () => (
+    "flag": (
       <g>
-        <rect x={mid - 5} y={mid - 30} width="55" height="6" fill="#6b7280" rx="2" />
-        <circle cx={mid + 45} cy={mid - 30} r="7" fill="#ef4444" />
-        <line x1={mid + 40} y1={mid - 30} x2={mid - 5} y2={mid - 30} stroke="#ef4444" strokeWidth="3" />
-        <line x1={mid - 5} y1={mid - 30} x2={mid - 15} y2={mid + 15} stroke="#ef4444" strokeWidth="3" />
-        <line x1={mid - 15} y1={mid + 15} x2={mid - 20} y2={mid + 35} stroke="#ef4444" strokeWidth="3" />
-        <text x={mid} y={mid + 55} textAnchor="middle" fill="#9ca3af" fontSize="11">rigid body, pivot at shoulders</text>
+        <line x1={cx - 20 * s} y1={cy - 28 * s} x2={cx - 20 * s} y2={cy + 28 * s} stroke="#4b5563" strokeWidth={3 * s} strokeLinecap="round" />
+        <circle cx={cx + 8 * s} cy={cy} r={headR} fill={color} />
+        <line x1={cx + 2 * s} y1={cy} x2={cx - 20 * s} y2={cy} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx + 14 * s} y1={cy} x2={cx + 34 * s} y2={cy} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 8 * s} y1={cy} x2={cx - 20 * s} y2={cy - 14 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 8 * s} y1={cy} x2={cx - 20 * s} y2={cy + 14 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "l-sit": () => (
+    "ninety-degree": (
       <g>
-        <rect x={mid - 15} y={mid + 5} width="6" height="20" fill="#6b7280" rx="1" />
-        <rect x={mid + 10} y={mid + 5} width="6" height="20" fill="#6b7280" rx="1" />
-        <circle cx={mid} cy={mid - 15} r="7" fill="#f59e0b" />
-        <line x1={mid} y1={mid - 8} x2={mid} y2={mid + 5} stroke="#f59e0b" strokeWidth="3" />
-        <line x1={mid} y1={mid + 5} x2={mid + 30} y2={mid + 5} stroke="#f59e0b" strokeWidth="3" />
-        <line x1={mid} y1={mid - 2} x2={mid - 12} y2={mid + 5} stroke="#f59e0b" strokeWidth="3" />
-        <line x1={mid} y1={mid - 2} x2={mid + 12} y2={mid + 5} stroke="#f59e0b" strokeWidth="3" />
-        <text x={mid} y={mid + 45} textAnchor="middle" fill="#9ca3af" fontSize="11">legs parallel to ground</text>
+        <circle cx={cx + 16 * s} cy={cy - 4 * s} r={headR} fill={color} />
+        <line x1={cx + 10 * s} y1={cy} x2={cx - 18 * s} y2={cy} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx + 2 * s} y1={cy} x2={cx - 2 * s} y2={cy + 14 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 2 * s} y1={cy + 14 * s} x2={cx - 6 * s} y2={cy + 26 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 8 * s} y1={cy} x2={cx - 12 * s} y2={cy + 14 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 12 * s} y1={cy + 14 * s} x2={cx - 16 * s} y2={cy + 26 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "v-sit": () => (
+    "pike": (
       <g>
-        <circle cx={mid} cy={mid + 5} r="7" fill="#f59e0b" />
-        <line x1={mid} y1={mid + 12} x2={mid} y2={mid + 25} stroke="#f59e0b" strokeWidth="3" />
-        <line x1={mid} y1={mid + 25} x2={mid + 20} y2={mid - 15} stroke="#f59e0b" strokeWidth="3" />
-        <line x1={mid} y1={mid + 18} x2={mid - 15} y2={mid + 30} stroke="#f59e0b" strokeWidth="3" />
-        <line x1={mid} y1={mid + 18} x2={mid + 15} y2={mid + 30} stroke="#f59e0b" strokeWidth="3" />
-        <text x={mid} y={mid + 55} textAnchor="middle" fill="#9ca3af" fontSize="11">V shape — legs above horizontal</text>
+        <circle cx={cx} cy={cy - 14 * s} r={headR} fill={color} />
+        <line x1={cx} y1={cy - 8 * s} x2={cx} y2={cy + 8 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 8 * s} x2={cx + 20 * s} y2={cy + 20 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx + 20 * s} y1={cy + 20 * s} x2={cx + 24 * s} y2={cy + 28 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 8 * s} x2={cx - 20 * s} y2={cy + 20 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 20 * s} y1={cy + 20 * s} x2={cx - 24 * s} y2={cy + 28 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy - 2 * s} x2={cx - 14 * s} y2={cy + 14 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy - 2 * s} x2={cx + 14 * s} y2={cy + 14 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "manna": () => (
+    "burpee": (
       <g>
-        <circle cx={mid} cy={mid + 15} r="7" fill="#f59e0b" />
-        <line x1={mid} y1={mid + 22} x2={mid} y2={mid + 35} stroke="#f59e0b" strokeWidth="3" />
-        <line x1={mid} y1={mid + 35} x2={mid - 8} y2={mid - 15} stroke="#f59e0b" strokeWidth="3" />
-        <line x1={mid} y1={mid + 28} x2={mid - 15} y2={mid + 38} stroke="#f59e0b" strokeWidth="3" />
-        <line x1={mid} y1={mid + 28} x2={mid + 15} y2={mid + 38} stroke="#f59e0b" strokeWidth="3" />
-        <circle cx={mid + 5} cy={mid - 20} r="2" fill="#f59e0b" opacity="0.4" />
-        <text x={mid} y={mid + 55} textAnchor="middle" fill="#9ca3af" fontSize="11">legs behind and above torso</text>
+        <circle cx={cx - 22 * s} cy={cy - 18 * s} r={5 * s} fill={color} opacity={0.4} />
+        <line x1={cx - 22 * s} y1={cy - 13 * s} x2={cx - 22 * s} y2={cy + 4 * s} stroke={color} strokeWidth={2 * s} strokeLinecap="round" opacity={0.4} />
+        <circle cx={cx} cy={cy + 2 * s} r={5 * s} fill={color} opacity={0.6} />
+        <line x1={cx - 16 * s} y1={cy + 4 * s} x2={cx + 16 * s} y2={cy + 4 * s} stroke={color} strokeWidth={2 * s} strokeLinecap="round" opacity={0.6} />
+        <circle cx={cx + 22 * s} cy={cy - 22 * s} r={5 * s} fill={color} />
+        <line x1={cx + 22 * s} y1={cy - 17 * s} x2={cx + 22 * s} y2={cy - 2 * s} stroke={color} strokeWidth={2 * s} strokeLinecap="round" />
+        <line x1={cx + 22 * s} y1={cy - 2 * s} x2={cx + 16 * s} y2={cy + 10 * s} stroke={color} strokeWidth={2 * s} strokeLinecap="round" />
+        <line x1={cx + 22 * s} y1={cy - 2 * s} x2={cx + 28 * s} y2={cy + 10 * s} stroke={color} strokeWidth={2 * s} strokeLinecap="round" />
       </g>
     ),
-    "tuck-planche": () => (
+    "bear-crawl": (
       <g>
-        <circle cx={mid} cy={mid} r="7" fill="#ef4444" />
-        <line x1={mid} y1={mid + 7} x2={mid} y2={mid + 20} stroke="#ef4444" strokeWidth="3" />
-        <line x1={mid} y1={mid + 12} x2={mid + 15} y2={mid + 5} stroke="#ef4444" strokeWidth="3" />
-        <line x1={mid} y1={mid + 20} x2={mid - 10} y2={mid + 35} stroke="#ef4444" strokeWidth="3" />
-        <line x1={mid} y1={mid + 20} x2={mid + 10} y2={mid + 35} stroke="#ef4444" strokeWidth="3" />
-        <path d={`M${mid + 15},${mid + 5} Q${mid + 10},${mid + 18} ${mid + 5},${mid + 15}`} stroke="#ef4444" strokeWidth="2" fill="none" />
-        <text x={mid} y={mid + 55} textAnchor="middle" fill="#9ca3af" fontSize="11">knees tucked, body horizontal</text>
+        <circle cx={cx - 16 * s} cy={cy - 6 * s} r={headR} fill={color} />
+        <line x1={cx - 10 * s} y1={cy - 2 * s} x2={cx + 8 * s} y2={cy + 8 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx + 8 * s} y1={cy + 8 * s} x2={cx + 24 * s} y2={cy + 8 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 4 * s} y1={cy + 2 * s} x2={cx - 16 * s} y2={cy + 18 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx + 4 * s} y1={cy + 6 * s} x2={cx + 8 * s} y2={cy + 18 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx + 16 * s} y1={cy + 8 * s} x2={cx + 22 * s} y2={cy + 18 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 4 * s} y1={cy + 2 * s} x2={cx - 8 * s} y2={cy + 18 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "straddle-planche": () => (
+    "calf-raise": (
       <g>
-        <circle cx={mid} cy={mid} r="7" fill="#ef4444" />
-        <line x1={mid} y1={mid + 7} x2={mid} y2={mid + 20} stroke="#ef4444" strokeWidth="3" />
-        <line x1={mid} y1={mid + 20} x2={mid - 25} y2={mid + 10} stroke="#ef4444" strokeWidth="3" />
-        <line x1={mid} y1={mid + 20} x2={mid + 25} y2={mid + 10} stroke="#ef4444" strokeWidth="3" />
-        <line x1={mid} y1={mid + 12} x2={mid - 12} y2={mid + 35} stroke="#ef4444" strokeWidth="3" />
-        <line x1={mid} y1={mid + 12} x2={mid + 12} y2={mid + 35} stroke="#ef4444" strokeWidth="3" />
-        <text x={mid} y={mid + 55} textAnchor="middle" fill="#9ca3af" fontSize="11">legs straddled wide</text>
+        <rect x={cx - 12 * s} y={cy + 18 * s} width={24 * s} height={4 * s} rx={2} fill="#4b5563" />
+        <circle cx={cx} cy={cy - 20 * s} r={headR} fill={color} />
+        <line x1={cx} y1={cy - 14 * s} x2={cx} y2={cy + 4 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 4 * s} x2={cx} y2={cy + 14 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 14 * s} x2={cx} y2={cy + 18 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "full-planche": () => (
+    "pistol-squat": (
       <g>
-        <line x1={mid - 40} y1={mid} x2={mid + 40} y2={mid} stroke="#ef4444" strokeWidth="3" />
-        <circle cx={mid + 40} cy={mid - 5} r="7" fill="#ef4444" />
-        <line x1={mid - 5} y1={mid} x2={mid - 12} y2={mid + 20} stroke="#ef4444" strokeWidth="3" />
-        <line x1={mid + 5} y1={mid} x2={mid + 12} y2={mid + 20} stroke="#ef4444" strokeWidth="3" />
-        <circle cx={mid - 38} cy={mid + 3} r="3" fill="#ef4444" opacity="0.4" />
-        <circle cx={mid - 32} cy={mid + 5} r="2" fill="#ef4444" opacity="0.3" />
-        <text x={mid} y={mid + 45} textAnchor="middle" fill="#9ca3af" fontSize="11">full horizontal hold</text>
+        <circle cx={cx - 4 * s} cy={cy - 14 * s} r={headR} fill={color} />
+        <line x1={cx - 4 * s} y1={cy - 8 * s} x2={cx - 4 * s} y2={cy + 6 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 4 * s} y1={cy + 6 * s} x2={cx - 14 * s} y2={cy + 18 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 14 * s} y1={cy + 18 * s} x2={cx - 10 * s} y2={cy + 28 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx - 4 * s} y1={cy + 6 * s} x2={cx + 22 * s} y2={cy + 6 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
-    "tuck-front-lever": () => (
+    "manna": (
       <g>
-        <line x1={mid - 35} y1={mid - 30} x2={mid + 35} y2={mid - 30} stroke="#6b7280" strokeWidth="4" />
-        <circle cx={mid} cy={mid} r="7" fill="#a78bfa" />
-        <line x1={mid} y1={mid + 7} x2={mid} y2={mid + 15} stroke="#a78bfa" strokeWidth="3" />
-        <line x1={mid} y1={mid - 5} x2={mid - 10} y2={mid - 30} stroke="#a78bfa" strokeWidth="3" />
-        <line x1={mid} y1={mid - 5} x2={mid + 10} y2={mid - 30} stroke="#a78bfa" strokeWidth="3" />
-        <path d={`M${mid},${mid + 15} Q${mid + 10},${mid + 10} ${mid + 5},${mid + 5}`} stroke="#a78bfa" strokeWidth="2" fill="none" />
-        <text x={mid} y={mid + 40} textAnchor="middle" fill="#9ca3af" fontSize="11">tucked, back horizontal</text>
-      </g>
-    ),
-    "front-lever": () => (
-      <g>
-        <line x1={mid - 35} y1={mid - 30} x2={mid + 35} y2={mid - 30} stroke="#6b7280" strokeWidth="4" />
-        <line x1={mid - 35} y1={mid} x2={mid + 35} y2={mid} stroke="#a78bfa" strokeWidth="3" />
-        <circle cx={mid + 30} cy={mid - 5} r="7" fill="#a78bfa" />
-        <line x1={mid - 5} y1={mid} x2={mid - 10} y2={mid - 30} stroke="#a78bfa" strokeWidth="3" />
-        <line x1={mid + 5} y1={mid} x2={mid + 10} y2={mid - 30} stroke="#a78bfa" strokeWidth="3" />
-        <text x={mid} y={mid + 30} textAnchor="middle" fill="#9ca3af" fontSize="11">body horizontal under bar</text>
-      </g>
-    ),
-    "back-lever": () => (
-      <g>
-        <line x1={mid - 35} y1={mid - 30} x2={mid + 35} y2={mid - 30} stroke="#6b7280" strokeWidth="4" />
-        <line x1={mid - 35} y1={mid} x2={mid + 35} y2={mid} stroke="#a78bfa" strokeWidth="3" />
-        <circle cx={mid - 30} cy={mid - 5} r="7" fill="#a78bfa" />
-        <line x1={mid - 5} y1={mid} x2={mid - 10} y2={mid - 30} stroke="#a78bfa" strokeWidth="3" />
-        <line x1={mid + 5} y1={mid} x2={mid + 10} y2={mid - 30} stroke="#a78bfa" strokeWidth="3" />
-        <text x={mid} y={mid + 30} textAnchor="middle" fill="#9ca3af" fontSize="11">face-down horizontal hold</text>
-      </g>
-    ),
-    "90-degree-hold": () => (
-      <g>
-        <circle cx={mid} cy={mid - 5} r="7" fill="#ef4444" />
-        <line x1={mid} y1={mid + 2} x2={mid} y2={mid + 15} stroke="#ef4444" strokeWidth="3" />
-        <line x1={mid} y1={mid + 15} x2={mid + 30} y2={mid + 15} stroke="#ef4444" strokeWidth="3" />
-        <line x1={mid} y1={mid + 8} x2={mid - 12} y2={mid + 20} stroke="#ef4444" strokeWidth="3" />
-        <line x1={mid - 12} y1={mid + 20} x2={mid - 12} y2={mid + 35} stroke="#ef4444" strokeWidth="3" />
-        <line x1={mid} y1={mid + 8} x2={mid + 12} y2={mid + 20} stroke="#ef4444" strokeWidth="3" />
-        <line x1={mid + 12} y1={mid + 20} x2={mid + 12} y2={mid + 35} stroke="#ef4444" strokeWidth="3" />
-        <path d={`M${mid - 5},${mid + 20} A5,5 0 0,1 ${mid - 5},${mid + 10}`} stroke="#facc15" strokeWidth="1.5" fill="none" />
-        <text x={mid} y={mid + 55} textAnchor="middle" fill="#9ca3af" fontSize="11">arms 90°, body horizontal</text>
-      </g>
-    ),
-    "human-flag": () => (
-      <g>
-        <line x1={mid - 25} y1={mid - 40} x2={mid - 25} y2={mid + 40} stroke="#6b7280" strokeWidth="4" />
-        <circle cx={mid} cy={mid} r="7" fill="#ef4444" />
-        <line x1={mid + 7} y1={mid} x2={mid + 40} y2={mid} stroke="#ef4444" strokeWidth="3" />
-        <line x1={mid - 7} y1={mid} x2={mid - 25} y2={mid - 15} stroke="#ef4444" strokeWidth="3" />
-        <line x1={mid - 7} y1={mid} x2={mid - 25} y2={mid + 15} stroke="#ef4444" strokeWidth="3" />
-        <text x={mid + 10} y={mid + 40} textAnchor="middle" fill="#9ca3af" fontSize="11">sideways on pole</text>
-      </g>
-    ),
-    "burpee": () => (
-      <g>
-        <circle cx={mid - 25} cy={mid - 20} r="6" fill="#38bdf8" />
-        <line x1={mid - 25} y1={mid - 14} x2={mid - 25} y2={mid + 5} stroke="#38bdf8" strokeWidth="2" />
-        <circle cx={mid} cy={mid + 10} r="6" fill="#38bdf8" />
-        <line x1={mid - 15} y1={mid + 10} x2={mid + 15} y2={mid + 10} stroke="#38bdf8" strokeWidth="2" />
-        <circle cx={mid + 25} cy={mid - 25} r="6" fill="#38bdf8" />
-        <line x1={mid + 25} y1={mid - 19} x2={mid + 25} y2={mid} stroke="#38bdf8" strokeWidth="2" />
-        <path d={`M${mid - 15},${mid - 15} L${mid - 8},${mid} L${mid + 8},${mid} L${mid + 15},${mid - 15}`} stroke="#facc15" strokeWidth="1" fill="none" strokeDasharray="3" />
-        <text x={mid} y={mid + 40} textAnchor="middle" fill="#9ca3af" fontSize="11">squat → plank → push → jump</text>
-      </g>
-    ),
-    "bear-crawl": () => (
-      <g>
-        <circle cx={mid - 15} cy={mid - 10} r="7" fill="#38bdf8" />
-        <line x1={mid - 15} y1={mid - 3} x2={mid - 5} y2={mid + 10} stroke="#38bdf8" strokeWidth="3" />
-        <line x1={mid - 5} y1={mid + 10} x2={mid + 15} y2={mid + 10} stroke="#38bdf8" strokeWidth="3" />
-        <line x1={mid - 10} y1={mid + 3} x2={mid - 20} y2={mid + 18} stroke="#38bdf8" strokeWidth="2" />
-        <line x1={mid - 10} y1={mid + 3} x2={mid} y2={mid + 18} stroke="#38bdf8" strokeWidth="2" />
-        <line x1={mid + 5} y1={mid + 10} x2={mid + 20} y2={mid + 22} stroke="#38bdf8" strokeWidth="2" />
-        <line x1={mid + 5} y1={mid + 10} x2={mid - 5} y2={mid + 22} stroke="#38bdf8" strokeWidth="2" />
-        <text x={mid} y={mid + 45} textAnchor="middle" fill="#9ca3af" fontSize="11">crawl on all fours</text>
+        <circle cx={cx} cy={cy + 12 * s} r={headR} fill={color} />
+        <line x1={cx} y1={cy + 18 * s} x2={cx} y2={cy + 28 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 28 * s} x2={cx - 6 * s} y2={cy - 10 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 22 * s} x2={cx - 10 * s} y2={cy + 30 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        <line x1={cx} y1={cy + 22 * s} x2={cx + 10 * s} y2={cy + 30 * s} stroke={color} strokeWidth={sw} strokeLinecap="round" />
       </g>
     ),
   };
 
-  const renderDefault = () => (
-    <g>
-      <circle cx={mid} cy={mid - 15} r="10" fill="#6b7280" />
-      <line x1={mid} y1={mid - 5} x2={mid} y2={mid + 15} stroke="#6b7280" strokeWidth="3" />
-      <line x1={mid} y1={mid + 15} x2={mid - 12} y2={mid + 35} stroke="#6b7280" strokeWidth="3" />
-      <line x1={mid} y1={mid + 15} x2={mid + 12} y2={mid + 35} stroke="#6b7280" strokeWidth="3" />
-      <line x1={mid} y1={mid + 2} x2={mid - 15} y2={mid + 12} stroke="#6b7280" strokeWidth="3" />
-      <line x1={mid} y1={mid + 2} x2={mid + 15} y2={mid + 12} stroke="#6b7280" strokeWidth="3" />
-    </g>
-  );
+  return <>{poses[pose] || poses["squat"]}</>;
+}
 
-  const render = illustrations[exerciseId] || renderDefault;
+const exercisePoseMap: Record<string, { pose: string; color: string }> = {
+  "push-up": { pose: "push-up-up", color: "#60a5fa" },
+  "diamond-push-up": { pose: "push-up-down", color: "#60a5fa" },
+  "pike-push-up": { pose: "pike", color: "#60a5fa" },
+  "dips": { pose: "dip", color: "#60a5fa" },
+  "handstand-push-up": { pose: "handstand", color: "#60a5fa" },
+  "freestanding-hspu": { pose: "handstand", color: "#f59e0b" },
+  "pseudo-planche-push-up": { pose: "push-up-down", color: "#f59e0b" },
+  "pull-up": { pose: "pull-up", color: "#a78bfa" },
+  "chin-up": { pose: "pull-up", color: "#a78bfa" },
+  "australian-pull-up": { pose: "push-up-up", color: "#a78bfa" },
+  "muscle-up": { pose: "muscle-up", color: "#f59e0b" },
+  "squat": { pose: "squat", color: "#fb923c" },
+  "pistol-squat": { pose: "pistol-squat", color: "#fb923c" },
+  "lunge": { pose: "lunge", color: "#fb923c" },
+  "calf-raise": { pose: "calf-raise", color: "#fb923c" },
+  "jump-squat": { pose: "squat", color: "#fb923c" },
+  "plank": { pose: "plank", color: "#ec4899" },
+  "hollow-body-hold": { pose: "hollow-body", color: "#ec4899" },
+  "hanging-leg-raise": { pose: "hanging-leg-raise", color: "#ec4899" },
+  "dragon-flag": { pose: "dragon-flag", color: "#ef4444" },
+  "l-sit": { pose: "l-sit", color: "#f59e0b" },
+  "v-sit": { pose: "v-sit", color: "#f59e0b" },
+  "manna": { pose: "manna", color: "#f59e0b" },
+  "tuck-planche": { pose: "tuck-planche", color: "#ef4444" },
+  "straddle-planche": { pose: "planche", color: "#ef4444" },
+  "full-planche": { pose: "planche", color: "#ef4444" },
+  "tuck-front-lever": { pose: "front-lever", color: "#a78bfa" },
+  "front-lever": { pose: "front-lever", color: "#a78bfa" },
+  "back-lever": { pose: "back-lever", color: "#a78bfa" },
+  "90-degree-hold": { pose: "ninety-degree", color: "#ef4444" },
+  "human-flag": { pose: "flag", color: "#ef4444" },
+  "burpee": { pose: "burpee", color: "#38bdf8" },
+  "bear-crawl": { pose: "bear-crawl", color: "#38bdf8" },
+};
+
+export default function ExerciseIllustration({ exerciseId, size = 200, className }: Props) {
+  const s = size;
+  const mid = s / 2;
+  const mapping = exercisePoseMap[exerciseId] || { pose: "squat", color: "#9ca3af" };
 
   return (
     <svg
       width={s}
       height={s}
       viewBox={`0 0 ${s} ${s}`}
-      className="rounded-xl bg-gray-800/50"
+      className={`rounded-xl bg-gray-800/60 ${className || ""}`}
     >
-      {render()}
+      <Human cx={mid} cy={mid} scale={s / 100} color={mapping.color} pose={mapping.pose} />
     </svg>
   );
 }

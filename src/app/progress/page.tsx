@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useWorkout } from "@/context/WorkoutContext";
-import { weeklyPlans } from "@/data/workouts";
 import { exercises } from "@/data/exercises";
 import StrengthChart from "@/components/StrengthChart";
 
@@ -193,8 +192,7 @@ export default function ProgressPage() {
         ) : (
           <div className="space-y-3">
             {completedLogs.map((log) => {
-              const plan = weeklyPlans.find((w) => w.id === log.planId);
-              const dayName = plan?.days[log.dayIndex]?.name;
+              const dayName = `Day ${log.dayIndex + 1}`;
               const totalSets = log.exercises.reduce(
                 (s, e) => s + e.sets.length,
                 0
@@ -219,7 +217,7 @@ export default function ProgressPage() {
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <p className="font-semibold text-white">
-                        {plan?.name || "Unknown"} — {dayName || "Day"}
+                        {dayName} Workout
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
                         {new Date(log.date).toLocaleDateString("en-US", {
