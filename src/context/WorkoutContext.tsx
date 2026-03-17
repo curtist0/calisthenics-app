@@ -1,21 +1,26 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
-import { WorkoutLog, UserStats } from "@/lib/types";
+import { WorkoutLog, UserStats, PlateauInfo, ExerciseRecord, StrengthDataPoint } from "@/lib/types";
 import {
   getWorkoutLogs,
   saveWorkoutLog,
   getUserStats,
   recalculateStats,
   generateId,
+  detectPlateaus,
+  getExerciseRecords,
+  getStrengthHistory,
 } from "@/lib/storage";
-import { getWorkoutById } from "@/data/workouts";
+import { getPlanById } from "@/data/workouts";
 
 interface WorkoutContextType {
   logs: WorkoutLog[];
   stats: UserStats;
+  plateaus: PlateauInfo[];
+  records: ExerciseRecord[];
   activeWorkout: WorkoutLog | null;
-  startWorkout: (workoutId: string) => WorkoutLog;
+  startDayWorkout: (planId: string, dayIndex: number) => WorkoutLog;
   completeSet: (
     exerciseIndex: number,
     setIndex: number,
@@ -25,6 +30,7 @@ interface WorkoutContextType {
   finishWorkout: () => void;
   cancelWorkout: () => void;
   refreshStats: () => void;
+  getStrengthData: (exerciseId: string) => StrengthDataPoint[];
 }
 
 const WorkoutContext = createContext<WorkoutContextType | null>(null);
@@ -38,30 +44,39 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     longestStreak: 0,
     lastWorkoutDate: null,
   });
+  const [plateaus, setPlateaus] = useState<PlateauInfo[]>([]);
+  const [records, setRecords] = useState<ExerciseRecord[]>([]);
   const [activeWorkout, setActiveWorkout] = useState<WorkoutLog | null>(null);
 
   useEffect(() => {
     setLogs(getWorkoutLogs());
     setStats(getUserStats());
+    setPlateaus(detectPlateaus());
+    setRecords(getExerciseRecords());
   }, []);
 
   const refreshStats = useCallback(() => {
     setStats(recalculateStats());
     setLogs(getWorkoutLogs());
+    setPlateaus(detectPlateaus());
+    setRecords(getExerciseRecords());
   }, []);
 
-  const startWorkout = useCallback((workoutId: string): WorkoutLog => {
-    const workout = getWorkoutById(workoutId);
-    if (!workout) throw new Error(`Workout ${workoutId} not found`);
+  const startDayWorkout = useCallback((planId: string, dayIndex: number): WorkoutLog => {
+    const plan = getPlanById(planId);
+    if (!plan) throw new Error(`Plan ${planId} not found`);
+    const day = plan.days[dayIndex];
+    if (!day || day.isRest) throw new Error("Cannot start a rest day");
 
     const log: WorkoutLog = {
       id: generateId(),
-      workoutId,
+      planId,
+      dayIndex,
       date: new Date().toISOString(),
       startTime: new Date().toISOString(),
       endTime: null,
       completed: false,
-      exercises: workout.exercises.map((ex) => ({
+      exercises: day.exercises.map((ex) => ({
         exerciseId: ex.exerciseId,
         sets: Array.from({ length: ex.sets }, () => ({
           reps: null,
@@ -117,17 +132,24 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     setActiveWorkout(null);
   }, []);
 
+  const getStrengthData = useCallback((exerciseId: string) => {
+    return getStrengthHistory(exerciseId);
+  }, []);
+
   return (
     <WorkoutContext.Provider
       value={{
         logs,
         stats,
+        plateaus,
+        records,
         activeWorkout,
-        startWorkout,
+        startDayWorkout,
         completeSet,
         finishWorkout,
         cancelWorkout,
         refreshStats,
+        getStrengthData,
       }}
     >
       {children}

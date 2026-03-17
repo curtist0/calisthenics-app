@@ -12,6 +12,7 @@ const categories: { value: ExerciseCategory | "all"; label: string }[] = [
   { value: "pull", label: "Pull" },
   { value: "legs", label: "Legs" },
   { value: "core", label: "Core" },
+  { value: "skill", label: "Skills" },
   { value: "full-body", label: "Full Body" },
 ];
 
@@ -20,6 +21,7 @@ const difficulties: { value: Difficulty | "all"; label: string }[] = [
   { value: "beginner", label: "Beginner" },
   { value: "intermediate", label: "Intermediate" },
   { value: "advanced", label: "Advanced" },
+  { value: "elite", label: "Elite" },
 ];
 
 export default function ExercisesPage() {
@@ -45,7 +47,7 @@ export default function ExercisesPage() {
     <div className="max-w-lg mx-auto px-4 pt-8">
       <h1 className="text-3xl font-bold text-white mb-1">Exercise Library</h1>
       <p className="text-gray-400 mb-6">
-        {exercises.length} bodyweight exercises
+        {exercises.length} bodyweight exercises with visual demos
       </p>
 
       {/* Category Filter */}
@@ -81,6 +83,8 @@ export default function ExercisesPage() {
           </button>
         ))}
       </div>
+
+      <p className="text-sm text-gray-500 mb-4">{filtered.length} exercises</p>
 
       {/* Exercise List */}
       <div className="space-y-3">

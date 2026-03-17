@@ -1,6 +1,7 @@
 "use client";
 
 import { Exercise } from "@/lib/types";
+import ExerciseIllustration from "./ExerciseIllustration";
 
 interface ExerciseCardProps {
   exercise: Exercise;
@@ -12,6 +13,7 @@ const difficultyColors = {
   beginner: "bg-green-500/20 text-green-400",
   intermediate: "bg-yellow-500/20 text-yellow-400",
   advanced: "bg-red-500/20 text-red-400",
+  elite: "bg-fuchsia-500/20 text-fuchsia-400",
 };
 
 const categoryColors = {
@@ -20,6 +22,7 @@ const categoryColors = {
   legs: "bg-orange-500/20 text-orange-400",
   core: "bg-pink-500/20 text-pink-400",
   "full-body": "bg-teal-500/20 text-teal-400",
+  skill: "bg-amber-500/20 text-amber-400",
 };
 
 export default function ExerciseCard({
@@ -58,8 +61,8 @@ export default function ExerciseCard({
       className="block w-full p-4 bg-gray-800/50 rounded-2xl hover:bg-gray-800 transition-all hover:scale-[1.02] text-left border border-gray-700/50"
     >
       <div className="flex items-start gap-4">
-        <div className="text-4xl flex-shrink-0 bg-gray-700/50 w-14 h-14 rounded-xl flex items-center justify-center">
-          {exercise.image}
+        <div className="flex-shrink-0">
+          <ExerciseIllustration exerciseId={exercise.id} size={80} />
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-white text-lg">{exercise.name}</h3>

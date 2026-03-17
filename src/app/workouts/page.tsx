@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { workouts } from "@/data/workouts";
+import { weeklyPlans } from "@/data/workouts";
 import WorkoutCard from "@/components/WorkoutCard";
 import { Difficulty } from "@/lib/types";
 
@@ -10,6 +10,7 @@ const difficulties: { value: Difficulty | "all"; label: string }[] = [
   { value: "beginner", label: "Beginner" },
   { value: "intermediate", label: "Intermediate" },
   { value: "advanced", label: "Advanced" },
+  { value: "elite", label: "Elite" },
 ];
 
 export default function WorkoutsPage() {
@@ -17,7 +18,7 @@ export default function WorkoutsPage() {
     Difficulty | "all"
   >("all");
 
-  const filtered = workouts.filter((w) => {
+  const filtered = weeklyPlans.filter((w) => {
     if (selectedDifficulty !== "all" && w.difficulty !== selectedDifficulty)
       return false;
     return true;
@@ -25,9 +26,9 @@ export default function WorkoutsPage() {
 
   return (
     <div className="max-w-lg mx-auto px-4 pt-8">
-      <h1 className="text-3xl font-bold text-white mb-1">Workouts</h1>
+      <h1 className="text-3xl font-bold text-white mb-1">Weekly Programs</h1>
       <p className="text-gray-400 mb-6">
-        {workouts.length} training programs
+        {weeklyPlans.length} structured weekly plans
       </p>
 
       {/* Difficulty Filter */}
@@ -48,15 +49,15 @@ export default function WorkoutsPage() {
       </div>
 
       <div className="space-y-4">
-        {filtered.map((workout) => (
-          <WorkoutCard key={workout.id} workout={workout} />
+        {filtered.map((plan) => (
+          <WorkoutCard key={plan.id} plan={plan} />
         ))}
       </div>
 
       {filtered.length === 0 && (
         <div className="text-center py-12">
           <p className="text-gray-400">
-            No workouts match your filter.
+            No programs match your filter.
           </p>
         </div>
       )}
