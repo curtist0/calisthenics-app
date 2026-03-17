@@ -17,7 +17,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](https://p-3000-pod-pinscj33grfypa4whx2csnsemy-b13b3da34bbf4c4e760f-us4p.agent.cvm.dev/) in your browser.
 
 ## Scripts
 
