@@ -25,6 +25,8 @@ export interface Exercise {
   instructions: string[];
   image: string;
   isHold: boolean;
+  supportsWeight: boolean;
+  videoUrl: string;
   progressionFrom?: string;
   progressionTo?: string;
 }
@@ -35,6 +37,7 @@ export interface WorkoutExercise {
   reps: number | null;
   holdSeconds: number | null;
   restSeconds: number;
+  progressionLevel?: string;
 }
 
 export interface DayWorkout {
@@ -51,13 +54,16 @@ export interface WeeklyPlan {
   description: string;
   difficulty: Difficulty;
   goal: string;
+  targetSkills: string[];
   days: DayWorkout[];
   estimatedWeeklyMinutes: number;
+  createdAt: string;
 }
 
 export interface CompletedSet {
   reps: number | null;
   holdSeconds: number | null;
+  weightKg: number | null;
   completed: boolean;
 }
 
@@ -77,25 +83,19 @@ export interface WorkoutLog {
   completed: boolean;
 }
 
-export interface ExerciseRecord {
+export interface PersonalRecord {
   exerciseId: string;
-  date: string;
-  maxReps: number | null;
-  maxHoldSeconds: number | null;
-  totalVolume: number;
-}
-
-export interface StrengthDataPoint {
-  date: string;
+  type: "reps" | "hold" | "weight";
   value: number;
+  date: string;
+  previousValue: number | null;
 }
 
-export interface PlateauInfo {
-  exerciseId: string;
-  exerciseName: string;
-  currentLevel: number;
-  durationWeeks: number;
-  suggestion: string;
+export interface ProgressPhoto {
+  id: string;
+  date: string;
+  dataUrl: string;
+  note: string;
 }
 
 export interface UserStats {

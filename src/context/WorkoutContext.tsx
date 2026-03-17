@@ -1,192 +1,130 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
-import { WorkoutLog, UserStats, PlateauInfo, ExerciseRecord, StrengthDataPoint, WeeklyPlan } from "@/lib/types";
+import { WorkoutLog, UserStats, PersonalRecord, WeeklyPlan, ProgressPhoto } from "@/lib/types";
 import {
-  getWorkoutLogs,
-  saveWorkoutLog,
-  getUserStats,
-  recalculateStats,
-  generateId,
-  detectPlateaus,
-  getExerciseRecords,
-  getStrengthHistory,
-  getActivePlan,
-  saveActivePlan,
-  clearActivePlan,
-  getSelectedSkills,
-  saveSelectedSkills,
+  getWorkoutLogs, saveWorkoutLog, getUserStats, recalculateStats, generateId,
+  getPersonalRecords, getRecentPRs,
+  getSavedPlans, savePlan, deletePlan as deletePlanFromStorage,
+  getProgressPhotos, saveProgressPhoto, deleteProgressPhoto as deletePhotoFromStorage,
 } from "@/lib/storage";
 
 interface WorkoutContextType {
   logs: WorkoutLog[];
   stats: UserStats;
-  plateaus: PlateauInfo[];
-  records: ExerciseRecord[];
-  activePlan: WeeklyPlan | null;
-  selectedSkills: string[];
+  personalRecords: PersonalRecord[];
+  recentPRs: PersonalRecord[];
+  savedPlans: WeeklyPlan[];
+  photos: ProgressPhoto[];
   activeWorkout: WorkoutLog | null;
-  setActivePlanFromGenerator: (plan: WeeklyPlan) => void;
-  updateSelectedSkills: (skillIds: string[]) => void;
-  startDayWorkout: (planId: string, dayIndex: number, plan?: WeeklyPlan) => WorkoutLog;
-  completeSet: (
-    exerciseIndex: number,
-    setIndex: number,
-    reps: number | null,
-    holdSeconds: number | null
-  ) => void;
+  addPlan: (plan: WeeklyPlan) => void;
+  removePlan: (planId: string) => void;
+  startDayWorkout: (plan: WeeklyPlan, dayIndex: number) => WorkoutLog;
+  completeSet: (exerciseIndex: number, setIndex: number, reps: number | null, holdSeconds: number | null, weightKg: number | null) => void;
   finishWorkout: () => void;
   cancelWorkout: () => void;
-  refreshStats: () => void;
-  getStrengthData: (exerciseId: string) => StrengthDataPoint[];
+  refreshData: () => void;
+  addPhoto: (dataUrl: string, note: string) => void;
+  removePhoto: (id: string) => void;
 }
 
 const WorkoutContext = createContext<WorkoutContextType | null>(null);
 
 export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   const [logs, setLogs] = useState<WorkoutLog[]>([]);
-  const [stats, setStats] = useState<UserStats>({
-    totalWorkouts: 0,
-    totalExercises: 0,
-    currentStreak: 0,
-    longestStreak: 0,
-    lastWorkoutDate: null,
-  });
-  const [plateaus, setPlateaus] = useState<PlateauInfo[]>([]);
-  const [records, setRecords] = useState<ExerciseRecord[]>([]);
-  const [activePlan, setActivePlan] = useState<WeeklyPlan | null>(null);
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [stats, setStats] = useState<UserStats>({ totalWorkouts: 0, totalExercises: 0, currentStreak: 0, longestStreak: 0, lastWorkoutDate: null });
+  const [personalRecords, setPersonalRecords] = useState<PersonalRecord[]>([]);
+  const [recentPRs, setRecentPRs] = useState<PersonalRecord[]>([]);
+  const [savedPlans, setSavedPlans] = useState<WeeklyPlan[]>([]);
+  const [photos, setPhotos] = useState<ProgressPhoto[]>([]);
   const [activeWorkout, setActiveWorkout] = useState<WorkoutLog | null>(null);
+
+  const refreshData = useCallback(() => {
+    setLogs(getWorkoutLogs());
+    setStats(recalculateStats());
+    setPersonalRecords(getPersonalRecords());
+    setRecentPRs(getRecentPRs());
+    setSavedPlans(getSavedPlans());
+    setPhotos(getProgressPhotos());
+  }, []);
 
   useEffect(() => {
     setLogs(getWorkoutLogs());
     setStats(getUserStats());
-    setPlateaus(detectPlateaus());
-    setRecords(getExerciseRecords());
-    setActivePlan(getActivePlan());
-    setSelectedSkills(getSelectedSkills());
+    setPersonalRecords(getPersonalRecords());
+    setRecentPRs(getRecentPRs());
+    setSavedPlans(getSavedPlans());
+    setPhotos(getProgressPhotos());
   }, []);
 
-  const refreshStats = useCallback(() => {
-    setStats(recalculateStats());
-    setLogs(getWorkoutLogs());
-    setPlateaus(detectPlateaus());
-    setRecords(getExerciseRecords());
+  const addPlan = useCallback((plan: WeeklyPlan) => {
+    savePlan(plan);
+    setSavedPlans(getSavedPlans());
   }, []);
 
-  const setActivePlanFromGenerator = useCallback((plan: WeeklyPlan) => {
-    setActivePlan(plan);
-    saveActivePlan(plan);
+  const removePlan = useCallback((planId: string) => {
+    deletePlanFromStorage(planId);
+    setSavedPlans(getSavedPlans());
   }, []);
 
-  const updateSelectedSkills = useCallback((skillIds: string[]) => {
-    setSelectedSkills(skillIds);
-    saveSelectedSkills(skillIds);
-  }, []);
-
-  const startDayWorkout = useCallback((planId: string, dayIndex: number, plan?: WeeklyPlan): WorkoutLog => {
-    const usePlan = plan || activePlan;
-    if (!usePlan) throw new Error("No active plan");
-    const day = usePlan.days[dayIndex];
+  const startDayWorkout = useCallback((plan: WeeklyPlan, dayIndex: number): WorkoutLog => {
+    const day = plan.days[dayIndex];
     if (!day || day.isRest) throw new Error("Cannot start a rest day");
-
     const log: WorkoutLog = {
-      id: generateId(),
-      planId,
-      dayIndex,
-      date: new Date().toISOString(),
-      startTime: new Date().toISOString(),
-      endTime: null,
-      completed: false,
+      id: generateId(), planId: plan.id, dayIndex, date: new Date().toISOString(),
+      startTime: new Date().toISOString(), endTime: null, completed: false,
       exercises: day.exercises.map((ex) => ({
         exerciseId: ex.exerciseId,
-        sets: Array.from({ length: ex.sets }, () => ({
-          reps: null,
-          holdSeconds: null,
-          completed: false,
-        })),
+        sets: Array.from({ length: ex.sets }, () => ({ reps: null, holdSeconds: null, weightKg: null, completed: false })),
       })),
     };
-
     setActiveWorkout(log);
     return log;
-  }, [activePlan]);
+  }, []);
 
-  const completeSet = useCallback(
-    (
-      exerciseIndex: number,
-      setIndex: number,
-      reps: number | null,
-      holdSeconds: number | null
-    ) => {
-      setActiveWorkout((prev) => {
-        if (!prev) return prev;
-        const updated = { ...prev };
-        updated.exercises = [...prev.exercises];
-        updated.exercises[exerciseIndex] = {
-          ...updated.exercises[exerciseIndex],
-          sets: [...updated.exercises[exerciseIndex].sets],
-        };
-        updated.exercises[exerciseIndex].sets[setIndex] = {
-          reps,
-          holdSeconds,
-          completed: true,
-        };
-        return updated;
-      });
-    },
-    []
-  );
+  const completeSet = useCallback((exerciseIndex: number, setIndex: number, reps: number | null, holdSeconds: number | null, weightKg: number | null) => {
+    setActiveWorkout((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, exercises: [...prev.exercises] };
+      updated.exercises[exerciseIndex] = { ...updated.exercises[exerciseIndex], sets: [...updated.exercises[exerciseIndex].sets] };
+      updated.exercises[exerciseIndex].sets[setIndex] = { reps, holdSeconds, weightKg, completed: true };
+      return updated;
+    });
+  }, []);
 
   const finishWorkout = useCallback(() => {
     if (!activeWorkout) return;
-    const finished: WorkoutLog = {
-      ...activeWorkout,
-      endTime: new Date().toISOString(),
-      completed: true,
-    };
+    const finished: WorkoutLog = { ...activeWorkout, endTime: new Date().toISOString(), completed: true };
     saveWorkoutLog(finished);
     setActiveWorkout(null);
-    refreshStats();
-  }, [activeWorkout, refreshStats]);
+    refreshData();
+  }, [activeWorkout, refreshData]);
 
-  const cancelWorkout = useCallback(() => {
-    setActiveWorkout(null);
+  const cancelWorkout = useCallback(() => { setActiveWorkout(null); }, []);
+
+  const addPhoto = useCallback((dataUrl: string, note: string) => {
+    saveProgressPhoto({ id: generateId(), date: new Date().toISOString(), dataUrl, note });
+    setPhotos(getProgressPhotos());
   }, []);
 
-  const getStrengthData = useCallback((exerciseId: string) => {
-    return getStrengthHistory(exerciseId);
+  const removePhoto = useCallback((id: string) => {
+    deletePhotoFromStorage(id);
+    setPhotos(getProgressPhotos());
   }, []);
 
   return (
-    <WorkoutContext.Provider
-      value={{
-        logs,
-        stats,
-        plateaus,
-        records,
-        activePlan,
-        selectedSkills,
-        activeWorkout,
-        setActivePlanFromGenerator,
-        updateSelectedSkills,
-        startDayWorkout,
-        completeSet,
-        finishWorkout,
-        cancelWorkout,
-        refreshStats,
-        getStrengthData,
-      }}
-    >
+    <WorkoutContext.Provider value={{
+      logs, stats, personalRecords, recentPRs, savedPlans, photos, activeWorkout,
+      addPlan, removePlan, startDayWorkout, completeSet, finishWorkout, cancelWorkout,
+      refreshData, addPhoto, removePhoto,
+    }}>
       {children}
     </WorkoutContext.Provider>
   );
 }
 
 export function useWorkout(): WorkoutContextType {
-  const context = useContext(WorkoutContext);
-  if (!context) {
-    throw new Error("useWorkout must be used within a WorkoutProvider");
-  }
-  return context;
+  const ctx = useContext(WorkoutContext);
+  if (!ctx) throw new Error("useWorkout must be used within WorkoutProvider");
+  return ctx;
 }

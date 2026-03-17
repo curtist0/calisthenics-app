@@ -1,14 +1,13 @@
 import { Exercise, WeeklyPlan, DayWorkout, WorkoutExercise } from "./types";
 import { exercises, getExerciseById } from "@/data/exercises";
 
-function getProgressionChain(exerciseId: string): Exercise[] {
+function getFullProgressionChain(exerciseId: string): Exercise[] {
   const chain: Exercise[] = [];
   let current = getExerciseById(exerciseId);
   if (!current) return chain;
 
-  // Walk backward to find the easiest prerequisite
-  const visited = new Set<string>();
   let root = current;
+  const visited = new Set<string>();
   while (root.progressionFrom && !visited.has(root.progressionFrom)) {
     visited.add(root.id);
     const prev = getExerciseById(root.progressionFrom);
@@ -16,7 +15,6 @@ function getProgressionChain(exerciseId: string): Exercise[] {
     root = prev;
   }
 
-  // Walk forward from root
   visited.clear();
   let node: Exercise | undefined = root;
   while (node && !visited.has(node.id)) {
@@ -24,253 +22,124 @@ function getProgressionChain(exerciseId: string): Exercise[] {
     chain.push(node);
     node = node.progressionTo ? getExerciseById(node.progressionTo) : undefined;
   }
-
   return chain;
 }
 
-function getPrerequisites(targetId: string): Exercise[] {
-  const chain = getProgressionChain(targetId);
-  const targetIdx = chain.findIndex((e) => e.id === targetId);
-  if (targetIdx <= 0) return [];
-  return chain.slice(Math.max(0, targetIdx - 2), targetIdx);
-}
-
-function getSupportingExercises(
-  targetExercises: Exercise[],
-  alreadyIncluded: Set<string>
-): Exercise[] {
-  const supporting: Exercise[] = [];
-  const targetMuscles = new Set<string>();
-  const targetCategories = new Set<string>();
-
-  for (const ex of targetExercises) {
-    ex.muscles.forEach((m) => targetMuscles.add(m));
-    targetCategories.add(ex.category);
-  }
-
-  const needsPull = targetCategories.has("push") || targetCategories.has("skill");
-  const needsPush = targetCategories.has("pull");
-  const needsCore = true;
-  const needsLegs = true;
-
-  const candidates = exercises.filter(
-    (e) =>
-      !alreadyIncluded.has(e.id) &&
-      (e.difficulty === "beginner" || e.difficulty === "intermediate")
-  );
-
-  if (needsPull) {
-    const pull = candidates.find((e) => e.category === "pull");
-    if (pull) supporting.push(pull);
-  }
-  if (needsPush) {
-    const push = candidates.find(
-      (e) => e.category === "push" && !alreadyIncluded.has(e.id) && !supporting.find((s) => s.id === e.id)
-    );
-    if (push) supporting.push(push);
-  }
-  if (needsCore) {
-    const core = candidates.find(
-      (e) => e.category === "core" && !supporting.find((s) => s.id === e.id)
-    );
-    if (core) supporting.push(core);
-  }
-  if (needsLegs) {
-    const legs = candidates.find(
-      (e) => e.category === "legs" && !supporting.find((s) => s.id === e.id)
-    );
-    if (legs) supporting.push(legs);
-  }
-
-  return supporting;
-}
-
-function makeWorkoutExercise(
-  ex: Exercise,
-  isTarget: boolean
-): WorkoutExercise {
+function makeExercise(ex: Exercise, sets: number, isTarget: boolean, level?: string): WorkoutExercise {
   if (ex.isHold) {
-    const holdBase = ex.difficulty === "elite" ? 5 : ex.difficulty === "advanced" ? 10 : ex.difficulty === "intermediate" ? 15 : 30;
-    return {
-      exerciseId: ex.id,
-      sets: isTarget ? 5 : 3,
-      reps: null,
-      holdSeconds: holdBase,
-      restSeconds: isTarget ? 120 : 60,
-    };
+    const hold = ex.difficulty === "elite" ? 5 : ex.difficulty === "advanced" ? 10 : ex.difficulty === "intermediate" ? 15 : 30;
+    return { exerciseId: ex.id, sets, reps: null, holdSeconds: hold, restSeconds: isTarget ? 120 : 60, progressionLevel: level };
   }
-
-  const repBase = ex.difficulty === "elite" ? 3 : ex.difficulty === "advanced" ? 5 : ex.difficulty === "intermediate" ? 8 : 12;
-  return {
-    exerciseId: ex.id,
-    sets: isTarget ? 4 : 3,
-    reps: repBase,
-    holdSeconds: null,
-    restSeconds: isTarget ? 120 : 60,
-  };
+  const reps = ex.difficulty === "elite" ? 3 : ex.difficulty === "advanced" ? 5 : ex.difficulty === "intermediate" ? 8 : 12;
+  return { exerciseId: ex.id, sets, reps, holdSeconds: null, restSeconds: isTarget ? 120 : 60, progressionLevel: level };
 }
 
 export function generateWeeklyPlan(selectedSkillIds: string[]): WeeklyPlan {
-  const targetExercises: Exercise[] = [];
-  const allExerciseIds = new Set<string>();
-  const prerequisiteExercises: Exercise[] = [];
+  const allExIds = new Set<string>();
+  const skillChains: { target: Exercise; chain: Exercise[] }[] = [];
 
-  for (const skillId of selectedSkillIds) {
-    const ex = getExerciseById(skillId);
-    if (ex) {
-      targetExercises.push(ex);
-      allExerciseIds.add(ex.id);
-    }
+  for (const id of selectedSkillIds) {
+    const target = getExerciseById(id);
+    if (!target) continue;
+    const chain = getFullProgressionChain(id);
+    skillChains.push({ target, chain });
+    chain.forEach((e) => allExIds.add(e.id));
   }
-
-  for (const target of targetExercises) {
-    const prereqs = getPrerequisites(target.id);
-    for (const p of prereqs) {
-      if (!allExerciseIds.has(p.id)) {
-        prerequisiteExercises.push(p);
-        allExerciseIds.add(p.id);
-      }
-    }
-  }
-
-  const supporting = getSupportingExercises(
-    [...targetExercises, ...prerequisiteExercises],
-    allExerciseIds
-  );
-  for (const s of supporting) {
-    allExerciseIds.add(s.id);
-  }
-
-  const skillWork = targetExercises.map((ex) => makeWorkoutExercise(ex, true));
-  const prereqWork = prerequisiteExercises.map((ex) => makeWorkoutExercise(ex, false));
-  const supportWork = supporting.map((ex) => makeWorkoutExercise(ex, false));
-
-  const allWork = [...skillWork, ...prereqWork, ...supportWork];
 
   const numTargets = selectedSkillIds.length;
-  let trainingDays: number;
-  if (numTargets <= 1) trainingDays = 3;
-  else if (numTargets <= 3) trainingDays = 4;
-  else if (numTargets <= 5) trainingDays = 5;
-  else trainingDays = 6;
+  const trainingDays = numTargets <= 1 ? 3 : numTargets <= 3 ? 4 : numTargets <= 5 ? 5 : 6;
 
-  const dayBuckets: { exercises: WorkoutExercise[]; name: string; focus: string }[] = [];
+  type Bucket = { exercises: WorkoutExercise[]; name: string; focus: string };
+  const buckets: Bucket[] = [];
 
+  // Build progression-focused training days
   if (trainingDays <= 3) {
-    dayBuckets.push({ exercises: [], name: "Skill Focus", focus: "Primary skill work" });
-    dayBuckets.push({ exercises: [], name: "Strength", focus: "Supporting strength" });
-    dayBuckets.push({ exercises: [], name: "Skill + Conditioning", focus: "Skill practice + conditioning" });
+    buckets.push({ exercises: [], name: "Progression Day", focus: "Work through skill progressions" });
+    buckets.push({ exercises: [], name: "Strength Day", focus: "Build supporting strength" });
+    buckets.push({ exercises: [], name: "Volume Day", focus: "Higher volume skill work" });
   } else if (trainingDays <= 4) {
-    dayBuckets.push({ exercises: [], name: "Skill Day A", focus: "Primary skill work" });
-    dayBuckets.push({ exercises: [], name: "Push & Press", focus: "Pushing strength" });
-    dayBuckets.push({ exercises: [], name: "Skill Day B", focus: "Skill volume" });
-    dayBuckets.push({ exercises: [], name: "Pull & Core", focus: "Pulling + core strength" });
-  } else if (trainingDays <= 5) {
-    dayBuckets.push({ exercises: [], name: "Skill Day A", focus: "Primary skill work" });
-    dayBuckets.push({ exercises: [], name: "Push Strength", focus: "Pushing strength" });
-    dayBuckets.push({ exercises: [], name: "Pull Strength", focus: "Pulling strength" });
-    dayBuckets.push({ exercises: [], name: "Skill Day B", focus: "Skill volume" });
-    dayBuckets.push({ exercises: [], name: "Legs & Core", focus: "Lower body + core" });
+    buckets.push({ exercises: [], name: "Progression A", focus: "Skill progressions (heavy)" });
+    buckets.push({ exercises: [], name: "Strength", focus: "Supporting strength" });
+    buckets.push({ exercises: [], name: "Progression B", focus: "Skill progressions (volume)" });
+    buckets.push({ exercises: [], name: "Accessory", focus: "Accessory + balance work" });
   } else {
-    dayBuckets.push({ exercises: [], name: "Skill Day A", focus: "Primary skill work" });
-    dayBuckets.push({ exercises: [], name: "Push Strength", focus: "Pushing strength" });
-    dayBuckets.push({ exercises: [], name: "Pull Strength", focus: "Pulling strength" });
-    dayBuckets.push({ exercises: [], name: "Skill Day B", focus: "Skill volume" });
-    dayBuckets.push({ exercises: [], name: "Legs & Core", focus: "Lower body + core" });
-    dayBuckets.push({ exercises: [], name: "Skill Day C", focus: "Skill endurance" });
+    for (let i = 0; i < trainingDays; i++) {
+      const names = ["Progression A", "Push Strength", "Pull Strength", "Progression B", "Accessory", "Volume"];
+      const focuses = ["Heavy skill progressions", "Pushing strength", "Pulling strength", "Skill volume work", "Accessory + core", "Endurance"];
+      buckets.push({ exercises: [], name: names[i] || `Day ${i + 1}`, focus: focuses[i] || "" });
+    }
   }
 
-  // Distribute skill work across skill days
-  const skillDayIndices = dayBuckets
-    .map((d, i) => (d.name.includes("Skill") ? i : -1))
-    .filter((i) => i >= 0);
-  const otherDayIndices = dayBuckets
-    .map((d, i) => (!d.name.includes("Skill") ? i : -1))
-    .filter((i) => i >= 0);
+  const progBuckets = buckets.filter((b) => b.name.includes("Progression") || b.name.includes("Volume"));
+  const strBuckets = buckets.filter((b) => !b.name.includes("Progression") && !b.name.includes("Volume"));
 
-  skillWork.forEach((ex, i) => {
-    const dayIdx = skillDayIndices[i % skillDayIndices.length];
-    dayBuckets[dayIdx].exercises.push(ex);
+  // For each target skill, add the full progression chain spread across progression days
+  skillChains.forEach(({ target, chain }, si) => {
+    const targetIdx = chain.findIndex((e) => e.id === target.id);
+    const relevantChain = chain.slice(Math.max(0, targetIdx - 3), targetIdx + 1);
+
+    relevantChain.forEach((ex, i) => {
+      const isTarget = ex.id === target.id;
+      const level = i === relevantChain.length - 1 ? "Target" :
+        i === relevantChain.length - 2 ? "Level " + (relevantChain.length - 1) :
+        "Level " + (i + 1);
+      const sets = isTarget ? 5 : 3;
+      const bucket = progBuckets[(si + i) % progBuckets.length];
+      if (bucket) bucket.exercises.push(makeExercise(ex, sets, isTarget, level));
+    });
   });
 
-  prereqWork.forEach((ex, i) => {
-    const dayIdx = skillDayIndices[(i + 1) % skillDayIndices.length];
-    dayBuckets[dayIdx].exercises.push(ex);
+  // Add supporting exercises to strength/accessory days
+  const usedIds = new Set(buckets.flatMap((b) => b.exercises.map((e) => e.exerciseId)));
+  const supporters = exercises.filter(
+    (e) => !usedIds.has(e.id) && (e.difficulty === "beginner" || e.difficulty === "intermediate")
+  );
+
+  const cats = ["pull", "push", "core", "legs"];
+  cats.forEach((cat, ci) => {
+    const ex = supporters.find((e) => e.category === cat);
+    if (ex && strBuckets.length > 0) {
+      const bucket = strBuckets[ci % strBuckets.length];
+      bucket.exercises.push(makeExercise(ex, 3, false));
+      usedIds.add(ex.id);
+    }
   });
 
-  supportWork.forEach((ex, i) => {
-    const dayIdx = otherDayIndices.length > 0
-      ? otherDayIndices[i % otherDayIndices.length]
-      : i % dayBuckets.length;
-    dayBuckets[dayIdx].exercises.push(ex);
-  });
-
-  // Ensure every training day has at least 3 exercises
-  for (const bucket of dayBuckets) {
-    if (bucket.exercises.length < 3) {
-      const fillers = exercises
-        .filter(
-          (e) =>
-            !allExerciseIds.has(e.id) &&
-            (e.difficulty === "beginner" || e.difficulty === "intermediate") &&
-            e.category !== "full-body"
-        )
-        .slice(0, 3 - bucket.exercises.length);
-      for (const f of fillers) {
-        bucket.exercises.push(makeWorkoutExercise(f, false));
-        allExerciseIds.add(f.id);
-      }
+  // Fill short days
+  for (const b of buckets) {
+    while (b.exercises.length < 3) {
+      const filler = supporters.find((e) => !usedIds.has(e.id));
+      if (!filler) break;
+      b.exercises.push(makeExercise(filler, 3, false));
+      usedIds.add(filler.id);
     }
   }
 
   const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const slots = trainingDays === 3 ? [0, 2, 4] : trainingDays === 4 ? [0, 1, 3, 4] : trainingDays === 5 ? [0, 1, 2, 4, 5] : [0, 1, 2, 3, 4, 5];
   const days: DayWorkout[] = [];
-  let bucketIdx = 0;
-
-  // Spread training days with rest between
-  const trainingSlots: number[] = [];
-  if (trainingDays === 3) trainingSlots.push(0, 2, 4);
-  else if (trainingDays === 4) trainingSlots.push(0, 1, 3, 4);
-  else if (trainingDays === 5) trainingSlots.push(0, 1, 2, 4, 5);
-  else trainingSlots.push(0, 1, 2, 3, 4, 5);
-
+  let bi = 0;
   for (let i = 0; i < 7; i++) {
-    if (trainingSlots.includes(i) && bucketIdx < dayBuckets.length) {
-      const bucket = dayBuckets[bucketIdx];
-      days.push({
-        day: dayNames[i],
-        name: bucket.name,
-        isRest: false,
-        focus: bucket.focus,
-        exercises: bucket.exercises,
-      });
-      bucketIdx++;
+    if (slots.includes(i) && bi < buckets.length) {
+      days.push({ day: dayNames[i], name: buckets[bi].name, isRest: false, focus: buckets[bi].focus, exercises: buckets[bi].exercises });
+      bi++;
     } else {
-      days.push({
-        day: dayNames[i],
-        name: "Rest & Recovery",
-        isRest: true,
-        exercises: [],
-      });
+      days.push({ day: dayNames[i], name: "Rest & Recovery", isRest: true, exercises: [] });
     }
   }
 
-  const totalExercises = dayBuckets.reduce((s, b) => s + b.exercises.length, 0);
-  const estimatedMinutes = totalExercises * 5 + trainingDays * 10;
-
-  const skillNames = targetExercises.map((e) => e.name).join(", ");
+  const totalEx = buckets.reduce((s, b) => s + b.exercises.length, 0);
+  const skillNames = skillChains.map((s) => s.target.name);
 
   return {
-    id: `custom-${Date.now()}`,
-    name: `${numTargets === 1 ? targetExercises[0].name : "Multi-Skill"} Program`,
-    description: `Custom weekly plan targeting: ${skillNames}`,
-    difficulty: targetExercises.some((e) => e.difficulty === "elite")
-      ? "elite"
-      : targetExercises.some((e) => e.difficulty === "advanced")
-      ? "advanced"
-      : "intermediate",
-    goal: `Master ${skillNames}`,
+    id: `plan-${Date.now()}`,
+    name: numTargets === 1 ? `${skillNames[0]} Program` : "Multi-Skill Program",
+    description: `Progression-based plan targeting: ${skillNames.join(", ")}`,
+    difficulty: skillChains.some((s) => s.target.difficulty === "elite") ? "elite" : "advanced",
+    goal: `Master ${skillNames.join(", ")}`,
+    targetSkills: selectedSkillIds,
     days,
-    estimatedWeeklyMinutes: estimatedMinutes,
+    estimatedWeeklyMinutes: totalEx * 5 + trainingDays * 10,
+    createdAt: new Date().toISOString(),
   };
 }

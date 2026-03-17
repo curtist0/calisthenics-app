@@ -1,17 +1,11 @@
-import {
-  WorkoutLog,
-  UserStats,
-  ExerciseRecord,
-  StrengthDataPoint,
-  PlateauInfo,
-} from "./types";
+import { WorkoutLog, UserStats, PersonalRecord, WeeklyPlan, ProgressPhoto } from "./types";
 import { getExerciseById } from "@/data/exercises";
 
 const LOGS_KEY = "calisthenics_logs";
 const STATS_KEY = "calisthenics_stats";
-const RECORDS_KEY = "calisthenics_records";
-const PLAN_KEY = "calisthenics_active_plan";
-const SELECTED_SKILLS_KEY = "calisthenics_selected_skills";
+const PRS_KEY = "calisthenics_prs";
+const PLANS_KEY = "calisthenics_plans";
+const PHOTOS_KEY = "calisthenics_photos";
 
 function isBrowser(): boolean {
   return typeof window !== "undefined";
@@ -28,202 +22,162 @@ export function getWorkoutLogs(): WorkoutLog[] {
 export function saveWorkoutLog(log: WorkoutLog): void {
   if (!isBrowser()) return;
   const logs = getWorkoutLogs();
-  const existingIndex = logs.findIndex((l) => l.id === log.id);
-  if (existingIndex >= 0) {
-    logs[existingIndex] = log;
-  } else {
-    logs.push(log);
-  }
+  const idx = logs.findIndex((l) => l.id === log.id);
+  if (idx >= 0) logs[idx] = log;
+  else logs.push(log);
   localStorage.setItem(LOGS_KEY, JSON.stringify(logs));
-  updateRecordsFromLog(log);
+  updatePRsFromLog(log);
 }
 
-export function deleteWorkoutLog(id: string): void {
-  if (!isBrowser()) return;
-  const logs = getWorkoutLogs().filter((l) => l.id !== id);
-  localStorage.setItem(LOGS_KEY, JSON.stringify(logs));
-}
+// ── Personal Records ──
 
-// ── Exercise Records (strength tracking) ──
-
-export function getExerciseRecords(): ExerciseRecord[] {
+export function getPersonalRecords(): PersonalRecord[] {
   if (!isBrowser()) return [];
-  const data = localStorage.getItem(RECORDS_KEY);
+  const data = localStorage.getItem(PRS_KEY);
   return data ? JSON.parse(data) : [];
 }
 
-function saveExerciseRecords(records: ExerciseRecord[]): void {
+function savePRs(prs: PersonalRecord[]): void {
   if (!isBrowser()) return;
-  localStorage.setItem(RECORDS_KEY, JSON.stringify(records));
+  localStorage.setItem(PRS_KEY, JSON.stringify(prs));
 }
 
-function updateRecordsFromLog(log: WorkoutLog): void {
+function updatePRsFromLog(log: WorkoutLog): void {
   if (!log.completed) return;
-  const records = getExerciseRecords();
+  const prs = getPersonalRecords();
   const dateStr = log.date.split("T")[0];
 
   for (const ex of log.exercises) {
-    let maxReps: number | null = null;
-    let maxHold: number | null = null;
-    let totalVolume = 0;
+    const exercise = getExerciseById(ex.exerciseId);
+    if (!exercise) continue;
 
     for (const set of ex.sets) {
-      if (set.completed) {
-        if (set.reps !== null) {
-          maxReps = Math.max(maxReps ?? 0, set.reps);
-          totalVolume += set.reps;
+      if (!set.completed) continue;
+
+      if (set.reps !== null && set.reps > 0) {
+        const existing = prs.find(
+          (p) => p.exerciseId === ex.exerciseId && p.type === "reps"
+        );
+        if (!existing || set.reps > existing.value) {
+          const prev = existing?.value ?? null;
+          const newPR: PersonalRecord = {
+            exerciseId: ex.exerciseId,
+            type: "reps",
+            value: set.reps,
+            date: dateStr,
+            previousValue: prev,
+          };
+          if (existing) {
+            const idx = prs.indexOf(existing);
+            prs[idx] = newPR;
+          } else {
+            prs.push(newPR);
+          }
         }
-        if (set.holdSeconds !== null) {
-          maxHold = Math.max(maxHold ?? 0, set.holdSeconds);
-          totalVolume += set.holdSeconds;
+      }
+
+      if (set.holdSeconds !== null && set.holdSeconds > 0) {
+        const existing = prs.find(
+          (p) => p.exerciseId === ex.exerciseId && p.type === "hold"
+        );
+        if (!existing || set.holdSeconds > existing.value) {
+          const prev = existing?.value ?? null;
+          const newPR: PersonalRecord = {
+            exerciseId: ex.exerciseId,
+            type: "hold",
+            value: set.holdSeconds,
+            date: dateStr,
+            previousValue: prev,
+          };
+          if (existing) {
+            const idx = prs.indexOf(existing);
+            prs[idx] = newPR;
+          } else {
+            prs.push(newPR);
+          }
+        }
+      }
+
+      if (set.weightKg !== null && set.weightKg > 0) {
+        const existing = prs.find(
+          (p) => p.exerciseId === ex.exerciseId && p.type === "weight"
+        );
+        if (!existing || set.weightKg > existing.value) {
+          const prev = existing?.value ?? null;
+          const newPR: PersonalRecord = {
+            exerciseId: ex.exerciseId,
+            type: "weight",
+            value: set.weightKg,
+            date: dateStr,
+            previousValue: prev,
+          };
+          if (existing) {
+            const idx = prs.indexOf(existing);
+            prs[idx] = newPR;
+          } else {
+            prs.push(newPR);
+          }
         }
       }
     }
-
-    if (totalVolume > 0) {
-      records.push({
-        exerciseId: ex.exerciseId,
-        date: dateStr,
-        maxReps,
-        maxHoldSeconds: maxHold,
-        totalVolume,
-      });
-    }
   }
 
-  saveExerciseRecords(records);
+  savePRs(prs);
 }
 
-export function getStrengthHistory(exerciseId: string): StrengthDataPoint[] {
-  const records = getExerciseRecords().filter(
-    (r) => r.exerciseId === exerciseId
-  );
-
-  const byDate = new Map<string, number>();
-  for (const r of records) {
-    const existing = byDate.get(r.date) ?? 0;
-    byDate.set(r.date, Math.max(existing, r.totalVolume));
-  }
-
-  return Array.from(byDate.entries())
-    .map(([date, value]) => ({ date, value }))
-    .sort((a, b) => a.date.localeCompare(b.date));
+export function getRecentPRs(limit = 10): PersonalRecord[] {
+  return getPersonalRecords()
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, limit);
 }
 
-// ── Plateau Detection ──
+// ── Saved Plans Library ──
 
-export function detectPlateaus(): PlateauInfo[] {
-  const records = getExerciseRecords();
-  const exerciseIds = [...new Set(records.map((r) => r.exerciseId))];
-  const plateaus: PlateauInfo[] = [];
-
-  for (const exId of exerciseIds) {
-    const history = getStrengthHistory(exId);
-    if (history.length < 4) continue;
-
-    const recent = history.slice(-6);
-    if (recent.length < 3) continue;
-
-    const values = recent.map((d) => d.value);
-    const avg = values.reduce((a, b) => a + b, 0) / values.length;
-    const variance =
-      values.reduce((sum, v) => sum + Math.pow(v - avg, 2), 0) / values.length;
-    const stdDev = Math.sqrt(variance);
-
-    const coeffOfVariation = avg > 0 ? stdDev / avg : 0;
-
-    if (coeffOfVariation < 0.1 && history.length >= 4) {
-      const exercise = getExerciseById(exId);
-      if (!exercise) continue;
-
-      const firstDate = new Date(recent[0].date);
-      const lastDate = new Date(recent[recent.length - 1].date);
-      const weeks = Math.max(
-        1,
-        Math.round(
-          (lastDate.getTime() - firstDate.getTime()) / (7 * 24 * 60 * 60 * 1000)
-        )
-      );
-
-      plateaus.push({
-        exerciseId: exId,
-        exerciseName: exercise.name,
-        currentLevel: Math.round(avg),
-        durationWeeks: weeks,
-        suggestion: generateSuggestion(exercise.id, exercise.category, avg),
-      });
-    }
-  }
-
-  return plateaus;
+export function getSavedPlans(): WeeklyPlan[] {
+  if (!isBrowser()) return [];
+  const data = localStorage.getItem(PLANS_KEY);
+  return data ? JSON.parse(data) : [];
 }
 
-function generateSuggestion(
-  exerciseId: string,
-  category: string,
-  currentVolume: number
-): string {
-  const suggestions: Record<string, string[]> = {
-    push: [
-      "Try adding a 3-second pause at the bottom of each rep to increase time under tension.",
-      "Switch to a harder progression (e.g., diamond → pike → HSPU) for 2 weeks, then return.",
-      "Add explosive push-ups (clap push-ups) to recruit more motor units.",
-      "Try 'grease the groove' — do 50% of your max throughout the day, every day for a week.",
-      "Increase rest between sets to 3 minutes and go for max reps each set.",
-    ],
-    pull: [
-      "Add a 2-second hold at the top of each pull-up to build peak contraction strength.",
-      "Try negative-only reps: jump up and lower for 5 seconds per rep.",
-      "Switch grip width — go wider or use a mixed grip for variety.",
-      "Add weight with a backpack if possible, even small amounts help.",
-      "Do archer pull-ups or typewriter pull-ups to increase unilateral demand.",
-    ],
-    legs: [
-      "Add a 3-second pause at the bottom of each squat.",
-      "Try single-leg variations to double the intensity per leg.",
-      "Add a jump to your squats for power development.",
-      "Slow down the eccentric (lowering) phase to 4-5 seconds.",
-      "Increase range of motion — use an elevated surface for deeper squats.",
-    ],
-    core: [
-      "Increase hold duration by 10-15% each session.",
-      "Try adding movement to your holds (e.g., hollow body rocks instead of holds).",
-      "Progress to the next harder variation in the progression chain.",
-      "Add weight — hold a book or water bottle for extra resistance.",
-      "Try anti-rotation exercises to challenge the core differently.",
-    ],
-    skill: [
-      "Focus on the easier progression for higher volume before returning to this skill.",
-      "Film yourself to check form — small technique fixes unlock big strength gains.",
-      "Add specific straight-arm or bent-arm conditioning work.",
-      "Try 'negatives' of this skill: start from the end position and slowly lower.",
-      "Take a deload week at 50% volume, then push past the plateau refreshed.",
-    ],
-    "full-body": [
-      "Increase the tempo — slower reps recruit more muscle fibers.",
-      "Try rest-pause sets: do max reps, rest 15 seconds, repeat for 3 mini-sets.",
-      "Reduce rest periods by 15 seconds to increase metabolic demand.",
-      "Add a variation you haven't tried to shock the body.",
-      "Increase weekly frequency from 2 to 3 sessions for this exercise.",
-    ],
-  };
+export function savePlan(plan: WeeklyPlan): void {
+  if (!isBrowser()) return;
+  const plans = getSavedPlans();
+  plans.unshift(plan);
+  localStorage.setItem(PLANS_KEY, JSON.stringify(plans));
+}
 
-  const pool = suggestions[category] || suggestions["full-body"];
-  const index = Math.floor(currentVolume) % pool.length;
-  return pool[index];
+export function deletePlan(planId: string): void {
+  if (!isBrowser()) return;
+  const plans = getSavedPlans().filter((p) => p.id !== planId);
+  localStorage.setItem(PLANS_KEY, JSON.stringify(plans));
+}
+
+// ── Progress Photos ──
+
+export function getProgressPhotos(): ProgressPhoto[] {
+  if (!isBrowser()) return [];
+  const data = localStorage.getItem(PHOTOS_KEY);
+  return data ? JSON.parse(data) : [];
+}
+
+export function saveProgressPhoto(photo: ProgressPhoto): void {
+  if (!isBrowser()) return;
+  const photos = getProgressPhotos();
+  photos.unshift(photo);
+  localStorage.setItem(PHOTOS_KEY, JSON.stringify(photos));
+}
+
+export function deleteProgressPhoto(id: string): void {
+  if (!isBrowser()) return;
+  const photos = getProgressPhotos().filter((p) => p.id !== id);
+  localStorage.setItem(PHOTOS_KEY, JSON.stringify(photos));
 }
 
 // ── User Stats ──
 
 export function getUserStats(): UserStats {
   if (!isBrowser()) {
-    return {
-      totalWorkouts: 0,
-      totalExercises: 0,
-      currentStreak: 0,
-      longestStreak: 0,
-      lastWorkoutDate: null,
-    };
+    return { totalWorkouts: 0, totalExercises: 0, currentStreak: 0, longestStreak: 0, lastWorkoutDate: null };
   }
   const data = localStorage.getItem(STATS_KEY);
   if (data) return JSON.parse(data);
@@ -232,99 +186,36 @@ export function getUserStats(): UserStats {
 
 export function recalculateStats(): UserStats {
   const logs = getWorkoutLogs().filter((l) => l.completed);
-
   if (logs.length === 0) {
-    const stats: UserStats = {
-      totalWorkouts: 0,
-      totalExercises: 0,
-      currentStreak: 0,
-      longestStreak: 0,
-      lastWorkoutDate: null,
-    };
-    if (isBrowser()) localStorage.setItem(STATS_KEY, JSON.stringify(stats));
-    return stats;
+    const s: UserStats = { totalWorkouts: 0, totalExercises: 0, currentStreak: 0, longestStreak: 0, lastWorkoutDate: null };
+    if (isBrowser()) localStorage.setItem(STATS_KEY, JSON.stringify(s));
+    return s;
   }
 
-  const totalExercises = logs.reduce(
-    (sum, log) => sum + log.exercises.length,
-    0
-  );
+  const totalExercises = logs.reduce((s, l) => s + l.exercises.length, 0);
+  const sortedDates = [...new Set(logs.map((l) => l.date.split("T")[0]))].sort();
 
-  const sortedDates = [
-    ...new Set(logs.map((l) => l.date.split("T")[0])),
-  ].sort();
-
-  let currentStreak = 0;
-  let longestStreak = 0;
-  let streak = 1;
-
+  let streak = 1, longestStreak = 0;
   for (let i = 1; i < sortedDates.length; i++) {
-    const prev = new Date(sortedDates[i - 1]);
-    const curr = new Date(sortedDates[i]);
-    const diffDays =
-      (curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
-    if (diffDays === 1) {
-      streak++;
-    } else {
-      longestStreak = Math.max(longestStreak, streak);
-      streak = 1;
-    }
+    const diff = (new Date(sortedDates[i]).getTime() - new Date(sortedDates[i - 1]).getTime()) / 86400000;
+    if (diff === 1) streak++;
+    else { longestStreak = Math.max(longestStreak, streak); streak = 1; }
   }
   longestStreak = Math.max(longestStreak, streak);
 
   const today = new Date().toISOString().split("T")[0];
   const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-  const lastDate = sortedDates[sortedDates.length - 1];
-
-  if (lastDate === today || lastDate === yesterday) {
-    currentStreak = streak;
-  } else {
-    currentStreak = 0;
-  }
+  const last = sortedDates[sortedDates.length - 1];
+  const currentStreak = (last === today || last === yesterday) ? streak : 0;
 
   const stats: UserStats = {
-    totalWorkouts: logs.length,
-    totalExercises,
-    currentStreak,
-    longestStreak,
-    lastWorkoutDate: sortedDates[sortedDates.length - 1],
+    totalWorkouts: logs.length, totalExercises, currentStreak, longestStreak,
+    lastWorkoutDate: last,
   };
-
   if (isBrowser()) localStorage.setItem(STATS_KEY, JSON.stringify(stats));
   return stats;
 }
 
 export function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-}
-
-// ── Active Plan ──
-
-export function getActivePlan(): import("./types").WeeklyPlan | null {
-  if (!isBrowser()) return null;
-  const data = localStorage.getItem(PLAN_KEY);
-  return data ? JSON.parse(data) : null;
-}
-
-export function saveActivePlan(plan: import("./types").WeeklyPlan): void {
-  if (!isBrowser()) return;
-  localStorage.setItem(PLAN_KEY, JSON.stringify(plan));
-}
-
-export function clearActivePlan(): void {
-  if (!isBrowser()) return;
-  localStorage.removeItem(PLAN_KEY);
-}
-
-// ── Selected Skills ──
-
-export function getSelectedSkills(): string[] {
-  if (!isBrowser()) return [];
-  const data = localStorage.getItem(SELECTED_SKILLS_KEY);
-  return data ? JSON.parse(data) : [];
-}
-
-export function saveSelectedSkills(skillIds: string[]): void {
-  if (!isBrowser()) return;
-  localStorage.setItem(SELECTED_SKILLS_KEY, JSON.stringify(skillIds));
 }
