@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { exercises } from "@/data/exercises";
 import { useWorkout } from "@/context/WorkoutContext";
 import { generateWeeklyPlan } from "@/lib/planGenerator";
+import PageBackground from "@/components/PageBackground";
 import ExerciseIllustration from "@/components/ExerciseIllustration";
 import Link from "next/link";
 
@@ -39,6 +40,7 @@ export default function WorkoutsPage() {
 
   return (
     <div className="max-w-lg mx-auto px-4 pt-8">
+      <PageBackground variant="workouts" />
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-white">Workouts</h1>

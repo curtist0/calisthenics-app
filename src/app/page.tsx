@@ -3,6 +3,7 @@
 import { useWorkout } from "@/context/WorkoutContext";
 import { getExerciseById } from "@/data/exercises";
 import Link from "next/link";
+import PageBackground from "@/components/PageBackground";
 
 const quotes = [
   "The body achieves what the mind believes.",
@@ -21,6 +22,7 @@ export default function Home() {
 
   return (
     <div className="max-w-lg mx-auto px-4 pt-6">
+      <PageBackground variant="home" />
       {/* Hero Section */}
       <div className="relative rounded-3xl overflow-hidden mb-8 bg-gradient-to-br from-brand-600/30 via-brand-800/20 to-gray-900 border border-brand-500/20 animate-pulse-glow">
         <div className="absolute inset-0 shimmer-bg" />

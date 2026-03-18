@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useWorkout } from "@/context/WorkoutContext";
 import { getExerciseById } from "@/data/exercises";
+import PageBackground from "@/components/PageBackground";
 
 export default function ProgressPage() {
   const { personalRecords, photos, addPhoto, removePhoto } = useWorkout();
@@ -57,6 +58,7 @@ export default function ProgressPage() {
 
   return (
     <div className="max-w-lg mx-auto px-4 pt-8">
+      <PageBackground variant="progress" />
       <h1 className="text-3xl font-bold text-white mb-1">Progress</h1>
       <p className="text-gray-400 mb-6">Your personal records & physical progress</p>
 
