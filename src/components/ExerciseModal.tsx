@@ -24,11 +24,9 @@ export default function ExerciseModal({ exercise, onClose }: ExerciseModalProps)
           <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl">✕</button>
         </div>
 
-        {/* Animated Illustration — tap to play */}
-        <div className="flex justify-center mb-2">
-          <ExerciseIllustration exerciseId={exercise.id} size={200} animated />
+        <div className="flex justify-center mb-5">
+          <ExerciseIllustration exerciseId={exercise.id} size={220} />
         </div>
-        <p className="text-center text-xs text-gray-500 mb-5">Tap illustration to see the movement</p>
 
         <p className="text-gray-300 mb-5">{exercise.description}</p>
 
