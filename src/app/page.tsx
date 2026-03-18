@@ -4,23 +4,16 @@ import { useWorkout } from "@/context/WorkoutContext";
 import { getExerciseById } from "@/data/exercises";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import PageBackground from "@/components/PageBackground";
-
-const quotes = [
-  "The body achieves what the mind believes.",
-  "Strength doesn't come from what you can do — it comes from overcoming what you once thought you couldn't.",
-  "Every rep counts. Every hold matters. Every day you show up, you're building something extraordinary.",
-  "Calisthenics isn't just training — it's mastering your own body.",
-  "The only bad workout is the one that didn't happen.",
-  "Your body is the ultimate gym. No excuses.",
-  "Discipline is choosing between what you want now and what you want most.",
-];
+import { getRandomQuote } from "@/data/quotes";
 
 export default function Home() {
   const router = useRouter();
   const { stats, recentPRs, savedPlans, profile } = useWorkout();
   const activePlan = savedPlans.length > 0 ? savedPlans[0] : null;
+  const [quote, setQuote] = useState("");
+  useEffect(() => { setQuote(getRandomQuote()); }, []);
 
   useEffect(() => {
     if (profile === null && typeof window !== "undefined") {
@@ -28,7 +21,7 @@ export default function Home() {
       if (!stored) router.push("/onboarding");
     }
   }, [profile, router]);
-  const quote = quotes[new Date().getDay() % quotes.length];
+  // quote is set via useEffect above
 
   return (
     <div className="max-w-lg mx-auto px-4 pt-6">
@@ -118,6 +111,15 @@ export default function Home() {
       </div>
 
       {/* Recent PRs */}
+      {/* Apple Watch Banner */}
+      <div className="mb-8 glass rounded-2xl p-4 flex items-center gap-3 border border-gray-700/50">
+        <span className="text-2xl">⌚</span>
+        <div>
+          <p className="text-white font-bold text-sm">Apple Watch Integration</p>
+          <p className="text-gray-400 text-xs">Coming soon — auto-track reps, heart rate, and workout duration from your wrist. Requires HealthKit when deployed as a native app.</p>
+        </div>
+      </div>
+
       <div className="mb-8">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-extrabold text-white">Recent Records 🏆</h2>

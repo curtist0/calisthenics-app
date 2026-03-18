@@ -36,6 +36,9 @@ function PlanContent() {
     );
   }
 
+  const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1; // Mon=0..Sun=6
+  const todayDay = plan.days[todayIndex];
+
   const activeDay = isActive ? plan.days[activeDayIndex] : null;
   const curWE = activeDay?.exercises[curEx];
   const curExercise = curWE ? getExerciseById(curWE.exerciseId) : null;
@@ -141,6 +144,27 @@ function PlanContent() {
         <p className="text-gray-400 text-sm mb-1">{plan.description}</p>
         <p className="text-brand-400 text-sm font-medium">Goal: {plan.goal}</p>
       </div>
+
+      {/* Today's Workout Quick Start */}
+      {todayDay && !todayDay.isRest && (
+        <div className="mb-6 glass rounded-2xl p-5 border-2 border-brand-500/40">
+          <p className="text-xs text-brand-400 font-bold uppercase tracking-wider mb-1">Today — {todayDay.day}</p>
+          <h2 className="text-xl font-extrabold text-white mb-1">{todayDay.name}</h2>
+          {todayDay.focus && <p className="text-gray-400 text-xs mb-3">{todayDay.focus}</p>}
+          <button onClick={() => handleStart(todayIndex)} className="w-full py-3 bg-brand-500 text-white rounded-xl font-bold hover:bg-brand-600 transition-colors">
+            Start Today&apos;s Workout 🚀
+          </button>
+        </div>
+      )}
+      {todayDay && todayDay.isRest && (
+        <div className="mb-6 glass rounded-2xl p-5 border-2 border-gray-600/40">
+          <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Today — {todayDay.day}</p>
+          <h2 className="text-lg font-bold text-white mb-1">😴 Rest & Recovery</h2>
+          <p className="text-gray-400 text-xs">Take it easy! Check out the suggested activities below.</p>
+        </div>
+      )}
+
+      <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Full Week Overview</h3>
       <div className="space-y-3 mb-8">
         {plan.days.map((day, i) => (
           <div key={i} className={`rounded-xl border transition-all ${day.isRest ? "bg-gray-800/30 border-gray-700/30 p-4" : selectedDay === i ? "bg-gray-800 border-brand-500/50 p-4" : "bg-gray-800/50 border-gray-700/50 p-4 hover:bg-gray-800/70 cursor-pointer"}`} onClick={() => !day.isRest && setSelectedDay(selectedDay === i ? null : i)}>

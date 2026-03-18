@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { exercises } from "@/data/exercises";
 import { useWorkout } from "@/context/WorkoutContext";
-import { generateWeeklyPlan } from "@/lib/planGenerator";
+import { generateWeeklyPlan, generateFlexibilityPlan } from "@/lib/planGenerator";
 import PageBackground from "@/components/PageBackground";
 import ExerciseIllustration from "@/components/ExerciseIllustration";
 import Link from "next/link";
@@ -89,6 +89,16 @@ export default function WorkoutsPage() {
               </div>
             </div>
           ))}
+          {/* Flexibility Plan Option */}
+          <button onClick={() => { addPlan(generateFlexibilityPlan()); }} className="w-full glass rounded-2xl p-5 text-left hover:scale-[1.02] transition-all border-2 border-dashed border-purple-500/30">
+            <div className="flex items-center gap-4">
+              <span className="text-3xl">🧘</span>
+              <div>
+                <p className="text-white font-bold">Generate Flexibility Plan</p>
+                <p className="text-gray-400 text-xs">5-day yoga & flexibility program working toward splits</p>
+              </div>
+            </div>
+          </button>
           {savedPlans.length === 0 && (
             <div className="text-center py-12 glass rounded-2xl"><p className="text-4xl mb-3">📋</p><p className="text-gray-300 font-semibold">No plans yet</p></div>
           )}

@@ -57,11 +57,20 @@ function getWarmUp(focus: string): WarmUp {
   return warmUps.general;
 }
 
-function getRestDayActivities(): RestDayActivity[] {
+const yogaFlows: RestDayActivity[] = [
+  { name: "Hip Opening Flow", description: "Deep hip stretches for recovery", duration: "15 min", type: "yoga", yogaPoseIds: ["pigeon", "seated-straddle", "half-splits", "childs", "savasana"] },
+  { name: "Spine & Back Flow", description: "Gentle backbends and twists", duration: "12 min", type: "yoga", yogaPoseIds: ["cobra", "bridge", "forward-fold", "childs", "legs-up-wall"] },
+  { name: "Full Body Restore", description: "Head-to-toe relaxation sequence", duration: "18 min", type: "yoga", yogaPoseIds: ["childs", "cobra", "pigeon", "forward-fold", "bridge", "legs-up-wall", "savasana"] },
+  { name: "Balance & Focus", description: "Build stability and mindfulness", duration: "15 min", type: "yoga", yogaPoseIds: ["tree", "warrior3", "chair", "forward-fold", "savasana"] },
+  { name: "Splits Prep Flow", description: "Progressive stretching toward splits", duration: "20 min", type: "yoga", yogaPoseIds: ["forward-fold", "half-splits", "pigeon", "seated-straddle", "full-splits", "savasana"] },
+];
+
+function getRestDayActivities(dayIndex: number): RestDayActivity[] {
+  const flow = yogaFlows[dayIndex % yogaFlows.length];
   return [
-    { name: "Gentle Yoga Flow", description: "15 minutes of relaxing yoga to aid recovery", duration: "15 min", type: "yoga", yogaPoseIds: ["childs", "cobra", "forward-fold", "pigeon", "bridge", "legs-up-wall", "savasana"] },
+    flow,
     { name: "Light Walk", description: "20–30 minute easy walk outdoors", duration: "20-30 min", type: "light-cardio" },
-    { name: "Mobility Work", description: "10 minutes of joint circles and gentle stretching", duration: "10 min", type: "mobility" },
+    { name: "Mobility Work", description: "Joint circles, wrist stretches, and foam rolling", duration: "10 min", type: "mobility" },
   ];
 }
 
@@ -147,7 +156,7 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
     } else {
       days.push({
         day: dayNames[i], name: "Rest & Recovery", isRest: true, exercises: [],
-        restDayActivities: getRestDayActivities(),
+        restDayActivities: getRestDayActivities(i),
       });
     }
   }
@@ -157,10 +166,39 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
   const goalLabel = { muscle: "Build Muscle", skills: "Master Skills", "weight-loss": "Lose Weight", endurance: "Build Endurance", balanced: "Balanced Fitness" }[goal];
 
   return {
-    id: `plan-${Date.now()}`, name: numTargets === 1 ? `${skillNames[0]} Program` : "Multi-Skill Program",
+    id: `plan-${Date.now()}`,
+    name: numTargets === 1 ? `${skillNames[0]} Program` : "Multi-Skill Program",
     description: `${goalLabel} plan targeting: ${skillNames.join(", ")}`,
     difficulty: skillChains.some((s) => s.target.difficulty === "elite") ? "elite" : "advanced",
     goal: `${goalLabel}: ${skillNames.join(", ")}`, trainingGoal: goal, targetSkills: selectedSkillIds,
     days, estimatedWeeklyMinutes: totalEx * 5 + trainingDays * 10, createdAt: new Date().toISOString(),
+  };
+}
+
+export function generateFlexibilityPlan(): WeeklyPlan {
+  const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const flows = yogaFlows;
+  const days: DayWorkout[] = dayNames.map((day, i) => {
+    if (i === 2 || i === 5) {
+      return { day, name: "Rest & Recovery", isRest: true, exercises: [], restDayActivities: [
+        { name: "Light Walk", description: "Easy walk for active recovery", duration: "20 min", type: "light-cardio" as const },
+      ] };
+    }
+    const flow = flows[i % flows.length];
+    return {
+      day, name: flow.name, isRest: false, focus: flow.description,
+      exercises: (flow.yogaPoseIds || []).map((id) => ({
+        exerciseId: id, sets: 1, reps: null, holdSeconds: 45, restSeconds: 10,
+      })),
+      warmUp: { name: "Gentle Warm-Up", duration: "3 min", exercises: ["Neck rolls × 10", "Shoulder rolls × 10", "Cat-cow × 8", "Deep breathing × 5"] },
+    };
+  });
+
+  return {
+    id: `flex-${Date.now()}`, name: "Flexibility & Yoga Program",
+    description: "5-day yoga & flexibility program working toward full splits",
+    difficulty: "beginner", goal: "Improve flexibility and achieve splits",
+    trainingGoal: "balanced", targetSkills: [],
+    days, estimatedWeeklyMinutes: 100, createdAt: new Date().toISOString(),
   };
 }
