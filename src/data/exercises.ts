@@ -163,7 +163,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=australian+pull+up+inverted+row+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/475/b0554016-16fd-4dbe-be47-a2a17d16ae0e.jpg",
+    imageUrl: "https://wger.de/media/exercise-images/1198/864906ac-4ac7-4e52-a886-c6bb97950a9f.jpg",
     progressionTo: "pull-up",
   },
   {
@@ -245,7 +245,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=bodyweight+squat+proper+form",
-    imageUrl: "https://wger.de/media/exercise-images/456/3b681e59-377b-40db-9113-ca5873ce084b.jpg",
+    imageUrl: "https://wger.de/media/exercise-images/1805/f166c599-4c03-42a0-9250-47f82a1f096d.jpg",
     progressionTo: "jump-squat",
   },
   {
@@ -488,7 +488,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=tuck+planche+tutorial+progression",
-    imageUrl: "https://wger.de/media/exercise-images/1551/a6a9e561-3965-45c6-9f2b-ee671e1a3a45.png",
+    imageUrl: "https://wger.de/media/exercise-images/1916/e7d97b4b-9fe4-4378-aea3-5a9d93b6eb8d.png",
     progressionFrom: "pseudo-planche-push-up",
     progressionTo: "straddle-planche",
   },
