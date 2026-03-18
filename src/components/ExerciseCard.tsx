@@ -9,86 +9,49 @@ interface ExerciseCardProps {
   compact?: boolean;
 }
 
-const difficultyColors = {
-  beginner: "bg-green-500/20 text-green-400",
-  intermediate: "bg-yellow-500/20 text-yellow-400",
-  advanced: "bg-red-500/20 text-red-400",
-  elite: "bg-fuchsia-500/20 text-fuchsia-400",
+const difficultyColors: Record<string, string> = {
+  beginner: "bg-green-500/15 text-green-400",
+  intermediate: "bg-yellow-500/15 text-yellow-400",
+  advanced: "bg-red-500/15 text-red-400",
+  elite: "bg-fuchsia-500/15 text-fuchsia-400",
 };
 
-const categoryColors = {
-  push: "bg-blue-500/20 text-blue-400",
-  pull: "bg-purple-500/20 text-purple-400",
-  legs: "bg-orange-500/20 text-orange-400",
-  core: "bg-pink-500/20 text-pink-400",
-  "full-body": "bg-teal-500/20 text-teal-400",
-  skill: "bg-amber-500/20 text-amber-400",
+const categoryColors: Record<string, string> = {
+  push: "bg-blue-500/15 text-blue-400",
+  pull: "bg-purple-500/15 text-purple-400",
+  legs: "bg-orange-500/15 text-orange-400",
+  core: "bg-pink-500/15 text-pink-400",
+  "full-body": "bg-teal-500/15 text-teal-400",
+  skill: "bg-amber-500/15 text-amber-400",
 };
 
-export default function ExerciseCard({
-  exercise,
-  onClick,
-  compact,
-}: ExerciseCardProps) {
+export default function ExerciseCard({ exercise, onClick, compact }: ExerciseCardProps) {
   if (compact) {
     return (
-      <button
-        onClick={onClick}
-        className="flex items-center gap-3 w-full p-3 bg-gray-800/50 rounded-xl hover:bg-gray-800 transition-colors text-left"
-      >
-        <span className="text-2xl">{exercise.image}</span>
+      <button onClick={onClick} className="flex items-center gap-3 w-full p-2 rounded-xl hover:bg-gray-800/50 transition-colors text-left">
+        <span className="text-xl">{exercise.image}</span>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-white text-sm truncate">
-            {exercise.name}
-          </h3>
-          <div className="flex gap-2 mt-1">
-            <span
-              className={`text-xs px-2 py-0.5 rounded-full ${
-                categoryColors[exercise.category]
-              }`}
-            >
-              {exercise.category}
-            </span>
-          </div>
+          <h3 className="font-bold text-white text-sm truncate">{exercise.name}</h3>
+          <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${categoryColors[exercise.category]}`}>{exercise.category}</span>
         </div>
       </button>
     );
   }
 
   return (
-    <button
-      onClick={onClick}
-      className="block w-full p-4 bg-gray-800/50 rounded-2xl hover:bg-gray-800 transition-all hover:scale-[1.02] text-left border border-gray-700/50"
-    >
+    <button onClick={onClick} className="block w-full glass rounded-2xl p-4 hover:scale-[1.02] transition-all duration-200 text-left group">
       <div className="flex items-start gap-4">
         <div className="flex-shrink-0">
           <ExerciseIllustration exerciseId={exercise.id} size={80} />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-white text-lg">{exercise.name}</h3>
-          <p className="text-gray-400 text-sm mt-1 line-clamp-2">
-            {exercise.description}
-          </p>
-          <div className="flex flex-wrap gap-2 mt-3">
-            <span
-              className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                difficultyColors[exercise.difficulty]
-              }`}
-            >
-              {exercise.difficulty}
-            </span>
-            <span
-              className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                categoryColors[exercise.category]
-              }`}
-            >
-              {exercise.category}
-            </span>
-            {exercise.isHold && (
-              <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-cyan-500/20 text-cyan-400">
-                hold
-              </span>
-            )}
+          <h3 className="font-extrabold text-white text-base group-hover:text-brand-300 transition-colors">{exercise.name}</h3>
+          <p className="text-gray-400 text-xs mt-1 line-clamp-2">{exercise.description}</p>
+          <div className="flex flex-wrap gap-1.5 mt-2.5">
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${difficultyColors[exercise.difficulty]}`}>{exercise.difficulty}</span>
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${categoryColors[exercise.category]}`}>{exercise.category}</span>
+            {exercise.isHold && <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-cyan-500/15 text-cyan-400">hold</span>}
+            {exercise.supportsWeight && <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-blue-500/15 text-blue-400">+weight</span>}
           </div>
         </div>
       </div>
