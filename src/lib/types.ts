@@ -1,19 +1,7 @@
-export type MuscleGroup =
-  | "chest"
-  | "back"
-  | "shoulders"
-  | "biceps"
-  | "triceps"
-  | "core"
-  | "quads"
-  | "hamstrings"
-  | "glutes"
-  | "calves"
-  | "full-body";
-
+export type MuscleGroup = "chest" | "back" | "shoulders" | "biceps" | "triceps" | "core" | "quads" | "hamstrings" | "glutes" | "calves" | "full-body";
 export type Difficulty = "beginner" | "intermediate" | "advanced" | "elite";
-
 export type ExerciseCategory = "push" | "pull" | "legs" | "core" | "full-body" | "skill";
+export type TrainingGoal = "muscle" | "skills" | "weight-loss" | "endurance" | "balanced";
 
 export interface Exercise {
   id: string;
@@ -31,6 +19,19 @@ export interface Exercise {
   progressionTo?: string;
 }
 
+export interface YogaPose {
+  id: string;
+  name: string;
+  sanskrit: string;
+  description: string;
+  holdSeconds: number;
+  difficulty: Difficulty;
+  category: "flexibility" | "balance" | "strength" | "relaxation";
+  targetAreas: string[];
+  instructions: string[];
+  image: string;
+}
+
 export interface WorkoutExercise {
   exerciseId: string;
   sets: number;
@@ -40,12 +41,28 @@ export interface WorkoutExercise {
   progressionLevel?: string;
 }
 
+export interface WarmUp {
+  name: string;
+  duration: string;
+  exercises: string[];
+}
+
+export interface RestDayActivity {
+  name: string;
+  description: string;
+  duration: string;
+  type: "yoga" | "mobility" | "light-cardio";
+  yogaPoseIds?: string[];
+}
+
 export interface DayWorkout {
   day: string;
   name: string;
   isRest: boolean;
   focus?: string;
   exercises: WorkoutExercise[];
+  warmUp?: WarmUp;
+  restDayActivities?: RestDayActivity[];
 }
 
 export interface WeeklyPlan {
@@ -54,6 +71,7 @@ export interface WeeklyPlan {
   description: string;
   difficulty: Difficulty;
   goal: string;
+  trainingGoal: TrainingGoal;
   targetSkills: string[];
   days: DayWorkout[];
   estimatedWeeklyMinutes: number;
@@ -89,6 +107,22 @@ export interface PersonalRecord {
   value: number;
   date: string;
   previousValue: number | null;
+}
+
+export interface ExerciseLevel {
+  exerciseId: string;
+  level: Difficulty;
+  bestReps: number;
+  bestHold: number;
+  lastUpdated: string;
+}
+
+export interface UserProfile {
+  onboarded: boolean;
+  overallLevel: Difficulty;
+  exerciseLevels: ExerciseLevel[];
+  trainingGoal: TrainingGoal;
+  createdAt: string;
 }
 
 export interface ProgressPhoto {

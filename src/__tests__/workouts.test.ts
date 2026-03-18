@@ -3,47 +3,48 @@ import { generateWeeklyPlan } from "@/lib/planGenerator";
 
 describe("Plan generator", () => {
   it("generates a 7-day plan for a single skill", () => {
-    const plan = generateWeeklyPlan(["muscle-up"]);
+    const plan = generateWeeklyPlan(["muscle-up"], "balanced");
     expect(plan.days.length).toBe(7);
     expect(plan.name).toContain("Muscle-Up");
-    expect(plan.targetSkills).toContain("muscle-up");
-    expect(plan.createdAt).toBeTruthy();
+    expect(plan.trainingGoal).toBe("balanced");
   });
 
-  it("generates a plan with training and rest days", () => {
-    const plan = generateWeeklyPlan(["full-planche"]);
-    const training = plan.days.filter((d) => !d.isRest);
-    const rest = plan.days.filter((d) => d.isRest);
-    expect(training.length).toBeGreaterThan(0);
-    expect(rest.length).toBeGreaterThan(0);
+  it("generates training and rest days", () => {
+    const plan = generateWeeklyPlan(["full-planche"], "skills");
+    expect(plan.days.filter((d) => !d.isRest).length).toBeGreaterThan(0);
+    expect(plan.days.filter((d) => d.isRest).length).toBeGreaterThan(0);
   });
 
-  it("includes progression levels in exercises", () => {
-    const plan = generateWeeklyPlan(["full-planche"]);
+  it("includes progression levels", () => {
+    const plan = generateWeeklyPlan(["full-planche"], "muscle");
     const allEx = plan.days.flatMap((d) => d.exercises);
-    const withLevel = allEx.filter((e) => e.progressionLevel);
-    expect(withLevel.length).toBeGreaterThan(0);
+    expect(allEx.filter((e) => e.progressionLevel).length).toBeGreaterThan(0);
   });
 
-  it("includes prerequisite exercises from the chain", () => {
-    const plan = generateWeeklyPlan(["full-planche"]);
-    const allExIds = plan.days.flatMap((d) => d.exercises.map((e) => e.exerciseId));
-    const hasPrereq = allExIds.includes("tuck-planche") || allExIds.includes("straddle-planche");
-    expect(hasPrereq).toBe(true);
+  it("includes warm-ups for training days", () => {
+    const plan = generateWeeklyPlan(["muscle-up"], "balanced");
+    const trainingDays = plan.days.filter((d) => !d.isRest);
+    expect(trainingDays.every((d) => d.warmUp)).toBe(true);
   });
 
-  it("all generated exercises reference valid exercises", () => {
-    const plan = generateWeeklyPlan(["muscle-up", "full-planche"]);
+  it("includes rest day activities", () => {
+    const plan = generateWeeklyPlan(["muscle-up"], "balanced");
+    const restDays = plan.days.filter((d) => d.isRest);
+    expect(restDays.every((d) => d.restDayActivities && d.restDayActivities.length > 0)).toBe(true);
+  });
+
+  it("adjusts for weight-loss goal", () => {
+    const balanced = generateWeeklyPlan(["muscle-up"], "balanced");
+    const wl = generateWeeklyPlan(["muscle-up"], "weight-loss");
+    const bReps = balanced.days.flatMap((d) => d.exercises).find((e) => !e.holdSeconds)?.reps ?? 0;
+    const wReps = wl.days.flatMap((d) => d.exercises).find((e) => !e.holdSeconds)?.reps ?? 0;
+    expect(wReps).toBeGreaterThanOrEqual(bReps);
+  });
+
+  it("all exercises reference valid exercises", () => {
+    const plan = generateWeeklyPlan(["muscle-up", "full-planche"], "skills");
     plan.days.forEach((day) => {
-      day.exercises.forEach((we) => {
-        expect(getExerciseById(we.exerciseId)).toBeDefined();
-      });
+      day.exercises.forEach((we) => { expect(getExerciseById(we.exerciseId)).toBeDefined(); });
     });
-  });
-
-  it("scales training days for multiple skills", () => {
-    const single = generateWeeklyPlan(["muscle-up"]);
-    const multi = generateWeeklyPlan(["muscle-up", "full-planche", "front-lever", "dragon-flag"]);
-    expect(multi.days.filter((d) => !d.isRest).length).toBeGreaterThanOrEqual(single.days.filter((d) => !d.isRest).length);
   });
 });

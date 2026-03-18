@@ -152,8 +152,28 @@ function PlanContent() {
               {day.isRest ? <span className="text-xs text-gray-500">😴</span> : <span className="text-xs text-gray-400">{day.exercises.length} ex {selectedDay === i ? "▲" : "▼"}</span>}
             </div>
             {day.focus && !day.isRest && <p className="text-xs text-gray-400 mt-1 ml-10">{day.focus}</p>}
+            {day.isRest && day.restDayActivities && (
+              <div className="mt-3 space-y-2">
+                {day.restDayActivities.map((act, ai) => (
+                  <div key={ai} className="bg-gray-800/50 rounded-lg p-3">
+                    <p className="text-white text-xs font-semibold">{act.name}</p>
+                    <p className="text-gray-500 text-xs">{act.description} · {act.duration}</p>
+                  </div>
+                ))}
+              </div>
+            )}
             {selectedDay === i && !day.isRest && (
               <div className="mt-4 pt-4 border-t border-gray-700/50">
+                {day.warmUp && (
+                  <div className="mb-4 bg-orange-500/10 border border-orange-500/20 rounded-xl p-3">
+                    <p className="text-orange-400 text-xs font-bold mb-1">🔥 {day.warmUp.name} ({day.warmUp.duration})</p>
+                    <ul className="space-y-1">
+                      {day.warmUp.exercises.map((w, wi) => (
+                        <li key={wi} className="text-gray-400 text-xs">• {w}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <div className="space-y-2 mb-4">
                   {day.exercises.map((we, ei) => {
                     const ex = getExerciseById(we.exerciseId);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { playTimerBeep } from "@/lib/audio";
 
 interface TimerProps {
   targetSeconds: number;
@@ -31,16 +32,26 @@ export default function Timer({ targetSeconds, onComplete, label, setNumber }: T
   const stopAndRecord = useCallback(() => {
     setIsRunning(false);
     if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
-    const recorded = seconds;
-    onComplete(recorded);
+    playTimerBeep();
+    onComplete(seconds);
   }, [seconds, onComplete]);
 
+  const beeped = useRef(false);
   useEffect(() => {
     if (isRunning) {
       intervalRef.current = setInterval(() => { setSeconds((s) => s + 1); }, 1000);
     }
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [isRunning]);
+
+  useEffect(() => {
+    if (seconds >= targetSeconds && !beeped.current && isRunning) {
+      beeped.current = true;
+      playTimerBeep();
+    }
+  }, [seconds, targetSeconds, isRunning]);
+
+  useEffect(() => { beeped.current = false; }, [setNumber]);
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 

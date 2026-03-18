@@ -3,6 +3,8 @@
 import { useWorkout } from "@/context/WorkoutContext";
 import { getExerciseById } from "@/data/exercises";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import PageBackground from "@/components/PageBackground";
 
 const quotes = [
@@ -16,8 +18,16 @@ const quotes = [
 ];
 
 export default function Home() {
-  const { stats, recentPRs, savedPlans } = useWorkout();
+  const router = useRouter();
+  const { stats, recentPRs, savedPlans, profile } = useWorkout();
   const activePlan = savedPlans.length > 0 ? savedPlans[0] : null;
+
+  useEffect(() => {
+    if (profile === null && typeof window !== "undefined") {
+      const stored = localStorage.getItem("calisthenics_profile");
+      if (!stored) router.push("/onboarding");
+    }
+  }, [profile, router]);
   const quote = quotes[new Date().getDay() % quotes.length];
 
   return (

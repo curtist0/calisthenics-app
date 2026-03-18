@@ -1,11 +1,13 @@
-import { WorkoutLog, UserStats, PersonalRecord, WeeklyPlan, ProgressPhoto } from "./types";
+import { WorkoutLog, UserStats, PersonalRecord, WeeklyPlan, ProgressPhoto, UserProfile, ExerciseLevel, TrainingGoal } from "./types";
 import { getExerciseById } from "@/data/exercises";
+import { updateExerciseLevel } from "./progression";
 
 const LOGS_KEY = "calisthenics_logs";
 const STATS_KEY = "calisthenics_stats";
 const PRS_KEY = "calisthenics_prs";
 const PLANS_KEY = "calisthenics_plans";
 const PHOTOS_KEY = "calisthenics_photos";
+const PROFILE_KEY = "calisthenics_profile";
 
 function isBrowser(): boolean {
   return typeof window !== "undefined";
@@ -27,6 +29,7 @@ export function saveWorkoutLog(log: WorkoutLog): void {
   else logs.push(log);
   localStorage.setItem(LOGS_KEY, JSON.stringify(logs));
   updatePRsFromLog(log);
+  updateLevelsFromLog(log);
 }
 
 // ── Personal Records ──
@@ -218,4 +221,29 @@ export function recalculateStats(): UserStats {
 
 export function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+}
+
+// ── User Profile ──
+
+export function getUserProfile(): UserProfile | null {
+  if (!isBrowser()) return null;
+  const data = localStorage.getItem(PROFILE_KEY);
+  return data ? JSON.parse(data) : null;
+}
+
+export function saveUserProfile(profile: UserProfile): void {
+  if (!isBrowser()) return;
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+}
+
+export function updateLevelsFromLog(log: WorkoutLog): void {
+  if (!log.completed) return;
+  const profile = getUserProfile();
+  if (!profile) return;
+  let levels = [...profile.exerciseLevels];
+  for (const ex of log.exercises) {
+    levels = updateExerciseLevel(levels, ex.exerciseId, ex.sets);
+  }
+  profile.exerciseLevels = levels;
+  saveUserProfile(profile);
 }
