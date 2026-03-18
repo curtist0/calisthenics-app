@@ -17,41 +17,25 @@ export default function ExerciseModal({ exercise, onClose }: ExerciseModalProps)
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center" onClick={onClose}>
       <div className="bg-gray-900 rounded-t-3xl sm:rounded-3xl p-6 w-full max-w-lg max-h-[85vh] overflow-y-auto border border-gray-700" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">{exercise.image}</span>
-            <div>
-              <h2 className="text-xl font-bold text-white">{exercise.name}</h2>
-              <p className="text-sm text-gray-400 capitalize">{exercise.category} · {exercise.difficulty}</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors text-2xl">✕</button>
-        </div>
-
-        <div className="flex justify-center mb-4">
-          <ExerciseIllustration exerciseId={exercise.id} size={160} />
-        </div>
-
-        {/* Video Link */}
-        <a
-          href={exercise.videoUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-3 w-full p-3 mb-5 bg-red-500/10 border border-red-500/30 rounded-xl hover:bg-red-500/20 transition-colors"
-        >
-          <span className="text-2xl">▶️</span>
           <div>
-            <p className="text-white font-semibold text-sm">Watch Video Tutorial</p>
-            <p className="text-red-400 text-xs">Learn proper form on YouTube</p>
+            <h2 className="text-xl font-extrabold text-white">{exercise.name}</h2>
+            <p className="text-sm text-gray-400 capitalize">{exercise.category} · {exercise.difficulty}</p>
           </div>
-          <span className="ml-auto text-gray-400">→</span>
-        </a>
+          <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl">✕</button>
+        </div>
+
+        {/* Animated Illustration — tap to play */}
+        <div className="flex justify-center mb-2">
+          <ExerciseIllustration exerciseId={exercise.id} size={200} animated />
+        </div>
+        <p className="text-center text-xs text-gray-500 mb-5">Tap illustration to see the movement</p>
 
         <p className="text-gray-300 mb-5">{exercise.description}</p>
 
         {exercise.supportsWeight && (
           <div className="flex items-center gap-2 mb-5 bg-blue-500/10 border border-blue-500/30 rounded-xl p-3">
             <span className="text-lg">🏋️</span>
-            <p className="text-blue-400 text-sm font-medium">This exercise supports added weight for progressive overload</p>
+            <p className="text-blue-400 text-sm font-medium">Supports added weight for progressive overload</p>
           </div>
         )}
 
