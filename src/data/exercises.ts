@@ -405,7 +405,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=dragon+flag+tutorial+progression",
-    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3296.gif",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0475.gif",
     progressionFrom: "hanging-leg-raise",
   },
 
@@ -550,7 +550,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=tuck+front+lever+tutorial",
-    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3296.gif",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3295.gif",
     progressionTo: "front-lever",
   },
   {
@@ -628,7 +628,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=human+flag+tutorial+progression",
-    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3302.gif",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3303.gif",
   },
 
   // ──────── FULL-BODY ────────

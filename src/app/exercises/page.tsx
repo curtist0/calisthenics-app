@@ -103,7 +103,14 @@ export default function ExercisesPage() {
             {filteredYoga.map((pose) => (
               <button key={pose.id} onClick={() => setSelYoga(pose)} className="w-full glass rounded-2xl p-4 text-left hover:scale-[1.02] transition-all">
                 <div className="flex items-center gap-4">
-                  <span className="text-3xl">{pose.image}</span>
+                  {pose.imageUrl ? (
+                    <div className="w-16 h-16 rounded-xl overflow-hidden bg-white flex-shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={pose.imageUrl} alt={pose.name} className="w-full h-full object-contain" loading="lazy" />
+                    </div>
+                  ) : (
+                    <span className="text-3xl">{pose.image}</span>
+                  )}
                   <div className="flex-1">
                     <h3 className="font-bold text-white">{pose.name}</h3>
                     <p className="text-gray-500 text-xs italic">{pose.sanskrit}</p>
@@ -128,7 +135,16 @@ export default function ExercisesPage() {
                   </div>
                   <button onClick={() => setSelYoga(null)} className="text-gray-400 hover:text-white text-2xl">✕</button>
                 </div>
-                <div className="text-center text-6xl mb-4">{selYoga.image}</div>
+                {selYoga.imageUrl ? (
+                  <div className="flex justify-center mb-4">
+                    <div className="w-48 h-48 rounded-2xl overflow-hidden bg-white">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={selYoga.imageUrl} alt={selYoga.name} className="w-full h-full object-contain" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center text-6xl mb-4">{selYoga.image}</div>
+                )}
                 <p className="text-gray-300 mb-4">{selYoga.description}</p>
                 <div className="glass rounded-xl p-4 mb-4 text-center">
                   <p className="text-3xl font-black text-brand-400">{selYoga.holdSeconds}s</p>

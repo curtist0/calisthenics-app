@@ -31,6 +31,7 @@ export interface YogaPose {
   targetAreas: string[];
   instructions: string[];
   image: string;
+  imageUrl: string;
 }
 
 export interface WorkoutExercise {
