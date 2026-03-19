@@ -98,9 +98,14 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
   }
 
   const numTargets = selectedSkillIds.length;
-  const trainingDays = goal === "weight-loss" || goal === "endurance"
-    ? Math.min(numTargets <= 2 ? 4 : 5, 6)
-    : numTargets <= 1 ? 3 : numTargets <= 3 ? 4 : numTargets <= 5 ? 5 : 6;
+  // Goal-specific training day counts
+  const baseDays = numTargets <= 1 ? 3 : numTargets <= 3 ? 4 : numTargets <= 5 ? 5 : 6;
+  let trainingDays: number;
+  if (goal === "weight-loss") trainingDays = Math.min(baseDays + 1, 6); // more days, more calorie burn
+  else if (goal === "endurance") trainingDays = Math.min(baseDays + 1, 6); // more frequent
+  else if (goal === "skills") trainingDays = Math.max(baseDays - 1, 3); // more rest for CNS recovery
+  else if (goal === "muscle") trainingDays = baseDays; // standard
+  else trainingDays = baseDays;
 
   type Bucket = { exercises: WorkoutExercise[]; name: string; focus: string };
   const buckets: Bucket[] = [];
