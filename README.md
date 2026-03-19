@@ -58,7 +58,17 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser. You'll be guided through the onboarding assessment on first visit.
+Open **[http://localhost:3000](http://localhost:3000)** in your browser. You'll be guided through the onboarding assessment on first visit.
+
+## Deploy to a Public URL
+
+To get a `.com` or shareable link, deploy to [Vercel](https://vercel.com) (free for Next.js):
+
+1. Push your code to GitHub
+2. Go to [vercel.com](https://vercel.com) and sign in with GitHub
+3. Click **"Import Project"** and select this repo
+4. Click **Deploy** — you'll get a live URL like `calitrack.vercel.app`
+5. Optionally, connect a custom domain (e.g., `calitrack.com`) in Vercel's domain settings
 
 ## Scripts
 
