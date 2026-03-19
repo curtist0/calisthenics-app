@@ -8,7 +8,7 @@ import { generateWeeklyPlan } from "@/lib/planGenerator";
 import PageBackground from "@/components/PageBackground";
 import ExerciseIllustration from "@/components/ExerciseIllustration";
 import Link from "next/link";
-import { TrainingGoal } from "@/lib/types";
+import { TrainingGoal, Exercise } from "@/lib/types";
 
 const goalOptions: { value: TrainingGoal; label: string; icon: string }[] = [
   { value: "muscle", label: "Build Muscle", icon: "💪" },
@@ -40,6 +40,26 @@ const skillExercises = exercises.filter(
   (e) => e.category === "skill" || e.id === "handstand-push-up" || e.id === "pistol-squat" || e.id === "dragon-flag"
 );
 
+function getExerciseRelevantLevel(ex: Exercise, skillLevels: Record<string, string>): number {
+  const cats: string[] = ex.muscles.map((m) => {
+    if (["chest", "shoulders", "triceps"].includes(m)) return "push";
+    if (["back", "biceps"].includes(m)) return "pull";
+    if (["quads", "hamstrings", "glutes", "calves"].includes(m)) return "legs";
+    if (m === "core") return "core";
+    return "push";
+  });
+  if (ex.id.includes("handstand") || ex.id.includes("crow") || ex.id.includes("flag")) cats.push("balance");
+  if (ex.id.includes("lever") || ex.id.includes("planche") || ex.id.includes("l-sit") || ex.id.includes("v-sit")) cats.push("balance");
+
+  const uniqueCats = [...new Set(cats)];
+  let maxLevel = 0;
+  for (const cat of uniqueCats) {
+    const lvl = skillLevels[cat] || "beginner";
+    maxLevel = Math.max(maxLevel, diffOrder[lvl] || 0);
+  }
+  return maxLevel;
+}
+
 export default function WorkoutsPage() {
   const { savedPlans, addPlan, removePlan, profile } = useWorkout();
   const [view, setView] = useState<"library" | "type" | "pick" | "goal">("library");
@@ -48,41 +68,44 @@ export default function WorkoutsPage() {
   const [selectedGoal, setSelectedGoal] = useState<TrainingGoal>("balanced");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showAdvancedYoga, setShowAdvancedYoga] = useState(false);
 
   useEffect(() => { if (savedPlans.length === 0) setView("type"); }, [savedPlans.length]);
 
   const yogaUnlocked = profile?.yogaSetUp ?? false;
-  const userLevel = profile?.overallLevel ?? "beginner";
-  const userLevelIdx = diffOrder[userLevel];
+  const skillLevels = profile?.skillLevels ?? { push: "beginner", pull: "beginner", legs: "beginner", core: "beginner", balance: "beginner", flexibility: "beginner" };
 
-  const recommendedSkills = skillExercises.filter((e) => diffOrder[e.difficulty] <= userLevelIdx + 1)
-    .sort((a, b) => diffOrder[a.difficulty] - diffOrder[b.difficulty]);
-  const advancedSkills = skillExercises.filter((e) => diffOrder[e.difficulty] > userLevelIdx + 1)
-    .sort((a, b) => diffOrder[a.difficulty] - diffOrder[b.difficulty]);
+  const recommended: Exercise[] = [];
+  const advanced: Exercise[] = [];
+  for (const ex of skillExercises) {
+    const userLvl = getExerciseRelevantLevel(ex, skillLevels as unknown as Record<string, string>);
+    if (diffOrder[ex.difficulty] <= userLvl + 1) recommended.push(ex);
+    else advanced.push(ex);
+  }
+  recommended.sort((a, b) => diffOrder[a.difficulty] - diffOrder[b.difficulty]);
+  advanced.sort((a, b) => diffOrder[a.difficulty] - diffOrder[b.difficulty]);
 
-  const yogaLevel = profile?.yogaLevel ?? "beginner";
-  const yogaLevelIdx = diffOrder[yogaLevel];
-  const availableYogaPoses = yogaPoses.filter((p) => diffOrder[p.difficulty] <= yogaLevelIdx + 1);
+  const flexLevel = diffOrder[skillLevels.flexibility] || 0;
+  const balanceLevel = diffOrder[skillLevels.balance] || 0;
+  const yogaMaxLevel = Math.max(flexLevel, balanceLevel);
+  const recommendedYoga = yogaPoses.filter((p) => diffOrder[p.difficulty] <= yogaMaxLevel + 1);
+  const advancedYoga = yogaPoses.filter((p) => diffOrder[p.difficulty] > yogaMaxLevel + 1);
 
   const toggle = (id: string) => { setSelected((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; }); };
 
   const handleGenerate = () => {
     const ids = Array.from(selected);
     if (ids.length === 0) return;
-    if (workoutType === "flexibility") {
-      const plan = generateWeeklyPlan(ids, "balanced");
-      addPlan(plan);
-    } else {
-      const plan = generateWeeklyPlan(ids, selectedGoal);
-      addPlan(plan);
-    }
+    const plan = generateWeeklyPlan(ids, workoutType === "flexibility" ? "balanced" : selectedGoal);
+    addPlan(plan);
     setSelected(new Set());
     setView("library");
     setWorkoutType(null);
     setShowAdvanced(false);
+    setShowAdvancedYoga(false);
   };
 
-  const renderSkillButton = (ex: typeof exercises[0]) => {
+  const renderSkillButton = (ex: Exercise) => {
     const isSel = selected.has(ex.id);
     const endpoint = getProgressionEndpoint(ex.id);
     return (
@@ -94,6 +117,27 @@ export default function WorkoutsPage() {
           {endpoint && <p className="text-xs text-gray-500 mt-0.5">Leads to → <span className="text-brand-400">{endpoint}</span></p>}
         </div>
         <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSel ? "border-brand-500 bg-brand-500" : "border-gray-600"}`}>
+          {isSel && <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7L6 10L11 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+        </div>
+      </button>
+    );
+  };
+
+  const renderYogaButton = (pose: typeof yogaPoses[0]) => {
+    const isSel = selected.has(pose.id);
+    return (
+      <button key={pose.id} onClick={() => toggle(pose.id)} className={`w-full flex items-center gap-3 p-3 rounded-2xl border-2 transition-all text-left ${isSel ? "border-purple-500 bg-purple-500/10" : "border-gray-700/50 bg-gray-800/30 hover:bg-gray-800/50"}`}>
+        {pose.imageUrl ? (
+          <div className="w-12 h-12 rounded-xl overflow-hidden bg-white flex-shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={pose.imageUrl} alt={pose.name} className="w-full h-full object-contain" loading="lazy" />
+          </div>
+        ) : <span className="text-2xl">{pose.image}</span>}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-white text-sm">{pose.name}</h3>
+          <span className={`text-xs font-medium capitalize ${diffText[pose.difficulty]}`}>{pose.difficulty}</span>
+        </div>
+        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSel ? "border-purple-500 bg-purple-500" : "border-gray-600"}`}>
           {isSel && <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7L6 10L11 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
         </div>
       </button>
@@ -113,7 +157,7 @@ export default function WorkoutsPage() {
         {view === "library" ? (
           <button onClick={() => setView("type")} className="px-4 py-2 bg-gray-800 text-gray-300 rounded-full text-sm font-medium hover:bg-gray-700">+ New Plan</button>
         ) : (
-          savedPlans.length > 0 && <button onClick={() => { setView("library"); setWorkoutType(null); setSelected(new Set()); setShowAdvanced(false); }} className="px-4 py-2 bg-gray-800 text-gray-300 rounded-full text-sm font-medium hover:bg-gray-700">My Plans</button>
+          savedPlans.length > 0 && <button onClick={() => { setView("library"); setWorkoutType(null); setSelected(new Set()); }} className="px-4 py-2 bg-gray-800 text-gray-300 rounded-full text-sm font-medium hover:bg-gray-700">My Plans</button>
         )}
       </div>
 
@@ -122,7 +166,7 @@ export default function WorkoutsPage() {
         <div className="space-y-4">
           {savedPlans.map((plan) => (
             <div key={plan.id} className="glass rounded-2xl overflow-hidden">
-              <Link href={`/workouts/plan?id=${plan.id}`} className="block p-5 hover:bg-gray-800/30 transition-colors">
+              <Link href={`/workouts/plan?id=${plan.id}`} className="block p-5 hover:bg-gray-800/30">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-bold text-white text-lg">{plan.name}</h3>
                   <span className="text-xs px-2.5 py-1 rounded-full bg-brand-500/20 text-brand-400 capitalize">{plan.difficulty}</span>
@@ -152,29 +196,24 @@ export default function WorkoutsPage() {
         </div>
       )}
 
-      {/* Step 1: Choose Type */}
+      {/* Choose Type */}
       {view === "type" && (
         <div className="space-y-4">
-          <button onClick={() => { setWorkoutType("calisthenics"); setView("pick"); setSelected(new Set()); }} className="w-full glass rounded-2xl p-6 text-left hover:scale-[1.02] transition-all border-2 border-transparent hover:border-brand-500/30">
+          <button onClick={() => { setWorkoutType("calisthenics"); setView("pick"); setSelected(new Set()); }} className="w-full glass rounded-2xl p-6 text-left hover:scale-[1.02] transition-all">
             <div className="flex items-center gap-4">
               <span className="text-4xl">💪</span>
               <div><p className="text-white font-extrabold text-lg">Calisthenics</p><p className="text-gray-400 text-sm">Strength & skill progressions</p></div>
             </div>
           </button>
           {yogaUnlocked ? (
-            <button onClick={() => { setWorkoutType("flexibility"); setView("pick"); setSelected(new Set()); }} className="w-full glass rounded-2xl p-6 text-left hover:scale-[1.02] transition-all border-2 border-transparent hover:border-purple-500/30">
+            <button onClick={() => { setWorkoutType("flexibility"); setView("pick"); setSelected(new Set()); }} className="w-full glass rounded-2xl p-6 text-left hover:scale-[1.02] transition-all">
               <div className="flex items-center gap-4">
                 <span className="text-4xl">🧘</span>
-                <div><p className="text-white font-extrabold text-lg">Flexibility & Yoga</p><p className="text-gray-400 text-sm">Progressive flexibility plan toward your desired poses</p></div>
+                <div><p className="text-white font-extrabold text-lg">Flexibility & Yoga</p><p className="text-gray-400 text-sm">Work toward your desired poses</p></div>
               </div>
             </button>
           ) : (
-            <div className="w-full glass rounded-2xl p-6 opacity-50 border-2 border-gray-700/30">
-              <div className="flex items-center gap-4">
-                <span className="text-4xl">🔒</span>
-                <div><p className="text-white font-bold text-lg">Flexibility & Yoga</p><p className="text-gray-400 text-sm">Set up yoga to unlock</p></div>
-              </div>
-            </div>
+            <div className="w-full glass rounded-2xl p-6 opacity-50"><div className="flex items-center gap-4"><span className="text-4xl">🔒</span><div><p className="text-white font-bold text-lg">Flexibility & Yoga</p><p className="text-gray-400 text-sm">Set up yoga to unlock</p></div></div></div>
           )}
         </div>
       )}
@@ -182,21 +221,19 @@ export default function WorkoutsPage() {
       {/* Calisthenics Pick */}
       {view === "pick" && workoutType === "calisthenics" && (
         <>
-          <p className="text-gray-400 text-sm mb-2">Recommended for your level:</p>
-          <div className="space-y-2 mb-4">
-            {recommendedSkills.map(renderSkillButton)}
-          </div>
+          <p className="text-xs text-gray-500 mb-1">Based on your push, pull, balance & core levels:</p>
+          <p className="text-gray-400 text-sm font-medium mb-3">Recommended for you ({recommended.length})</p>
+          <div className="space-y-2 mb-4">{recommended.map(renderSkillButton)}</div>
 
-          {advancedSkills.length > 0 && (
+          {advanced.length > 0 && (
             <>
-              <button onClick={() => setShowAdvanced(!showAdvanced)} className="w-full py-3 glass rounded-xl text-sm font-medium text-gray-300 hover:text-white transition-colors mb-2 flex items-center justify-center gap-2">
-                {showAdvanced ? "Hide" : "Show"} advanced skills ({advancedSkills.length})
-                <span className="text-xs">{showAdvanced ? "▲" : "▼"}</span>
+              <button onClick={() => setShowAdvanced(!showAdvanced)} className="w-full py-3 glass rounded-xl text-sm font-medium text-gray-300 hover:text-white mb-2 flex items-center justify-center gap-2">
+                {showAdvanced ? "Hide" : "Show"} advanced skills ({advanced.length}) <span className="text-xs">{showAdvanced ? "▲" : "▼"}</span>
               </button>
               {showAdvanced && (
                 <div className="space-y-2 mb-4">
-                  <p className="text-xs text-yellow-400 mb-2">⚠️ These are above your current level — select at your own pace</p>
-                  {advancedSkills.map(renderSkillButton)}
+                  <p className="text-xs text-yellow-400 mb-2">⚠️ Above your current level — progress at your own pace</p>
+                  {advanced.map(renderSkillButton)}
                 </div>
               )}
             </>
@@ -204,43 +241,38 @@ export default function WorkoutsPage() {
 
           <div className="sticky bottom-20 z-40 pb-2">
             <button onClick={() => { if (selected.size > 0) setView("goal"); }} disabled={selected.size === 0}
-              className={`w-full py-4 rounded-2xl font-bold text-lg transition-all shadow-lg ${selected.size > 0 ? "bg-brand-500 text-white hover:bg-brand-600" : "bg-gray-800 text-gray-500 cursor-not-allowed"}`}>
+              className={`w-full py-4 rounded-2xl font-bold text-lg shadow-lg ${selected.size > 0 ? "bg-brand-500 text-white hover:bg-brand-600" : "bg-gray-800 text-gray-500 cursor-not-allowed"}`}>
               {selected.size === 0 ? "Select skills to continue" : "Next: Choose Goal →"}
             </button>
           </div>
         </>
       )}
 
-      {/* Flexibility Pick — auto generates, no goal step */}
+      {/* Flexibility Pick — no goals */}
       {view === "pick" && workoutType === "flexibility" && (
         <>
-          <p className="text-gray-400 text-sm mb-4">Select yoga poses you want to achieve:</p>
-          <div className="space-y-2 mb-6">
-            {availableYogaPoses.map((pose) => {
-              const isSel = selected.has(pose.id);
-              return (
-                <button key={pose.id} onClick={() => toggle(pose.id)} className={`w-full flex items-center gap-3 p-3 rounded-2xl border-2 transition-all text-left ${isSel ? "border-purple-500 bg-purple-500/10" : "border-gray-700/50 bg-gray-800/30 hover:bg-gray-800/50"}`}>
-                  {pose.imageUrl ? (
-                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-white flex-shrink-0">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={pose.imageUrl} alt={pose.name} className="w-full h-full object-contain" loading="lazy" />
-                    </div>
-                  ) : <span className="text-2xl">{pose.image}</span>}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-white text-sm">{pose.name}</h3>
-                    <span className={`text-xs font-medium capitalize ${diffText[pose.difficulty]}`}>{pose.difficulty}</span>
-                  </div>
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSel ? "border-purple-500 bg-purple-500" : "border-gray-600"}`}>
-                    {isSel && <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7L6 10L11 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+          <p className="text-xs text-gray-500 mb-1">Based on your flexibility & balance levels:</p>
+          <p className="text-gray-400 text-sm font-medium mb-3">Recommended for you ({recommendedYoga.length})</p>
+          <div className="space-y-2 mb-4">{recommendedYoga.map(renderYogaButton)}</div>
+
+          {advancedYoga.length > 0 && (
+            <>
+              <button onClick={() => setShowAdvancedYoga(!showAdvancedYoga)} className="w-full py-3 glass rounded-xl text-sm font-medium text-gray-300 hover:text-white mb-2 flex items-center justify-center gap-2">
+                {showAdvancedYoga ? "Hide" : "Show"} advanced poses ({advancedYoga.length}) <span className="text-xs">{showAdvancedYoga ? "▲" : "▼"}</span>
+              </button>
+              {showAdvancedYoga && (
+                <div className="space-y-2 mb-4">
+                  <p className="text-xs text-yellow-400 mb-2">⚠️ Above your current flexibility/balance level</p>
+                  {advancedYoga.map(renderYogaButton)}
+                </div>
+              )}
+            </>
+          )}
+
           <div className="sticky bottom-20 z-40 pb-2">
             <button onClick={handleGenerate} disabled={selected.size === 0}
-              className={`w-full py-4 rounded-2xl font-bold text-lg transition-all shadow-lg ${selected.size > 0 ? "bg-purple-500 text-white hover:bg-purple-600" : "bg-gray-800 text-gray-500 cursor-not-allowed"}`}>
-              {selected.size === 0 ? "Select poses to continue" : `Generate Yoga Plan 🧘`}
+              className={`w-full py-4 rounded-2xl font-bold text-lg shadow-lg ${selected.size > 0 ? "bg-purple-500 text-white hover:bg-purple-600" : "bg-gray-800 text-gray-500 cursor-not-allowed"}`}>
+              {selected.size === 0 ? "Select poses to continue" : "Generate Yoga Plan 🧘"}
             </button>
           </div>
         </>
@@ -253,7 +285,7 @@ export default function WorkoutsPage() {
           <div className="space-y-3 mb-6">
             {goalOptions.map((g) => (
               <button key={g.value} onClick={() => setSelectedGoal(g.value)}
-                className={`w-full p-4 rounded-2xl text-left transition-all flex items-center gap-4 border-2 ${
+                className={`w-full p-4 rounded-2xl text-left flex items-center gap-4 border-2 ${
                   selectedGoal === g.value ? "border-brand-500 bg-brand-500/10 glass" : "border-transparent glass hover:border-gray-600"
                 }`}>
                 <span className="text-2xl">{g.icon}</span>
