@@ -123,6 +123,8 @@ export interface UserProfile {
   overallLevel: Difficulty;
   exerciseLevels: ExerciseLevel[];
   trainingGoal: TrainingGoal;
+  yogaSetUp: boolean;
+  yogaLevel: Difficulty;
   createdAt: string;
 }
 

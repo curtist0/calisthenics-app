@@ -110,13 +110,26 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Recent PRs */}
+      {/* Yoga Setup Prompt */}
+      {profile && !profile.yogaSetUp && (
+        <Link href="/onboarding" className="block mb-6 glass rounded-2xl p-4 border border-purple-500/30 hover:bg-purple-500/10 transition-colors">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🧘</span>
+            <div>
+              <p className="text-white font-bold text-sm">Set Up Yoga & Flexibility</p>
+              <p className="text-gray-400 text-xs">Unlock yoga-based workouts and rest day recovery flows</p>
+            </div>
+            <span className="ml-auto text-gray-400">→</span>
+          </div>
+        </Link>
+      )}
+
       {/* Apple Watch Banner */}
-      <div className="mb-8 glass rounded-2xl p-4 flex items-center gap-3 border border-gray-700/50">
+      <div className="mb-6 glass rounded-2xl p-4 flex items-center gap-3 border border-gray-700/50">
         <span className="text-2xl">⌚</span>
         <div>
           <p className="text-white font-bold text-sm">Apple Watch Integration</p>
-          <p className="text-gray-400 text-xs">Coming soon — auto-track reps, heart rate, and workout duration from your wrist. Requires HealthKit when deployed as a native app.</p>
+          <p className="text-gray-400 text-xs">Coming soon — auto-track reps, heart rate, and workout duration from your wrist.</p>
         </div>
       </div>
 

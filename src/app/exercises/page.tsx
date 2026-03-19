@@ -7,6 +7,7 @@ import ExerciseCard from "@/components/ExerciseCard";
 import ExerciseModal from "@/components/ExerciseModal";
 import { Exercise, ExerciseCategory, Difficulty, YogaPose } from "@/lib/types";
 import PageBackground from "@/components/PageBackground";
+import { useWorkout } from "@/context/WorkoutContext";
 
 const exCategories: { value: ExerciseCategory | "all"; label: string }[] = [
   { value: "all", label: "All" }, { value: "push", label: "Push" }, { value: "pull", label: "Pull" },
@@ -30,6 +31,8 @@ const diffColors: Record<string, string> = {
 };
 
 export default function ExercisesPage() {
+  const { profile } = useWorkout();
+  const yogaUnlocked = profile?.yogaSetUp ?? false;
   const [tab, setTab] = useState<"exercises" | "yoga">("exercises");
   const [selCat, setSelCat] = useState<ExerciseCategory | "all">("all");
   const [selDiff, setSelDiff] = useState<Difficulty | "all">("all");
@@ -56,9 +59,13 @@ export default function ExercisesPage() {
         <button onClick={() => setTab("exercises")} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors ${tab === "exercises" ? "bg-brand-500 text-white" : "bg-gray-800 text-gray-300"}`}>
           💪 Exercises
         </button>
-        <button onClick={() => setTab("yoga")} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors ${tab === "yoga" ? "bg-brand-500 text-white" : "bg-gray-800 text-gray-300"}`}>
-          🧘 Yoga & Flexibility
-        </button>
+        {yogaUnlocked ? (
+          <button onClick={() => setTab("yoga")} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors ${tab === "yoga" ? "bg-brand-500 text-white" : "bg-gray-800 text-gray-300"}`}>
+            🧘 Yoga & Flexibility
+          </button>
+        ) : (
+          <div className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-gray-800/50 text-gray-500 text-center">🔒 Yoga (not set up)</div>
+        )}
       </div>
 
       {/* Exercises Tab */}

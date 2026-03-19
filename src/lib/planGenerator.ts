@@ -1,5 +1,7 @@
 import { Exercise, WeeklyPlan, DayWorkout, WorkoutExercise, TrainingGoal, WarmUp, RestDayActivity } from "./types";
 import { exercises, getExerciseById } from "@/data/exercises";
+import { getYogaPoseById } from "@/data/yoga";
+import { getUserProfile } from "./storage";
 
 function getFullProgressionChain(exerciseId: string): Exercise[] {
   const chain: Exercise[] = [];
@@ -66,15 +68,25 @@ const yogaFlows: RestDayActivity[] = [
 ];
 
 function getRestDayActivities(dayIndex: number): RestDayActivity[] {
-  const flow = yogaFlows[dayIndex % yogaFlows.length];
-  return [
-    flow,
-    { name: "Light Walk", description: "20–30 minute easy walk outdoors", duration: "20-30 min", type: "light-cardio" },
-    { name: "Mobility Work", description: "Joint circles, wrist stretches, and foam rolling", duration: "10 min", type: "mobility" },
-  ];
+  const profile = getUserProfile();
+  const yogaEnabled = profile?.yogaSetUp ?? false;
+  const activities: RestDayActivity[] = [];
+  if (yogaEnabled) {
+    activities.push(yogaFlows[dayIndex % yogaFlows.length]);
+  }
+  activities.push({ name: "Light Walk", description: "20–30 minute easy walk outdoors", duration: "20-30 min", type: "light-cardio" });
+  activities.push({ name: "Mobility Work", description: "Joint circles, wrist stretches, and foam rolling", duration: "10 min", type: "mobility" });
+  return activities;
 }
 
 export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoal): WeeklyPlan {
+  // Check if these are yoga pose IDs
+  const isYogaPlan = selectedSkillIds.some((id) => getYogaPoseById(id) !== undefined);
+
+  if (isYogaPlan) {
+    return generateYogaPlan(selectedSkillIds, goal);
+  }
+
   const allExIds = new Set<string>();
   const skillChains: { target: Exercise; chain: Exercise[] }[] = [];
 
@@ -175,30 +187,41 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
   };
 }
 
-export function generateFlexibilityPlan(): WeeklyPlan {
+function generateYogaPlan(selectedPoseIds: string[], goal: TrainingGoal): WeeklyPlan {
   const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-  const flows = yogaFlows;
+  const targetPoses = selectedPoseIds.map((id) => getYogaPoseById(id)).filter(Boolean);
+  const poseNames = targetPoses.map((p) => p!.name);
+
+  // Build prerequisite poses (easier flexibility poses as warm-up)
+  const prepPoses = ["forward-fold", "cobra", "bridge", "childs"].filter((id) => !selectedPoseIds.includes(id));
+
+  const warmUp: WarmUp = { name: "Flexibility Warm-Up", duration: "5 min", exercises: ["Neck rolls × 10", "Shoulder rolls × 10", "Cat-cow × 8", "Hip circles × 10 each", "Deep breathing × 5"] };
+
   const days: DayWorkout[] = dayNames.map((day, i) => {
-    if (i === 2 || i === 5) {
-      return { day, name: "Rest & Recovery", isRest: true, exercises: [], restDayActivities: [
-        { name: "Light Walk", description: "Easy walk for active recovery", duration: "20 min", type: "light-cardio" as const },
-      ] };
+    if (i === 2 || i === 6) {
+      return { day, name: "Rest & Recovery", isRest: true, exercises: [], restDayActivities: getRestDayActivities(i) };
     }
-    const flow = flows[i % flows.length];
+
+    const dayPoses = [...prepPoses.slice(0, 2), ...selectedPoseIds];
+    const suffix = ["savasana"];
+    const allPoseIds = [...dayPoses, ...suffix];
+
     return {
-      day, name: flow.name, isRest: false, focus: flow.description,
-      exercises: (flow.yogaPoseIds || []).map((id) => ({
-        exerciseId: id, sets: 1, reps: null, holdSeconds: 45, restSeconds: 10,
-      })),
-      warmUp: { name: "Gentle Warm-Up", duration: "3 min", exercises: ["Neck rolls × 10", "Shoulder rolls × 10", "Cat-cow × 8", "Deep breathing × 5"] },
+      day, name: i % 2 === 0 ? "Flexibility Focus" : "Deep Stretch",
+      isRest: false, focus: `Working toward: ${poseNames.join(", ")}`,
+      exercises: allPoseIds.map((id) => {
+        const pose = getYogaPoseById(id);
+        return { exerciseId: id, sets: 1, reps: null, holdSeconds: pose?.holdSeconds || 30, restSeconds: 10 };
+      }),
+      warmUp,
     };
   });
 
   return {
-    id: `flex-${Date.now()}`, name: "Flexibility & Yoga Program",
-    description: "5-day yoga & flexibility program working toward full splits",
-    difficulty: "beginner", goal: "Improve flexibility and achieve splits",
-    trainingGoal: "balanced", targetSkills: [],
-    days, estimatedWeeklyMinutes: 100, createdAt: new Date().toISOString(),
+    id: `yoga-${Date.now()}`, name: targetPoses.length === 1 ? `${poseNames[0]} Program` : "Flexibility Program",
+    description: `Progressive flexibility plan targeting: ${poseNames.join(", ")}`,
+    difficulty: targetPoses.some((p) => p!.difficulty === "elite") ? "elite" : targetPoses.some((p) => p!.difficulty === "advanced") ? "advanced" : "intermediate",
+    goal: `Achieve: ${poseNames.join(", ")}`, trainingGoal: goal, targetSkills: selectedPoseIds,
+    days, estimatedWeeklyMinutes: 80, createdAt: new Date().toISOString(),
   };
 }
