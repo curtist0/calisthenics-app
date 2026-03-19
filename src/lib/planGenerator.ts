@@ -33,15 +33,15 @@ const goalMultipliers: Record<TrainingGoal, { sets: number; reps: number; rest: 
   balanced:    { sets: 1.0, reps: 1.0, rest: 1.0 },
 };
 
-function makeExercise(ex: Exercise, baseSets: number, isTarget: boolean, goal: TrainingGoal, level?: string): WorkoutExercise {
+function makeExercise(ex: Exercise, baseSets: number, goal: TrainingGoal, label?: string): WorkoutExercise {
   const m = goalMultipliers[goal];
   const sets = Math.max(2, Math.round(baseSets * m.sets));
   if (ex.isHold) {
     const hold = ex.difficulty === "elite" ? 5 : ex.difficulty === "advanced" ? 10 : ex.difficulty === "intermediate" ? 15 : 30;
-    return { exerciseId: ex.id, sets, reps: null, holdSeconds: Math.round(hold * m.reps), restSeconds: Math.round(90 * m.rest), progressionLevel: level };
+    return { exerciseId: ex.id, sets, reps: null, holdSeconds: Math.round(hold * m.reps), restSeconds: Math.round(90 * m.rest), progressionLevel: label };
   }
   const reps = ex.difficulty === "elite" ? 3 : ex.difficulty === "advanced" ? 5 : ex.difficulty === "intermediate" ? 8 : 12;
-  return { exerciseId: ex.id, sets, reps: Math.max(1, Math.round(reps * m.reps)), holdSeconds: null, restSeconds: Math.round(90 * m.rest), progressionLevel: level };
+  return { exerciseId: ex.id, sets, reps: Math.max(1, Math.round(reps * m.reps)), holdSeconds: null, restSeconds: Math.round(90 * m.rest), progressionLevel: label };
 }
 
 function getWarmUp(focus: string): WarmUp {
@@ -62,7 +62,7 @@ function getWarmUp(focus: string): WarmUp {
 const yogaFlows: RestDayActivity[] = [
   { name: "Hip Opening Flow", description: "Deep hip stretches for recovery", duration: "15 min", type: "yoga", yogaPoseIds: ["pigeon", "seated-straddle", "half-splits", "childs", "savasana"] },
   { name: "Spine & Back Flow", description: "Gentle backbends and twists", duration: "12 min", type: "yoga", yogaPoseIds: ["cobra", "bridge", "forward-fold", "childs", "legs-up-wall"] },
-  { name: "Full Body Restore", description: "Head-to-toe relaxation sequence", duration: "18 min", type: "yoga", yogaPoseIds: ["childs", "cobra", "pigeon", "forward-fold", "bridge", "legs-up-wall", "savasana"] },
+  { name: "Full Body Restore", description: "Head-to-toe relaxation", duration: "18 min", type: "yoga", yogaPoseIds: ["childs", "cobra", "pigeon", "forward-fold", "bridge", "legs-up-wall", "savasana"] },
   { name: "Balance & Focus", description: "Build stability and mindfulness", duration: "15 min", type: "yoga", yogaPoseIds: ["tree", "warrior3", "chair", "forward-fold", "savasana"] },
   { name: "Splits Prep Flow", description: "Progressive stretching toward splits", duration: "20 min", type: "yoga", yogaPoseIds: ["forward-fold", "half-splits", "pigeon", "seated-straddle", "full-splits", "savasana"] },
 ];
@@ -71,89 +71,95 @@ function getRestDayActivities(dayIndex: number): RestDayActivity[] {
   const profile = getUserProfile();
   const yogaEnabled = profile?.yogaSetUp ?? false;
   const activities: RestDayActivity[] = [];
-  if (yogaEnabled) {
-    activities.push(yogaFlows[dayIndex % yogaFlows.length]);
-  }
+  if (yogaEnabled) activities.push(yogaFlows[dayIndex % yogaFlows.length]);
   activities.push({ name: "Light Walk", description: "20–30 minute easy walk outdoors", duration: "20-30 min", type: "light-cardio" });
   activities.push({ name: "Mobility Work", description: "Joint circles, wrist stretches, and foam rolling", duration: "10 min", type: "mobility" });
   return activities;
 }
 
 export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoal): WeeklyPlan {
-  // Check if these are yoga pose IDs
   const isYogaPlan = selectedSkillIds.some((id) => getYogaPoseById(id) !== undefined);
+  if (isYogaPlan) return generateYogaPlan(selectedSkillIds, goal);
 
-  if (isYogaPlan) {
-    return generateYogaPlan(selectedSkillIds, goal);
-  }
+  const allWorkExercises: { ex: WorkoutExercise; category: string }[] = [];
+  const usedIds = new Set<string>();
+  const targetNames: string[] = [];
 
-  const allExIds = new Set<string>();
-  const skillChains: { target: Exercise; chain: Exercise[] }[] = [];
-
-  for (const id of selectedSkillIds) {
-    const target = getExerciseById(id);
+  // For each target skill, include ONLY the progressions the user can actually do
+  // EXCLUDE the target itself (they can't do it yet)
+  for (const targetId of selectedSkillIds) {
+    const target = getExerciseById(targetId);
     if (!target) continue;
-    skillChains.push({ target, chain: getFullProgressionChain(id) });
-    getFullProgressionChain(id).forEach((e) => allExIds.add(e.id));
+    targetNames.push(target.name);
+
+    const chain = getFullProgressionChain(targetId);
+    const targetIdx = chain.findIndex((e) => e.id === targetId);
+
+    // Get progressions BELOW the target (exercises they CAN do)
+    const doable = chain.slice(Math.max(0, targetIdx - 4), targetIdx);
+    if (doable.length === 0 && targetIdx > 0) {
+      doable.push(chain[targetIdx - 1]);
+    }
+    // If target is the very first in chain (beginner skill), include it
+    if (targetIdx === 0) {
+      doable.push(chain[0]);
+    }
+
+    doable.forEach((ex, i) => {
+      if (usedIds.has(ex.id)) return;
+      usedIds.add(ex.id);
+      const isHighest = i === doable.length - 1;
+      const nextInChain = chain[chain.indexOf(ex) + 1];
+      const label = isHighest && nextInChain
+        ? `⬆ Level up → ${nextInChain.name}`
+        : `Step ${i + 1}`;
+      allWorkExercises.push({
+        ex: makeExercise(ex, isHighest ? 4 : 3, goal, label),
+        category: ex.category,
+      });
+    });
   }
 
+  // Add supporting exercises (ones the user can actually do — beginner/intermediate only)
+  const supporters = exercises.filter(
+    (e) => !usedIds.has(e.id) && (e.difficulty === "beginner" || e.difficulty === "intermediate") && e.category !== "skill"
+  );
+  const supportCats = ["pull", "push", "core", "legs"];
+  for (const cat of supportCats) {
+    const ex = supporters.find((e) => e.category === cat);
+    if (ex) {
+      usedIds.add(ex.id);
+      allWorkExercises.push({ ex: makeExercise(ex, 3, goal), category: cat });
+    }
+  }
+
+  // Distribute into training days
   const numTargets = selectedSkillIds.length;
-  // Goal-specific training day counts
   const baseDays = numTargets <= 1 ? 3 : numTargets <= 3 ? 4 : numTargets <= 5 ? 5 : 6;
   let trainingDays: number;
-  if (goal === "weight-loss") trainingDays = Math.min(baseDays + 1, 6); // more days, more calorie burn
-  else if (goal === "endurance") trainingDays = Math.min(baseDays + 1, 6); // more frequent
-  else if (goal === "skills") trainingDays = Math.max(baseDays - 1, 3); // more rest for CNS recovery
-  else if (goal === "muscle") trainingDays = baseDays; // standard
+  if (goal === "weight-loss") trainingDays = Math.min(baseDays + 1, 6);
+  else if (goal === "endurance") trainingDays = Math.min(baseDays + 1, 6);
+  else if (goal === "skills") trainingDays = Math.max(baseDays - 1, 3);
   else trainingDays = baseDays;
 
   type Bucket = { exercises: WorkoutExercise[]; name: string; focus: string };
   const buckets: Bucket[] = [];
-  const names3 = ["Progression Day", "Strength Day", "Volume Day"];
-  const names4 = ["Progression A", "Strength", "Progression B", "Accessory"];
-  const names6 = ["Progression A", "Push Strength", "Pull Strength", "Progression B", "Accessory", "Volume"];
-  const nameList = trainingDays <= 3 ? names3 : trainingDays <= 4 ? names4 : names6;
+  const names = ["Progression A", "Strength", "Progression B", "Accessory", "Volume", "Conditioning"];
   for (let i = 0; i < trainingDays; i++) {
-    buckets.push({ exercises: [], name: nameList[i] || `Day ${i + 1}`, focus: "" });
+    buckets.push({ exercises: [], name: names[i] || `Day ${i + 1}`, focus: "" });
   }
 
-  const progBuckets = buckets.filter((b) => b.name.includes("Progression") || b.name.includes("Volume"));
-  const strBuckets = buckets.filter((b) => !progBuckets.includes(b));
-
-  skillChains.forEach(({ target, chain }, si) => {
-    const targetIdx = chain.findIndex((e) => e.id === target.id);
-    const relevant = chain.slice(Math.max(0, targetIdx - 3), targetIdx + 1);
-    relevant.forEach((ex, i) => {
-      const isTarget = ex.id === target.id;
-      const level = isTarget ? "Target" : `Level ${i + 1}`;
-      const bucket = progBuckets[(si + i) % progBuckets.length];
-      if (bucket) bucket.exercises.push(makeExercise(ex, isTarget ? 5 : 3, isTarget, goal, level));
-    });
+  // Distribute exercises round-robin
+  allWorkExercises.forEach((item, i) => {
+    buckets[i % buckets.length].exercises.push(item.ex);
   });
 
-  const usedIds = new Set(buckets.flatMap((b) => b.exercises.map((e) => e.exerciseId)));
-  const supporters = exercises.filter((e) => !usedIds.has(e.id) && (e.difficulty === "beginner" || e.difficulty === "intermediate"));
-  ["pull", "push", "core", "legs"].forEach((cat, ci) => {
-    const ex = supporters.find((e) => e.category === cat);
-    if (ex && strBuckets.length > 0) {
-      strBuckets[ci % strBuckets.length].exercises.push(makeExercise(ex, 3, false, goal));
-      usedIds.add(ex.id);
-    }
-  });
-
-  if (goal === "weight-loss" || goal === "endurance") {
-    const cardio = exercises.find((e) => e.id === "burpee");
-    if (cardio && !usedIds.has(cardio.id)) {
-      const lastBucket = strBuckets[strBuckets.length - 1] || buckets[buckets.length - 1];
-      lastBucket.exercises.push(makeExercise(cardio, 4, false, goal));
-    }
-  }
-
+  // Ensure each day has at least 3 exercises
   for (const b of buckets) {
     while (b.exercises.length < 3) {
       const filler = supporters.find((e) => !usedIds.has(e.id));
       if (!filler) break;
-      b.exercises.push(makeExercise(filler, 3, false, goal));
+      b.exercises.push(makeExercise(filler, 3, goal));
       usedIds.add(filler.id);
     }
     b.focus = b.exercises.map((e) => getExerciseById(e.exerciseId)?.category).filter(Boolean).join(", ");
@@ -171,24 +177,22 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
       });
       bi++;
     } else {
-      days.push({
-        day: dayNames[i], name: "Rest & Recovery", isRest: true, exercises: [],
-        restDayActivities: getRestDayActivities(i),
-      });
+      days.push({ day: dayNames[i], name: "Rest & Recovery", isRest: true, exercises: [], restDayActivities: getRestDayActivities(i) });
     }
   }
 
   const totalEx = buckets.reduce((s, b) => s + b.exercises.length, 0);
-  const skillNames = skillChains.map((s) => s.target.name);
-  const goalLabel = { muscle: "Build Muscle", skills: "Master Skills", "weight-loss": "Lose Weight", endurance: "Build Endurance", balanced: "Balanced Fitness" }[goal];
+  const goalLabel = { muscle: "Build Muscle", skills: "Master Skills", "weight-loss": "Lose Weight", endurance: "Build Endurance", balanced: "Balanced" }[goal];
 
   return {
     id: `plan-${Date.now()}`,
-    name: numTargets === 1 ? `${skillNames[0]} Program` : "Multi-Skill Program",
-    description: `${goalLabel} plan targeting: ${skillNames.join(", ")}`,
-    difficulty: skillChains.some((s) => s.target.difficulty === "elite") ? "elite" : "advanced",
-    goal: `${goalLabel}: ${skillNames.join(", ")}`, trainingGoal: goal, targetSkills: selectedSkillIds,
-    days, estimatedWeeklyMinutes: totalEx * 5 + trainingDays * 10, createdAt: new Date().toISOString(),
+    name: numTargets === 1 ? `${targetNames[0]} Program` : "Multi-Skill Program",
+    description: `${goalLabel} — progressions toward: ${targetNames.join(", ")}`,
+    difficulty: "intermediate",
+    goal: `${goalLabel}: ${targetNames.join(", ")}`,
+    trainingGoal: goal, targetSkills: selectedSkillIds,
+    days, estimatedWeeklyMinutes: totalEx * 5 + trainingDays * 10,
+    createdAt: new Date().toISOString(),
   };
 }
 
@@ -196,21 +200,14 @@ function generateYogaPlan(selectedPoseIds: string[], goal: TrainingGoal): Weekly
   const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   const targetPoses = selectedPoseIds.map((id) => getYogaPoseById(id)).filter(Boolean);
   const poseNames = targetPoses.map((p) => p!.name);
-
-  // Build prerequisite poses (easier flexibility poses as warm-up)
   const prepPoses = ["forward-fold", "cobra", "bridge", "childs"].filter((id) => !selectedPoseIds.includes(id));
-
   const warmUp: WarmUp = { name: "Flexibility Warm-Up", duration: "5 min", exercises: ["Neck rolls × 10", "Shoulder rolls × 10", "Cat-cow × 8", "Hip circles × 10 each", "Deep breathing × 5"] };
 
   const days: DayWorkout[] = dayNames.map((day, i) => {
     if (i === 2 || i === 6) {
       return { day, name: "Rest & Recovery", isRest: true, exercises: [], restDayActivities: getRestDayActivities(i) };
     }
-
-    const dayPoses = [...prepPoses.slice(0, 2), ...selectedPoseIds];
-    const suffix = ["savasana"];
-    const allPoseIds = [...dayPoses, ...suffix];
-
+    const allPoseIds = [...prepPoses.slice(0, 2), ...selectedPoseIds, "savasana"];
     return {
       day, name: i % 2 === 0 ? "Flexibility Focus" : "Deep Stretch",
       isRest: false, focus: `Working toward: ${poseNames.join(", ")}`,
@@ -224,7 +221,7 @@ function generateYogaPlan(selectedPoseIds: string[], goal: TrainingGoal): Weekly
 
   return {
     id: `yoga-${Date.now()}`, name: targetPoses.length === 1 ? `${poseNames[0]} Program` : "Flexibility Program",
-    description: `Progressive flexibility plan targeting: ${poseNames.join(", ")}`,
+    description: `Progressive flexibility plan toward: ${poseNames.join(", ")}`,
     difficulty: targetPoses.some((p) => p!.difficulty === "elite") ? "elite" : targetPoses.some((p) => p!.difficulty === "advanced") ? "advanced" : "intermediate",
     goal: `Achieve: ${poseNames.join(", ")}`, trainingGoal: goal, targetSkills: selectedPoseIds,
     days, estimatedWeeklyMinutes: 80, createdAt: new Date().toISOString(),
