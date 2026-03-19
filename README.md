@@ -58,7 +58,7 @@ npm install
 npm run dev
 ```
 
-Open **[http://localhost:3000](http://localhost:3000)** in your browser. You'll be guided through the onboarding assessment on first visit.
+Open **[http://localhost:3000](https://p-3000-pod-hpg3bgwvjjckvpv2jroid5snwa-2bcd4f9ac98e330195e9-us4p.agent.cvm.dev/workouts)** in your browser. You'll be guided through the onboarding assessment on first visit.
 
 ## Deploy to a Public URL
 
