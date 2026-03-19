@@ -83,6 +83,7 @@ export const exercises: Exercise[] = [
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=parallel+bar+dips+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0251.gif",
+    progressionFrom: "push-up",
   },
   {
     id: "handstand-push-up",
@@ -206,6 +207,7 @@ export const exercises: Exercise[] = [
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=chin+up+proper+form+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/1326.gif",
+    progressionFrom: "australian-pull-up",
   },
   {
     id: "muscle-up",
@@ -247,7 +249,7 @@ export const exercises: Exercise[] = [
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=bodyweight+squat+proper+form",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/1685.gif",
-    progressionTo: "jump-squat",
+    progressionTo: "lunge",
   },
   {
     id: "pistol-squat",
@@ -267,6 +269,7 @@ export const exercises: Exercise[] = [
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=pistol+squat+tutorial+progression",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/1759.gif",
+    progressionFrom: "squat",
   },
   {
     id: "lunge",
@@ -286,6 +289,7 @@ export const exercises: Exercise[] = [
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=walking+lunge+proper+form",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/1460.gif",
+    progressionTo: "pistol-squat",
   },
   {
     id: "calf-raise",
@@ -611,6 +615,7 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=90+degree+push+up+hold+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3300.gif",
+    progressionFrom: "tuck-planche",
   },
   {
     id: "human-flag",
@@ -630,6 +635,7 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=human+flag+tutorial+progression",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3303.gif",
+    progressionFrom: "back-lever",
   },
 
   // ──────── FULL-BODY ────────
