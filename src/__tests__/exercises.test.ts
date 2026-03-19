@@ -42,5 +42,30 @@ describe("Exercise data", () => {
     expect(categories.has("legs")).toBe(true);
     expect(categories.has("core")).toBe(true);
     expect(categories.has("full-body")).toBe(true);
+    expect(categories.has("skill")).toBe(true);
+  });
+
+  it("includes advanced skills", () => {
+    expect(getExerciseById("dragon-flag")).toBeDefined();
+    expect(getExerciseById("full-planche")).toBeDefined();
+    expect(getExerciseById("front-lever")).toBeDefined();
+    expect(getExerciseById("90-degree-hold")).toBeDefined();
+    expect(getExerciseById("human-flag")).toBeDefined();
+    expect(getExerciseById("muscle-up")).toBeDefined();
+    expect(getExerciseById("back-lever")).toBeDefined();
+    expect(getExerciseById("manna")).toBeDefined();
+  });
+
+  it("has valid progression chains", () => {
+    exercises.forEach((ex) => {
+      if (ex.progressionFrom) {
+        const from = getExerciseById(ex.progressionFrom);
+        expect(from).toBeDefined();
+      }
+      if (ex.progressionTo) {
+        const to = getExerciseById(ex.progressionTo);
+        expect(to).toBeDefined();
+      }
+    });
   });
 });
