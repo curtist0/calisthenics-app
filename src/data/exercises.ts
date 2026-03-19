@@ -39,7 +39,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=diamond+push+up+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/1551/a6a9e561-3965-45c6-9f2b-ee671e1a3a45.png",
+    imageUrl: "https://wger.de/media/exercise-images/1112/81f40bee-4adf-4317-8476-1a87706e3031.png",
     progressionFrom: "push-up",
     progressionTo: "pike-push-up",
   },
@@ -60,7 +60,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=pike+push+up+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/1551/a6a9e561-3965-45c6-9f2b-ee671e1a3a45.png",
+    imageUrl: "https://wger.de/media/exercise-images/478/70a2d72c-a822-45f3-8de2-54ea85951b84.jpg",
     progressionFrom: "diamond-push-up",
     progressionTo: "handstand-push-up",
   },
@@ -100,7 +100,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=wall+handstand+push+up+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/1551/a6a9e561-3965-45c6-9f2b-ee671e1a3a45.png",
+    imageUrl: "https://wger.de/media/exercise-images/1554/49207a62-8799-4b47-8c0b-7bde02926f3d.png",
     progressionFrom: "pike-push-up",
     progressionTo: "freestanding-hspu",
   },
@@ -121,7 +121,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=freestanding+handstand+push+up+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/1551/a6a9e561-3965-45c6-9f2b-ee671e1a3a45.png",
+    imageUrl: "https://wger.de/media/exercise-images/1554/49207a62-8799-4b47-8c0b-7bde02926f3d.png",
     progressionFrom: "handstand-push-up",
   },
   {
@@ -141,7 +141,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=pseudo+planche+push+up+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/1551/a6a9e561-3965-45c6-9f2b-ee671e1a3a45.png",
+    imageUrl: "https://wger.de/media/exercise-images/1112/81f40bee-4adf-4317-8476-1a87706e3031.png",
     progressionTo: "tuck-planche",
   },
 
@@ -284,7 +284,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=walking+lunge+proper+form",
-    imageUrl: "https://wger.de/media/exercise-images/984/5c7ffe68-e7b2-47f3-a22a-f9cc28640432.png",
+    imageUrl: "https://wger.de/media/exercise-images/1903/6ec66efd-e74f-4142-bed1-0a0ac74e3294.png",
   },
   {
     id: "calf-raise",
@@ -303,7 +303,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=single+leg+calf+raise+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/1243/53d4fabe-c994-4907-873f-8d82813a9832.png",
+    imageUrl: "https://wger.de/media/exercise-images/622/9a429bd0-afd3-4ad0-8043-e9beec901c81.jpeg",
   },
   {
     id: "jump-squat",
@@ -322,7 +322,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=jump+squat+proper+form",
-    imageUrl: "https://wger.de/media/exercise-images/456/3b681e59-377b-40db-9113-ca5873ce084b.jpg",
+    imageUrl: "https://wger.de/media/exercise-images/1627/86d0b85a-66b7-4e5f-bf8d-bb4d7eb03f59.webp",
     progressionFrom: "squat",
   },
 
@@ -364,7 +364,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=hollow+body+hold+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/458/b7bd9c28-9f1d-4647-bd17-ab6a3adf5770.png",
+    imageUrl: "",
     progressionFrom: "plank",
     progressionTo: "dragon-flag",
   },
@@ -385,7 +385,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=hanging+leg+raise+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/125/Leg-raises-2.png",
+    imageUrl: "https://wger.de/media/exercise-images/1889/bc51ef67-0c12-4340-a36c-42ef722778dd.png",
     progressionTo: "dragon-flag",
   },
   {
@@ -405,7 +405,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=dragon+flag+tutorial+progression",
-    imageUrl: "https://wger.de/media/exercise-images/125/Leg-raises-2.png",
+    imageUrl: "",
     progressionFrom: "hanging-leg-raise",
   },
 
@@ -427,7 +427,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=l+sit+tutorial+progression",
-    imageUrl: "https://wger.de/media/exercise-images/458/b7bd9c28-9f1d-4647-bd17-ab6a3adf5770.png",
+    imageUrl: "",
     progressionTo: "v-sit",
   },
   {
@@ -447,7 +447,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=v+sit+tutorial+calisthenics",
-    imageUrl: "https://wger.de/media/exercise-images/458/b7bd9c28-9f1d-4647-bd17-ab6a3adf5770.png",
+    imageUrl: "",
     progressionFrom: "l-sit",
     progressionTo: "manna",
   },
@@ -468,7 +468,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=manna+tutorial+calisthenics",
-    imageUrl: "https://wger.de/media/exercise-images/458/b7bd9c28-9f1d-4647-bd17-ab6a3adf5770.png",
+    imageUrl: "",
     progressionFrom: "v-sit",
   },
   {
@@ -509,7 +509,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=straddle+planche+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/1551/a6a9e561-3965-45c6-9f2b-ee671e1a3a45.png",
+    imageUrl: "https://wger.de/media/exercise-images/1916/e7d97b4b-9fe4-4378-aea3-5a9d93b6eb8d.png",
     progressionFrom: "tuck-planche",
     progressionTo: "full-planche",
   },
@@ -530,7 +530,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=full+planche+tutorial+progression",
-    imageUrl: "https://wger.de/media/exercise-images/1551/a6a9e561-3965-45c6-9f2b-ee671e1a3a45.png",
+    imageUrl: "https://wger.de/media/exercise-images/1916/e7d97b4b-9fe4-4378-aea3-5a9d93b6eb8d.png",
     progressionFrom: "straddle-planche",
   },
   {
@@ -570,7 +570,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=front+lever+tutorial+progression",
-    imageUrl: "https://wger.de/media/exercise-images/475/b0554016-16fd-4dbe-be47-a2a17d16ae0e.jpg",
+    imageUrl: "",
     progressionFrom: "tuck-front-lever",
   },
   {
@@ -590,7 +590,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=back+lever+tutorial+progression",
-    imageUrl: "https://wger.de/media/exercise-images/475/b0554016-16fd-4dbe-be47-a2a17d16ae0e.jpg",
+    imageUrl: "",
   },
   {
     id: "90-degree-hold",
@@ -609,7 +609,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=90+degree+push+up+hold+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/1551/a6a9e561-3965-45c6-9f2b-ee671e1a3a45.png",
+    imageUrl: "",
   },
   {
     id: "human-flag",
@@ -628,7 +628,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=human+flag+tutorial+progression",
-    imageUrl: "https://wger.de/media/exercise-images/475/b0554016-16fd-4dbe-be47-a2a17d16ae0e.jpg",
+    imageUrl: "",
   },
 
   // ──────── FULL-BODY ────────
@@ -649,7 +649,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=burpee+proper+form+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/456/3b681e59-377b-40db-9113-ca5873ce084b.jpg",
+    imageUrl: "",
   },
   {
     id: "bear-crawl",
@@ -668,7 +668,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=bear+crawl+exercise+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/458/b7bd9c28-9f1d-4647-bd17-ab6a3adf5770.png",
+    imageUrl: "",
   },
 ];
 
