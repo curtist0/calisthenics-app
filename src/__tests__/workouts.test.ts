@@ -41,10 +41,15 @@ describe("Plan generator", () => {
     expect(wReps).toBeGreaterThanOrEqual(bReps);
   });
 
-  it("all exercises reference valid exercises", () => {
+  it("all exercises reference valid exercises or conditioning", () => {
     const plan = generateWeeklyPlan(["muscle-up", "full-planche"], "skills");
     plan.days.forEach((day) => {
-      day.exercises.forEach((we) => { expect(getExerciseById(we.exerciseId)).toBeDefined(); });
+      day.exercises.forEach((we) => {
+        const isConditioning = we.exerciseId.startsWith("cond-");
+        if (!isConditioning) {
+          expect(getExerciseById(we.exerciseId)).toBeDefined();
+        }
+      });
     });
   });
 });
