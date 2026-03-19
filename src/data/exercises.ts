@@ -19,7 +19,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=push+up+proper+form+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/1551/a6a9e561-3965-45c6-9f2b-ee671e1a3a45.png",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0662.gif",
     progressionTo: "diamond-push-up",
   },
   {
@@ -39,7 +39,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=diamond+push+up+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/1112/81f40bee-4adf-4317-8476-1a87706e3031.png",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0283.gif",
     progressionFrom: "push-up",
     progressionTo: "pike-push-up",
   },
@@ -60,7 +60,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=pike+push+up+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/478/70a2d72c-a822-45f3-8de2-54ea85951b84.jpg",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3662.gif",
     progressionFrom: "diamond-push-up",
     progressionTo: "handstand-push-up",
   },
@@ -81,7 +81,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=parallel+bar+dips+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/194/34600351-8b0b-4cb0-8daa-583537be15b0.png",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0251.gif",
   },
   {
     id: "handstand-push-up",
@@ -100,7 +100,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=wall+handstand+push+up+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/1554/49207a62-8799-4b47-8c0b-7bde02926f3d.png",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0471.gif",
     progressionFrom: "pike-push-up",
     progressionTo: "freestanding-hspu",
   },
@@ -121,7 +121,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=freestanding+handstand+push+up+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/1554/49207a62-8799-4b47-8c0b-7bde02926f3d.png",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0471.gif",
     progressionFrom: "handstand-push-up",
   },
   {
@@ -141,7 +141,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=pseudo+planche+push+up+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/1112/81f40bee-4adf-4317-8476-1a87706e3031.png",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3327.gif",
     progressionTo: "tuck-planche",
   },
 
@@ -163,7 +163,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=australian+pull+up+inverted+row+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/1198/864906ac-4ac7-4e52-a886-c6bb97950a9f.jpg",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0499.gif",
     progressionTo: "pull-up",
   },
   {
@@ -183,7 +183,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=pull+up+proper+form+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/475/b0554016-16fd-4dbe-be47-a2a17d16ae0e.jpg",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0652.gif",
     progressionFrom: "australian-pull-up",
     progressionTo: "muscle-up",
   },
@@ -204,7 +204,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=chin+up+proper+form+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/181/Chin-ups-2.png",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0140.gif",
   },
   {
     id: "muscle-up",
@@ -223,7 +223,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=bar+muscle+up+tutorial+progression",
-    imageUrl: "https://wger.de/media/exercise-images/475/b0554016-16fd-4dbe-be47-a2a17d16ae0e.jpg",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0631.gif",
     progressionFrom: "pull-up",
   },
 
@@ -245,7 +245,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=bodyweight+squat+proper+form",
-    imageUrl: "https://wger.de/media/exercise-images/1805/f166c599-4c03-42a0-9250-47f82a1f096d.jpg",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/1685.gif",
     progressionTo: "jump-squat",
   },
   {
@@ -265,7 +265,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=pistol+squat+tutorial+progression",
-    imageUrl: "https://wger.de/media/exercise-images/456/3b681e59-377b-40db-9113-ca5873ce084b.jpg",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/1759.gif",
   },
   {
     id: "lunge",
@@ -284,7 +284,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=walking+lunge+proper+form",
-    imageUrl: "https://wger.de/media/exercise-images/1903/6ec66efd-e74f-4142-bed1-0a0ac74e3294.png",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/1460.gif",
   },
   {
     id: "calf-raise",
@@ -303,7 +303,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=single+leg+calf+raise+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/622/9a429bd0-afd3-4ad0-8043-e9beec901c81.jpeg",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/1373.gif",
   },
   {
     id: "jump-squat",
@@ -322,7 +322,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=jump+squat+proper+form",
-    imageUrl: "https://wger.de/media/exercise-images/1627/86d0b85a-66b7-4e5f-bf8d-bb4d7eb03f59.webp",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0514.gif",
     progressionFrom: "squat",
   },
 
@@ -344,7 +344,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=plank+proper+form+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/458/b7bd9c28-9f1d-4647-bd17-ab6a3adf5770.png",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0464.gif",
     progressionTo: "hollow-body-hold",
   },
   {
@@ -364,7 +364,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=hollow+body+hold+tutorial",
-    imageUrl: "",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3419.gif",
     progressionFrom: "plank",
     progressionTo: "dragon-flag",
   },
@@ -385,7 +385,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=hanging+leg+raise+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/1889/bc51ef67-0c12-4340-a36c-42ef722778dd.png",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0472.gif",
     progressionTo: "dragon-flag",
   },
   {
@@ -405,7 +405,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=dragon+flag+tutorial+progression",
-    imageUrl: "",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3296.gif",
     progressionFrom: "hanging-leg-raise",
   },
 
@@ -427,7 +427,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=l+sit+tutorial+progression",
-    imageUrl: "",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3419.gif",
     progressionTo: "v-sit",
   },
   {
@@ -447,7 +447,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=v+sit+tutorial+calisthenics",
-    imageUrl: "",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3420.gif",
     progressionFrom: "l-sit",
     progressionTo: "manna",
   },
@@ -468,7 +468,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=manna+tutorial+calisthenics",
-    imageUrl: "",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3300.gif",
     progressionFrom: "v-sit",
   },
   {
@@ -488,7 +488,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=tuck+planche+tutorial+progression",
-    imageUrl: "https://wger.de/media/exercise-images/1916/e7d97b4b-9fe4-4378-aea3-5a9d93b6eb8d.png",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3301.gif",
     progressionFrom: "pseudo-planche-push-up",
     progressionTo: "straddle-planche",
   },
@@ -509,7 +509,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=straddle+planche+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/1916/e7d97b4b-9fe4-4378-aea3-5a9d93b6eb8d.png",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3298.gif",
     progressionFrom: "tuck-planche",
     progressionTo: "full-planche",
   },
@@ -530,7 +530,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=full+planche+tutorial+progression",
-    imageUrl: "https://wger.de/media/exercise-images/1916/e7d97b4b-9fe4-4378-aea3-5a9d93b6eb8d.png",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3299.gif",
     progressionFrom: "straddle-planche",
   },
   {
@@ -550,7 +550,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=tuck+front+lever+tutorial",
-    imageUrl: "https://wger.de/media/exercise-images/475/b0554016-16fd-4dbe-be47-a2a17d16ae0e.jpg",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3296.gif",
     progressionTo: "front-lever",
   },
   {
@@ -570,7 +570,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=front+lever+tutorial+progression",
-    imageUrl: "",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3296.gif",
     progressionFrom: "tuck-front-lever",
   },
   {
@@ -590,7 +590,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=back+lever+tutorial+progression",
-    imageUrl: "",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3297.gif",
   },
   {
     id: "90-degree-hold",
@@ -609,7 +609,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=90+degree+push+up+hold+tutorial",
-    imageUrl: "",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3300.gif",
   },
   {
     id: "human-flag",
@@ -628,7 +628,7 @@ export const exercises: Exercise[] = [
     isHold: true,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=human+flag+tutorial+progression",
-    imageUrl: "",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3302.gif",
   },
 
   // ──────── FULL-BODY ────────
@@ -649,7 +649,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=burpee+proper+form+tutorial",
-    imageUrl: "",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/1160.gif",
   },
   {
     id: "bear-crawl",
@@ -668,7 +668,7 @@ export const exercises: Exercise[] = [
     isHold: false,
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=bear+crawl+exercise+tutorial",
-    imageUrl: "",
+    imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3360.gif",
   },
 ];
 
