@@ -119,9 +119,19 @@ export interface ExerciseLevel {
   lastUpdated: string;
 }
 
+export interface SkillLevels {
+  push: Difficulty;
+  pull: Difficulty;
+  legs: Difficulty;
+  core: Difficulty;
+  balance: Difficulty;
+  flexibility: Difficulty;
+}
+
 export interface UserProfile {
   onboarded: boolean;
   overallLevel: Difficulty;
+  skillLevels: SkillLevels;
   exerciseLevels: ExerciseLevel[];
   trainingGoal: TrainingGoal;
   yogaSetUp: boolean;
