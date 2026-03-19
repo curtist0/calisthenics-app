@@ -62,7 +62,7 @@ Open **[http://localhost:3000](http://localhost:3000)** in your browser. You'll 
 
 ## Deploy to a Public URL
 
-To get a `.com` or shareable link, deploy to [Vercel](https://vercel.com) (free for Next.js):
+To get a shareable link or custom `.com` domain, deploy to [Vercel](https://vercel.com) (free for Next.js):
 
 1. Push your code to GitHub
 2. Go to [vercel.com](https://vercel.com) and sign in with GitHub
