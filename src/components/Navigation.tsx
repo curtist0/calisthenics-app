@@ -12,7 +12,7 @@ const navItems = [
 
 export default function Navigation() {
   const pathname = usePathname();
-  if (pathname === "/onboarding") return null;
+  if (pathname === "/onboarding" || pathname === "/yoga-setup") return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 safe-area-bottom">

@@ -112,7 +112,7 @@ export default function Home() {
 
       {/* Yoga Setup Prompt */}
       {profile && !profile.yogaSetUp && (
-        <Link href="/onboarding" className="block mb-6 glass rounded-2xl p-4 border border-purple-500/30 hover:bg-purple-500/10 transition-colors">
+        <Link href="/yoga-setup" className="block mb-6 glass rounded-2xl p-4 border border-purple-500/30 hover:bg-purple-500/10 transition-colors">
           <div className="flex items-center gap-3">
             <span className="text-2xl">🧘</span>
             <div>

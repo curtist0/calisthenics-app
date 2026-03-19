@@ -8,6 +8,7 @@ import ExerciseCard from "@/components/ExerciseCard";
 import ExerciseModal from "@/components/ExerciseModal";
 import Timer from "@/components/Timer";
 import RestTimer from "@/components/RestTimer";
+import ExerciseAnimation from "@/components/ExerciseAnimation";
 import { Exercise } from "@/lib/types";
 import Link from "next/link";
 
@@ -103,7 +104,9 @@ function PlanContent() {
         </div>
 
         <div className="text-center mb-2">
-          <span className="text-5xl mb-3 block">{curExercise.image}</span>
+          <div className="flex justify-center mb-3">
+            <ExerciseAnimation exerciseId={curExercise.id} size={140} />
+          </div>
           <h2 className="text-2xl font-bold text-white">{curExercise.name}</h2>
           <p className="text-gray-400 text-sm">Set {curSet + 1} of {curWE.sets}</p>
           {curWE.progressionLevel && <span className="inline-block mt-2 text-xs bg-brand-500/20 text-brand-400 px-3 py-1 rounded-full">{curWE.progressionLevel}</span>}
