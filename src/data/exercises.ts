@@ -422,7 +422,7 @@ export const exercises: Exercise[] = [
     description: "An isometric hold requiring core compression and hip flexor strength.",
     category: "skill",
     muscles: ["core", "quads", "shoulders"],
-    difficulty: "beginner",
+    difficulty: "intermediate",
     instructions: [
       "Sit on the floor or use parallettes / parallel bars",
       "Place hands beside hips and press down",

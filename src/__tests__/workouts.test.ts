@@ -33,6 +33,14 @@ describe("Plan generator", () => {
     expect(restDays.every((d) => d.restDayActivities && d.restDayActivities.length > 0)).toBe(true);
   });
 
+  it("uses distinct exercise selections across training days", () => {
+    const plan = generateWeeklyPlan(["muscle-up", "full-planche"], "balanced");
+    const training = plan.days.filter((d) => !d.isRest);
+    const signatures = training.map((d) => d.exercises.map((e) => e.exerciseId).join(","));
+    const unique = new Set(signatures);
+    expect(unique.size).toBeGreaterThan(1);
+  });
+
   it("adjusts for weight-loss goal", () => {
     const balanced = generateWeeklyPlan(["muscle-up"], "balanced");
     const wl = generateWeeklyPlan(["muscle-up"], "weight-loss");
