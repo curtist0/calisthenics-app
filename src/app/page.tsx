@@ -59,6 +59,27 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Skill Level Display */}
+      {profile?.skillLevels && (
+        <div className="glass rounded-2xl p-4 mb-8">
+          <h3 className="text-white font-bold text-sm mb-3">Your Skill Levels</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {(["push", "pull", "legs", "core", "balance", "flexibility"] as const).map((cat) => {
+              const lvl = profile.skillLevels[cat];
+              const colors: Record<string, string> = { beginner: "text-green-400", intermediate: "text-yellow-400", advanced: "text-red-400", elite: "text-fuchsia-400" };
+              const icons: Record<string, string> = { push: "💪", pull: "🦍", legs: "🦵", core: "🧱", balance: "⚖️", flexibility: "🧘" };
+              return (
+                <div key={cat} className="text-center p-2 bg-gray-800/50 rounded-xl">
+                  <span className="text-lg">{icons[cat]}</span>
+                  <p className="text-[10px] text-gray-400 uppercase font-bold mt-0.5">{cat}</p>
+                  <p className={`text-xs font-bold capitalize ${colors[lvl]}`}>{lvl}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Quick Action Card */}
       {activePlan ? (
         <Link href={`/workouts/plan?id=${activePlan.id}`} className="block mb-8 group">

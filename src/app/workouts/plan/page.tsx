@@ -3,12 +3,13 @@
 import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { getExerciseById } from "@/data/exercises";
+import { getYogaPoseById } from "@/data/yoga";
 import { useWorkout } from "@/context/WorkoutContext";
 import ExerciseCard from "@/components/ExerciseCard";
 import ExerciseModal from "@/components/ExerciseModal";
+import ExerciseAnimation from "@/components/ExerciseAnimation";
 import Timer from "@/components/Timer";
 import RestTimer from "@/components/RestTimer";
-import ExerciseAnimation from "@/components/ExerciseAnimation";
 import { Exercise } from "@/lib/types";
 import Link from "next/link";
 
@@ -21,6 +22,7 @@ function PlanContent() {
   const plan = savedPlans.find((p) => p.id === planId);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [isActive, setIsActive] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [activeDayIndex, setActiveDayIndex] = useState(0);
   const [curEx, setCurEx] = useState(0);
   const [curSet, setCurSet] = useState(0);
@@ -39,37 +41,31 @@ function PlanContent() {
     );
   }
 
-  const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1; // Mon=0..Sun=6
+  const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
   const todayDay = plan.days[todayIndex];
-
   const activeDay = isActive ? plan.days[activeDayIndex] : null;
   const curWE = activeDay?.exercises[curEx];
-  const curExercise = curWE ? getExerciseById(curWE.exerciseId) : null;
+  const curExData = curWE ? getExerciseById(curWE.exerciseId) : null;
+  const curYogaPose = curWE ? getYogaPoseById(curWE.exerciseId) : null;
+  const curName = curExData?.name || curYogaPose?.name || curWE?.progressionLevel || "Exercise";
+  const curImage = curExData?.image || curYogaPose?.image || "💪";
 
   const handleStart = (dayIndex: number) => {
     const day = plan.days[dayIndex];
-    if (day.warmUp) {
-      setPendingDayIndex(dayIndex);
-      setShowWarmUpPrompt(true);
-    } else {
-      beginWorkout(dayIndex);
-    }
+    if (day.warmUp) { setPendingDayIndex(dayIndex); setShowWarmUpPrompt(true); }
+    else beginWorkout(dayIndex);
   };
 
   const beginWorkout = (dayIndex: number) => {
     startDayWorkout(plan, dayIndex);
-    setActiveDayIndex(dayIndex);
-    setIsActive(true);
-    setCurEx(0);
-    setCurSet(0);
-    setWeightInput("");
-    setShowWarmUpPrompt(false);
-    setPendingDayIndex(null);
+    setActiveDayIndex(dayIndex); setIsActive(true); setIsPaused(false);
+    setCurEx(0); setCurSet(0); setWeightInput("");
+    setShowWarmUpPrompt(false); setPendingDayIndex(null);
   };
 
   const handleCompleteReps = () => {
-    if (!curWE || !curExercise) return;
-    const w = curExercise.supportsWeight && weightInput ? parseFloat(weightInput) : null;
+    if (!curWE) return;
+    const w = curExData?.supportsWeight && weightInput ? parseFloat(weightInput) : null;
     completeSet(curEx, curSet, curWE.reps, null, w);
     advance();
   };
@@ -82,35 +78,59 @@ function PlanContent() {
   const advance = () => {
     if (!activeDay || !curWE) return;
     if (curSet < curWE.sets - 1) {
-      setShowRest(true);
-      setCurSet((s) => s + 1);
-      setWeightInput("");
+      setShowRest(true); setCurSet((s) => s + 1); setWeightInput("");
     } else if (curEx < activeDay.exercises.length - 1) {
-      setShowRest(true);
-      setCurEx((e) => e + 1);
-      setCurSet(0);
-      setWeightInput("");
+      setShowRest(true); setCurEx((e) => e + 1); setCurSet(0); setWeightInput("");
     } else {
-      finishWorkout();
-      setIsActive(false);
-      router.push("/progress");
+      finishWorkout(); setIsActive(false); router.push("/progress");
     }
   };
 
   const handleCancel = () => { cancelWorkout(); setIsActive(false); };
 
+  // Helper to render an exercise row (handles both real exercises and conditioning)
+  const renderExerciseRow = (we: typeof plan.days[0]["exercises"][0], idx: number, showManualEntry?: boolean) => {
+    const ex = getExerciseById(we.exerciseId);
+    const yoga = getYogaPoseById(we.exerciseId);
+    const isCond = we.exerciseId.startsWith("cond-");
+    const name = ex?.name || yoga?.name || we.progressionLevel?.replace("🔧 ", "") || "Exercise";
+    const image = ex?.image || yoga?.image || "🔧";
+
+    return (
+      <div key={`${we.exerciseId}-${idx}`} className="glass rounded-xl p-3 mb-2">
+        <div className="flex items-center gap-3">
+          {ex ? (
+            <button onClick={(e) => { e.stopPropagation(); setSelectedExercise(ex); }} className="flex-shrink-0">
+              <ExerciseCard exercise={ex} compact />
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 flex-1">
+              <span className="text-xl">{image}</span>
+              <div>
+                <p className="text-white font-bold text-sm">{name}</p>
+                {isCond && <span className="text-xs text-yellow-400">conditioning</span>}
+                {yoga && <span className="text-xs text-purple-400">{yoga.sanskrit}</span>}
+              </div>
+            </div>
+          )}
+          <div className="text-right text-xs text-gray-400 flex-shrink-0 ml-auto">
+            <p className="text-white font-semibold">{we.sets} × {we.holdSeconds ? `${we.holdSeconds}s` : we.reps}</p>
+            {we.progressionLevel && <p className="text-brand-400 text-[10px]">{we.progressionLevel}</p>}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Warm-up prompt
   if (showWarmUpPrompt && pendingDayIndex !== null) {
-    const warmUpDay = plan.days[pendingDayIndex];
-    const warmUp = warmUpDay.warmUp;
+    const warmUp = plan.days[pendingDayIndex].warmUp;
     return (
       <div className="max-w-lg mx-auto px-4 pt-8">
         <div className="text-center mb-6">
           <span className="text-5xl mb-4 block">🔥</span>
           <h2 className="text-2xl font-extrabold text-white mb-2">Warm Up First?</h2>
-          <p className="text-gray-400 text-sm">A proper warm-up reduces injury risk and improves performance</p>
         </div>
-
         {warmUp && (
           <div className="glass rounded-2xl p-5 mb-6">
             <h3 className="text-white font-bold mb-1">{warmUp.name}</h3>
@@ -125,30 +145,43 @@ function PlanContent() {
             </ul>
           </div>
         )}
-
         <div className="space-y-3">
-          <button onClick={() => beginWorkout(pendingDayIndex)} className="w-full py-4 bg-brand-500 text-white rounded-2xl font-bold text-lg hover:bg-brand-600 transition-colors">
-            ✅ Done Warming Up — Start Workout
-          </button>
-          <button onClick={() => beginWorkout(pendingDayIndex)} className="w-full py-3 bg-gray-800 text-gray-400 rounded-2xl font-medium hover:bg-gray-700 transition-colors">
-            Skip Warm-Up →
-          </button>
+          <button onClick={() => beginWorkout(pendingDayIndex)} className="w-full py-4 bg-brand-500 text-white rounded-2xl font-bold text-lg">✅ Start Workout</button>
+          <button onClick={() => beginWorkout(pendingDayIndex)} className="w-full py-3 bg-gray-800 text-gray-400 rounded-2xl font-medium">Skip Warm-Up →</button>
         </div>
       </div>
     );
   }
 
-  // Active workout
-  if (isActive && activeWorkout && curExercise && curWE && activeDay) {
+  // Active workout (paused state)
+  if (isActive && isPaused && activeDay) {
+    return (
+      <div className="max-w-lg mx-auto px-4 pt-8">
+        <div className="text-center mb-6">
+          <span className="text-4xl mb-3 block">⏸️</span>
+          <h2 className="text-xl font-extrabold text-white mb-1">Workout Paused</h2>
+          <p className="text-gray-400 text-sm">Take your time. Resume when ready.</p>
+        </div>
+        <div className="space-y-3">
+          <button onClick={() => setIsPaused(false)} className="w-full py-4 bg-brand-500 text-white rounded-2xl font-bold text-lg">▶ Resume Workout</button>
+          <button onClick={handleCancel} className="w-full py-3 bg-gray-800 text-gray-400 rounded-2xl font-medium">End Workout</button>
+        </div>
+      </div>
+    );
+  }
+
+  // Active workout (running)
+  if (isActive && activeWorkout && curWE && activeDay) {
     const totalSets = activeDay.exercises.reduce((s, e) => s + e.sets, 0);
     const doneSets = activeWorkout.exercises.reduce((s, e) => s + e.sets.filter((x) => x.completed).length, 0);
+    const isHold = curExData?.isHold || curWE.holdSeconds;
 
     return (
       <div className="max-w-lg mx-auto px-4 pt-8">
         {showRest && <RestTimer seconds={curWE.restSeconds} onComplete={() => setShowRest(false)} />}
         <div className="mb-6">
           <div className="flex justify-between text-sm text-gray-400 mb-2">
-            <span>{activeDay.name}</span>
+            <span>Exercise {curEx + 1}/{activeDay.exercises.length}</span>
             <span>{doneSets}/{totalSets} sets</span>
           </div>
           <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
@@ -156,37 +189,37 @@ function PlanContent() {
           </div>
         </div>
 
-        <div className="text-center mb-2">
-          <div className="flex justify-center mb-3">
-            <ExerciseAnimation exerciseId={curExercise.id} size={140} />
-          </div>
-          <h2 className="text-2xl font-bold text-white">{curExercise.name}</h2>
+        <div className="text-center mb-4">
+          {curExData && <div className="flex justify-center mb-3"><ExerciseAnimation exerciseId={curExData.id} size={120} /></div>}
+          {!curExData && <span className="text-5xl mb-3 block">{curImage}</span>}
+          <h2 className="text-xl font-bold text-white">{curName}</h2>
           <p className="text-gray-400 text-sm">Set {curSet + 1} of {curWE.sets}</p>
-          {curWE.progressionLevel && <span className="inline-block mt-2 text-xs bg-brand-500/20 text-brand-400 px-3 py-1 rounded-full">{curWE.progressionLevel}</span>}
+          {curWE.progressionLevel && <p className="text-brand-400 text-xs mt-1">{curWE.progressionLevel}</p>}
         </div>
 
-        {curExercise.isHold && curWE.holdSeconds ? (
-          <div className="flex flex-col items-center mt-4">
+        {isHold && curWE.holdSeconds ? (
+          <div className="flex flex-col items-center mt-2">
             <Timer targetSeconds={curWE.holdSeconds} onComplete={handleCompleteHold} label={`Hold for ${curWE.holdSeconds}s`} setNumber={curSet + curEx * 100} />
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-4 mt-4">
-            <div className="bg-gray-800/50 rounded-2xl p-6 text-center w-full">
-              <p className="text-5xl font-bold text-white mb-1">{curWE.reps}</p>
-              <p className="text-gray-400">reps</p>
+          <div className="flex flex-col items-center gap-4 mt-2">
+            <div className="bg-gray-800/50 rounded-2xl p-5 text-center w-full">
+              <p className="text-4xl font-bold text-white mb-1">{curWE.reps}</p>
+              <p className="text-gray-400 text-sm">reps</p>
             </div>
-            {curExercise.supportsWeight && (
+            {curExData?.supportsWeight && (
               <div className="w-full">
-                <label className="text-xs text-gray-400 mb-1 block">Added weight (kg) — optional</label>
-                <input type="number" value={weightInput} onChange={(e) => setWeightInput(e.target.value)} placeholder="0" className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl text-white text-center text-lg font-mono focus:border-brand-500 focus:outline-none" />
+                <label className="text-xs text-gray-400 mb-1 block">Added weight (kg)</label>
+                <input type="number" value={weightInput} onChange={(e) => setWeightInput(e.target.value)} placeholder="0" className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl text-white text-center font-mono focus:border-brand-500 focus:outline-none" />
               </div>
             )}
-            <button onClick={handleCompleteReps} className="w-full py-4 bg-brand-500 text-white rounded-2xl font-bold text-lg hover:bg-brand-600 transition-colors">
-              Complete Set ✓
-            </button>
+            <button onClick={handleCompleteReps} className="w-full py-4 bg-brand-500 text-white rounded-2xl font-bold text-lg hover:bg-brand-600">Complete Set ✓</button>
           </div>
         )}
-        <button onClick={handleCancel} className="w-full mt-4 py-3 bg-gray-800 text-gray-400 rounded-2xl font-medium hover:bg-gray-700 transition-colors">Cancel Workout</button>
+        <div className="flex gap-3 mt-4">
+          <button onClick={() => setIsPaused(true)} className="flex-1 py-3 bg-gray-800 text-gray-400 rounded-2xl font-medium">⏸ Pause</button>
+          <button onClick={handleCancel} className="flex-1 py-3 bg-gray-800 text-red-400 rounded-2xl font-medium">✕ End</button>
+        </div>
       </div>
     );
   }
@@ -198,29 +231,26 @@ function PlanContent() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-white mb-2">{plan.name}</h1>
         <p className="text-gray-400 text-sm mb-1">{plan.description}</p>
-        <p className="text-brand-400 text-sm font-medium">Goal: {plan.goal}</p>
+        <p className="text-brand-400 text-sm font-medium">{plan.goal}</p>
       </div>
 
-      {/* Today's Workout Quick Start */}
+      {/* Today's Quick Start */}
       {todayDay && !todayDay.isRest && (
         <div className="mb-6 glass rounded-2xl p-5 border-2 border-brand-500/40">
           <p className="text-xs text-brand-400 font-bold uppercase tracking-wider mb-1">Today — {todayDay.day}</p>
-          <h2 className="text-xl font-extrabold text-white mb-1">{todayDay.name}</h2>
-          {todayDay.focus && <p className="text-gray-400 text-xs mb-3">{todayDay.focus}</p>}
-          <button onClick={() => handleStart(todayIndex)} className="w-full py-3 bg-brand-500 text-white rounded-xl font-bold hover:bg-brand-600 transition-colors">
-            Start Today&apos;s Workout 🚀
-          </button>
+          <h2 className="text-lg font-extrabold text-white mb-1">{todayDay.name}</h2>
+          <p className="text-gray-400 text-xs mb-3">{todayDay.exercises.length} exercises</p>
+          <button onClick={() => handleStart(todayIndex)} className="w-full py-3 bg-brand-500 text-white rounded-xl font-bold hover:bg-brand-600">Start Workout 🚀</button>
         </div>
       )}
       {todayDay && todayDay.isRest && (
         <div className="mb-6 glass rounded-2xl p-5 border-2 border-gray-600/40">
           <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Today — {todayDay.day}</p>
-          <h2 className="text-lg font-bold text-white mb-1">😴 Rest & Recovery</h2>
-          <p className="text-gray-400 text-xs">Take it easy! Check out the suggested activities below.</p>
+          <p className="text-lg font-bold text-white">😴 Rest Day</p>
         </div>
       )}
 
-      <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Full Week Overview</h3>
+      <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Full Week</h3>
       <div className="space-y-3 mb-8">
         {plan.days.map((day, i) => (
           <div key={i} className={`rounded-xl border transition-all ${day.isRest ? "bg-gray-800/30 border-gray-700/30 p-4" : selectedDay === i ? "bg-gray-800 border-brand-500/50 p-4" : "bg-gray-800/50 border-gray-700/50 p-4 hover:bg-gray-800/70 cursor-pointer"}`} onClick={() => !day.isRest && setSelectedDay(selectedDay === i ? null : i)}>
@@ -231,7 +261,6 @@ function PlanContent() {
               </div>
               {day.isRest ? <span className="text-xs text-gray-500">😴</span> : <span className="text-xs text-gray-400">{day.exercises.length} ex {selectedDay === i ? "▲" : "▼"}</span>}
             </div>
-            {day.focus && !day.isRest && <p className="text-xs text-gray-400 mt-1 ml-10">{day.focus}</p>}
             {day.isRest && day.restDayActivities && (
               <div className="mt-3 space-y-2">
                 {day.restDayActivities.map((act, ai) => (
@@ -242,35 +271,22 @@ function PlanContent() {
                 ))}
               </div>
             )}
+
             {selectedDay === i && !day.isRest && (
               <div className="mt-4 pt-4 border-t border-gray-700/50">
                 {day.warmUp && (
                   <div className="mb-4 bg-orange-500/10 border border-orange-500/20 rounded-xl p-3">
                     <p className="text-orange-400 text-xs font-bold mb-1">🔥 {day.warmUp.name} ({day.warmUp.duration})</p>
                     <ul className="space-y-1">
-                      {day.warmUp.exercises.map((w, wi) => (
-                        <li key={wi} className="text-gray-400 text-xs">• {w}</li>
-                      ))}
+                      {day.warmUp.exercises.map((w, wi) => <li key={wi} className="text-gray-400 text-xs">• {w}</li>)}
                     </ul>
                   </div>
                 )}
-                <div className="space-y-2 mb-4">
-                  {day.exercises.map((we, ei) => {
-                    const ex = getExerciseById(we.exerciseId);
-                    if (!ex) return null;
-                    return (
-                      <div key={`${we.exerciseId}-${ei}`} className="flex items-center gap-3">
-                        <span className="text-gray-500 font-mono text-xs w-5">{ei + 1}.</span>
-                        <button onClick={(e) => { e.stopPropagation(); setSelectedExercise(ex); }} className="flex-1"><ExerciseCard exercise={ex} compact /></button>
-                        <div className="text-right text-xs text-gray-400 flex-shrink-0">
-                          <p className="text-white font-semibold">{we.sets} × {we.holdSeconds ? `${we.holdSeconds}s` : we.reps}</p>
-                          {we.progressionLevel && <p className="text-brand-400">{we.progressionLevel}</p>}
-                        </div>
-                      </div>
-                    );
-                  })}
+                {/* Exercise list — no numbering */}
+                <div className="mb-4">
+                  {day.exercises.map((we, ei) => renderExerciseRow(we, ei))}
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); handleStart(i); }} className="w-full py-3 bg-brand-500 text-white rounded-xl font-bold hover:bg-brand-600 transition-colors">Start {day.name} 🚀</button>
+                <button onClick={(e) => { e.stopPropagation(); handleStart(i); }} className="w-full py-3 bg-brand-500 text-white rounded-xl font-bold hover:bg-brand-600">Start {day.name} 🚀</button>
               </div>
             )}
           </div>
