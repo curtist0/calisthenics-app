@@ -70,6 +70,7 @@ To get a shareable link or custom `.com` domain, deploy to [Vercel](https://verc
 4. Click **Deploy** — you'll get a live URL like `calitrack.vercel.app`
 5. Optionally, connect a custom domain (e.g., `calitrack.com`) in Vercel's domain settings
 
+Open **(https://calisthenics-tracker-xi.vercel.app/onboarding)** in your browser.
 ## Scripts
 
 | Command | Description |
