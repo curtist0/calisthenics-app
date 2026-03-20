@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { exercises, getExerciseById } from "@/data/exercises";
-import { yogaPoses } from "@/data/yoga";
 import { useWorkout } from "@/context/WorkoutContext";
-import { generateWeeklyPlan } from "@/lib/planGenerator";
+import { generateWeeklyPlan, generateYogaPlanFromGoal } from "@/lib/planGenerator";
 import PageBackground from "@/components/PageBackground";
 import ExerciseIllustration from "@/components/ExerciseIllustration";
 import Link from "next/link";
@@ -50,59 +49,69 @@ function getExerciseRelevantLevel(ex: Exercise, skillLevels: Record<string, stri
   });
   if (ex.id.includes("handstand") || ex.id.includes("crow") || ex.id.includes("flag")) cats.push("balance");
   if (ex.id.includes("lever") || ex.id.includes("planche") || ex.id.includes("l-sit") || ex.id.includes("v-sit")) cats.push("balance");
-
   const uniqueCats = [...new Set(cats)];
   let maxLevel = 0;
-  for (const cat of uniqueCats) {
-    const lvl = skillLevels[cat] || "beginner";
-    maxLevel = Math.max(maxLevel, diffOrder[lvl] || 0);
-  }
+  for (const cat of uniqueCats) { maxLevel = Math.max(maxLevel, diffOrder[skillLevels[cat] || "beginner"] || 0); }
   return maxLevel;
 }
 
+const yogaGoalPresets = [
+  { label: "Improve overall flexibility", icon: "🧘" },
+  { label: "Achieve the splits", icon: "🤸" },
+  { label: "Reduce stress & anxiety", icon: "😌" },
+  { label: "Better sleep", icon: "😴" },
+  { label: "Improve balance & coordination", icon: "⚖️" },
+  { label: "Fix posture", icon: "🧍" },
+  { label: "Morning energy boost", icon: "☀️" },
+  { label: "Deep backbend flexibility", icon: "🔄" },
+];
+
 export default function WorkoutsPage() {
   const { savedPlans, addPlan, removePlan, profile } = useWorkout();
-  const [view, setView] = useState<"library" | "type" | "pick" | "goal">("library");
+  const [view, setView] = useState<"library" | "type" | "pick" | "goal" | "yoga-goal">("library");
   const [workoutType, setWorkoutType] = useState<"calisthenics" | "flexibility" | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [selectedGoal, setSelectedGoal] = useState<TrainingGoal>("balanced");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [showAdvancedYoga, setShowAdvancedYoga] = useState(false);
+  const [showMore, setShowMore] = useState(false);
+  const [yogaGoalText, setYogaGoalText] = useState("");
+  const [yogaDuration, setYogaDuration] = useState(60);
 
   useEffect(() => { if (savedPlans.length === 0) setView("type"); }, [savedPlans.length]);
 
   const yogaUnlocked = profile?.yogaSetUp ?? false;
   const skillLevels = profile?.skillLevels ?? { push: "beginner", pull: "beginner", legs: "beginner", core: "beginner", balance: "beginner", flexibility: "beginner" };
 
+  // Sort skills: recommended first, then by proximity to mastery (next level → already mastered → far away)
   const recommended: Exercise[] = [];
-  const advanced: Exercise[] = [];
+  const others: Exercise[] = [];
   for (const ex of skillExercises) {
     const userLvl = getExerciseRelevantLevel(ex, skillLevels as unknown as Record<string, string>);
     if (diffOrder[ex.difficulty] <= userLvl + 1) recommended.push(ex);
-    else advanced.push(ex);
+    else others.push(ex);
   }
   recommended.sort((a, b) => diffOrder[a.difficulty] - diffOrder[b.difficulty]);
-  advanced.sort((a, b) => diffOrder[a.difficulty] - diffOrder[b.difficulty]);
-
-  const flexLevel = diffOrder[skillLevels.flexibility] || 0;
-  const balanceLevel = diffOrder[skillLevels.balance] || 0;
-  const yogaMaxLevel = Math.max(flexLevel, balanceLevel);
-  const recommendedYoga = yogaPoses.filter((p) => diffOrder[p.difficulty] <= yogaMaxLevel + 1);
-  const advancedYoga = yogaPoses.filter((p) => diffOrder[p.difficulty] > yogaMaxLevel + 1);
+  // Sort others: closest to user level first, farthest last
+  const userOverallLevel = diffOrder[profile?.overallLevel || "beginner"];
+  others.sort((a, b) => {
+    const distA = Math.abs(diffOrder[a.difficulty] - userOverallLevel);
+    const distB = Math.abs(diffOrder[b.difficulty] - userOverallLevel);
+    return distA - distB;
+  });
 
   const toggle = (id: string) => { setSelected((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; }); };
 
-  const handleGenerate = () => {
+  const handleGenerateCalisthenics = () => {
     const ids = Array.from(selected);
     if (ids.length === 0) return;
-    const plan = generateWeeklyPlan(ids, workoutType === "flexibility" ? "balanced" : selectedGoal);
-    addPlan(plan);
-    setSelected(new Set());
-    setView("library");
-    setWorkoutType(null);
-    setShowAdvanced(false);
-    setShowAdvancedYoga(false);
+    addPlan(generateWeeklyPlan(ids, selectedGoal));
+    setSelected(new Set()); setView("library"); setWorkoutType(null); setShowMore(false);
+  };
+
+  const handleGenerateYoga = () => {
+    if (!yogaGoalText.trim()) return;
+    addPlan(generateYogaPlanFromGoal(yogaGoalText, yogaDuration));
+    setYogaGoalText(""); setView("library"); setWorkoutType(null);
   };
 
   const renderSkillButton = (ex: Exercise) => {
@@ -114,30 +123,9 @@ export default function WorkoutsPage() {
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-white text-sm">{ex.name}</h3>
           <span className={`text-xs font-medium capitalize ${diffText[ex.difficulty]}`}>{ex.difficulty}</span>
-          {endpoint && <p className="text-xs text-gray-500 mt-0.5">Leads to → <span className="text-brand-400">{endpoint}</span></p>}
+          {endpoint && <p className="text-xs text-gray-500 mt-0.5">→ <span className="text-brand-400">{endpoint}</span></p>}
         </div>
         <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSel ? "border-brand-500 bg-brand-500" : "border-gray-600"}`}>
-          {isSel && <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7L6 10L11 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-        </div>
-      </button>
-    );
-  };
-
-  const renderYogaButton = (pose: typeof yogaPoses[0]) => {
-    const isSel = selected.has(pose.id);
-    return (
-      <button key={pose.id} onClick={() => toggle(pose.id)} className={`w-full flex items-center gap-3 p-3 rounded-2xl border-2 transition-all text-left ${isSel ? "border-purple-500 bg-purple-500/10" : "border-gray-700/50 bg-gray-800/30 hover:bg-gray-800/50"}`}>
-        {pose.imageUrl ? (
-          <div className="w-12 h-12 rounded-xl overflow-hidden bg-white flex-shrink-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={pose.imageUrl} alt={pose.name} className="w-full h-full object-contain" loading="lazy" />
-          </div>
-        ) : <span className="text-2xl">{pose.image}</span>}
-        <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-white text-sm">{pose.name}</h3>
-          <span className={`text-xs font-medium capitalize ${diffText[pose.difficulty]}`}>{pose.difficulty}</span>
-        </div>
-        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSel ? "border-purple-500 bg-purple-500" : "border-gray-600"}`}>
           {isSel && <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7L6 10L11 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
         </div>
       </button>
@@ -150,15 +138,13 @@ export default function WorkoutsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-extrabold text-white">Workouts</h1>
-          <p className="text-gray-400 text-sm">
-            {view === "library" ? `${savedPlans.length} plan${savedPlans.length !== 1 ? "s" : ""}` : view === "type" ? "Choose type" : view === "pick" ? "Select exercises" : "Choose goal"}
-          </p>
+          <p className="text-gray-400 text-sm">{view === "library" ? `${savedPlans.length} plan${savedPlans.length !== 1 ? "s" : ""}` : view === "type" ? "Choose type" : view === "yoga-goal" ? "Yoga setup" : view === "pick" ? "Select skills" : "Choose goal"}</p>
         </div>
         {view === "library" ? (
-          <button onClick={() => setView("type")} className="px-4 py-2 bg-gray-800 text-gray-300 rounded-full text-sm font-medium hover:bg-gray-700">+ New Plan</button>
-        ) : (
-          savedPlans.length > 0 && <button onClick={() => { setView("library"); setWorkoutType(null); setSelected(new Set()); }} className="px-4 py-2 bg-gray-800 text-gray-300 rounded-full text-sm font-medium hover:bg-gray-700">My Plans</button>
-        )}
+          <button onClick={() => setView("type")} className="px-4 py-2 bg-gray-800 text-gray-300 rounded-full text-sm font-medium hover:bg-gray-700">+ New</button>
+        ) : savedPlans.length > 0 ? (
+          <button onClick={() => { setView("library"); setWorkoutType(null); setSelected(new Set()); setShowMore(false); }} className="px-4 py-2 bg-gray-800 text-gray-300 rounded-full text-sm font-medium">My Plans</button>
+        ) : null}
       </div>
 
       {/* Library */}
@@ -190,9 +176,7 @@ export default function WorkoutsPage() {
               </div>
             </div>
           ))}
-          {savedPlans.length === 0 && (
-            <div className="text-center py-12 glass rounded-2xl"><p className="text-4xl mb-3">📋</p><p className="text-gray-300 font-semibold">No plans yet</p></div>
-          )}
+          {savedPlans.length === 0 && <div className="text-center py-12 glass rounded-2xl"><p className="text-4xl mb-3">📋</p><p className="text-gray-300 font-semibold">No plans yet</p></div>}
         </div>
       )}
 
@@ -200,40 +184,70 @@ export default function WorkoutsPage() {
       {view === "type" && (
         <div className="space-y-4">
           <button onClick={() => { setWorkoutType("calisthenics"); setView("pick"); setSelected(new Set()); }} className="w-full glass rounded-2xl p-6 text-left hover:scale-[1.02] transition-all">
-            <div className="flex items-center gap-4">
-              <span className="text-4xl">💪</span>
-              <div><p className="text-white font-extrabold text-lg">Calisthenics</p><p className="text-gray-400 text-sm">Strength & skill progressions</p></div>
-            </div>
+            <div className="flex items-center gap-4"><span className="text-4xl">💪</span><div><p className="text-white font-extrabold text-lg">Calisthenics</p><p className="text-gray-400 text-sm">Strength & skill progressions</p></div></div>
           </button>
           {yogaUnlocked ? (
-            <button onClick={() => { setWorkoutType("flexibility"); setView("pick"); setSelected(new Set()); }} className="w-full glass rounded-2xl p-6 text-left hover:scale-[1.02] transition-all">
-              <div className="flex items-center gap-4">
-                <span className="text-4xl">🧘</span>
-                <div><p className="text-white font-extrabold text-lg">Flexibility & Yoga</p><p className="text-gray-400 text-sm">Work toward your desired poses</p></div>
-              </div>
+            <button onClick={() => { setWorkoutType("flexibility"); setView("yoga-goal"); }} className="w-full glass rounded-2xl p-6 text-left hover:scale-[1.02] transition-all">
+              <div className="flex items-center gap-4"><span className="text-4xl">🧘</span><div><p className="text-white font-extrabold text-lg">Yoga & Flexibility</p><p className="text-gray-400 text-sm">Custom yoga routine for your goals</p></div></div>
             </button>
           ) : (
-            <div className="w-full glass rounded-2xl p-6 opacity-50"><div className="flex items-center gap-4"><span className="text-4xl">🔒</span><div><p className="text-white font-bold text-lg">Flexibility & Yoga</p><p className="text-gray-400 text-sm">Set up yoga to unlock</p></div></div></div>
+            <div className="w-full glass rounded-2xl p-6 opacity-50"><div className="flex items-center gap-4"><span className="text-4xl">🔒</span><div><p className="text-white font-bold">Yoga</p><p className="text-gray-400 text-sm">Set up yoga to unlock</p></div></div></div>
           )}
         </div>
       )}
 
-      {/* Calisthenics Pick */}
+      {/* Yoga Goal Input */}
+      {view === "yoga-goal" && (
+        <div className="space-y-6">
+          <div>
+            <p className="text-white font-bold mb-3">What do you want from yoga?</p>
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              {yogaGoalPresets.map((p) => (
+                <button key={p.label} onClick={() => setYogaGoalText(p.label)}
+                  className={`p-3 rounded-xl text-left text-sm transition-all ${yogaGoalText === p.label ? "glass border-2 border-brand-500" : "glass border-2 border-transparent hover:border-gray-600"}`}>
+                  <span className="text-lg">{p.icon}</span>
+                  <p className="text-white font-medium mt-1 text-xs">{p.label}</p>
+                </button>
+              ))}
+            </div>
+            <input type="text" value={yogaGoalText} onChange={(e) => setYogaGoalText(e.target.value)} placeholder="Or type your own goal..." className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl text-white text-sm focus:border-brand-500 focus:outline-none" />
+          </div>
+
+          <div>
+            <p className="text-white font-bold mb-2">Session length</p>
+            <p className="text-gray-400 text-xs mb-3">How long would you like each yoga session?</p>
+            <div className="flex gap-2">
+              {[10, 20, 30, 45, 60].map((min) => (
+                <button key={min} onClick={() => setYogaDuration(min)}
+                  className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${yogaDuration === min ? "bg-brand-500 text-white" : "glass text-gray-300"}`}>
+                  {min}m
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button onClick={handleGenerateYoga} disabled={!yogaGoalText.trim()}
+            className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${yogaGoalText.trim() ? "bg-purple-500 text-white hover:bg-purple-600" : "bg-gray-800 text-gray-500 cursor-not-allowed"}`}>
+            Generate Yoga Routine 🧘
+          </button>
+        </div>
+      )}
+
+      {/* Calisthenics Skill Pick */}
       {view === "pick" && workoutType === "calisthenics" && (
         <>
-          <p className="text-xs text-gray-500 mb-1">Based on your push, pull, balance & core levels:</p>
-          <p className="text-gray-400 text-sm font-medium mb-3">Recommended for you ({recommended.length})</p>
+          <p className="text-gray-400 text-sm font-medium mb-3">Recommended for your level</p>
           <div className="space-y-2 mb-4">{recommended.map(renderSkillButton)}</div>
 
-          {advanced.length > 0 && (
+          {others.length > 0 && (
             <>
-              <button onClick={() => setShowAdvanced(!showAdvanced)} className="w-full py-3 glass rounded-xl text-sm font-medium text-gray-300 hover:text-white mb-2 flex items-center justify-center gap-2">
-                {showAdvanced ? "Hide" : "Show"} advanced skills ({advanced.length}) <span className="text-xs">{showAdvanced ? "▲" : "▼"}</span>
+              <button onClick={() => setShowMore(!showMore)} className="w-full py-3 glass rounded-xl text-sm font-medium text-gray-300 hover:text-white mb-2 flex items-center justify-center gap-2">
+                {showMore ? "Hide" : "Show"} more skills ({others.length}) <span className="text-xs">{showMore ? "▲" : "▼"}</span>
               </button>
-              {showAdvanced && (
+              {showMore && (
                 <div className="space-y-2 mb-4">
-                  <p className="text-xs text-yellow-400 mb-2">⚠️ Above your current level — progress at your own pace</p>
-                  {advanced.map(renderSkillButton)}
+                  <p className="text-xs text-gray-500 mb-1">Sorted by relevance — closest to your level first</p>
+                  {others.map(renderSkillButton)}
                 </div>
               )}
             </>
@@ -242,61 +256,29 @@ export default function WorkoutsPage() {
           <div className="sticky bottom-20 z-40 pb-2">
             <button onClick={() => { if (selected.size > 0) setView("goal"); }} disabled={selected.size === 0}
               className={`w-full py-4 rounded-2xl font-bold text-lg shadow-lg ${selected.size > 0 ? "bg-brand-500 text-white hover:bg-brand-600" : "bg-gray-800 text-gray-500 cursor-not-allowed"}`}>
-              {selected.size === 0 ? "Select skills to continue" : "Next: Choose Goal →"}
+              {selected.size === 0 ? "Select skills" : "Next: Choose Goal →"}
             </button>
           </div>
         </>
       )}
 
-      {/* Flexibility Pick — no goals */}
-      {view === "pick" && workoutType === "flexibility" && (
-        <>
-          <p className="text-xs text-gray-500 mb-1">Based on your flexibility & balance levels:</p>
-          <p className="text-gray-400 text-sm font-medium mb-3">Recommended for you ({recommendedYoga.length})</p>
-          <div className="space-y-2 mb-4">{recommendedYoga.map(renderYogaButton)}</div>
-
-          {advancedYoga.length > 0 && (
-            <>
-              <button onClick={() => setShowAdvancedYoga(!showAdvancedYoga)} className="w-full py-3 glass rounded-xl text-sm font-medium text-gray-300 hover:text-white mb-2 flex items-center justify-center gap-2">
-                {showAdvancedYoga ? "Hide" : "Show"} advanced poses ({advancedYoga.length}) <span className="text-xs">{showAdvancedYoga ? "▲" : "▼"}</span>
-              </button>
-              {showAdvancedYoga && (
-                <div className="space-y-2 mb-4">
-                  <p className="text-xs text-yellow-400 mb-2">⚠️ Above your current flexibility/balance level</p>
-                  {advancedYoga.map(renderYogaButton)}
-                </div>
-              )}
-            </>
-          )}
-
-          <div className="sticky bottom-20 z-40 pb-2">
-            <button onClick={handleGenerate} disabled={selected.size === 0}
-              className={`w-full py-4 rounded-2xl font-bold text-lg shadow-lg ${selected.size > 0 ? "bg-purple-500 text-white hover:bg-purple-600" : "bg-gray-800 text-gray-500 cursor-not-allowed"}`}>
-              {selected.size === 0 ? "Select poses to continue" : "Generate Yoga Plan 🧘"}
-            </button>
-          </div>
-        </>
-      )}
-
-      {/* Goal Selection (calisthenics only) */}
+      {/* Goal Selection */}
       {view === "goal" && (
         <>
           <p className="text-gray-400 text-sm mb-4">How should your plan be optimized?</p>
           <div className="space-y-3 mb-6">
             {goalOptions.map((g) => (
               <button key={g.value} onClick={() => setSelectedGoal(g.value)}
-                className={`w-full p-4 rounded-2xl text-left flex items-center gap-4 border-2 ${
-                  selectedGoal === g.value ? "border-brand-500 bg-brand-500/10 glass" : "border-transparent glass hover:border-gray-600"
-                }`}>
+                className={`w-full p-4 rounded-2xl text-left flex items-center gap-4 border-2 ${selectedGoal === g.value ? "border-brand-500 bg-brand-500/10 glass" : "border-transparent glass hover:border-gray-600"}`}>
                 <span className="text-2xl">{g.icon}</span>
                 <p className="text-white font-bold">{g.label}</p>
-                {selectedGoal === g.value && <span className="ml-auto text-brand-400 text-sm">✓</span>}
+                {selectedGoal === g.value && <span className="ml-auto text-brand-400">✓</span>}
               </button>
             ))}
           </div>
           <div className="flex gap-3 sticky bottom-20 z-40 pb-2">
             <button onClick={() => setView("pick")} className="px-6 py-4 bg-gray-800 text-gray-300 rounded-2xl font-bold">← Back</button>
-            <button onClick={handleGenerate} className="flex-1 py-4 bg-brand-500 text-white rounded-2xl font-bold text-lg hover:bg-brand-600 shadow-lg">Generate Plan 🚀</button>
+            <button onClick={handleGenerateCalisthenics} className="flex-1 py-4 bg-brand-500 text-white rounded-2xl font-bold text-lg hover:bg-brand-600">Generate Plan 🚀</button>
           </div>
         </>
       )}
