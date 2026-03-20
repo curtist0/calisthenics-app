@@ -52,13 +52,54 @@ function getRestDayActivities(dayIndex: number): RestDayActivity[] {
     const flows = [
       { name: "Hip Opening Flow", description: "Deep hip stretches", duration: "15 min", type: "yoga" as const, yogaPoseIds: ["pigeon", "seated-straddle", "half-splits", "childs", "savasana"] },
       { name: "Spine & Back Flow", description: "Backbends and twists", duration: "12 min", type: "yoga" as const, yogaPoseIds: ["cobra", "bridge", "forward-fold", "childs", "legs-up-wall"] },
+      { name: "Shoulders & Chest Flow", description: "Open the front body", duration: "12 min", type: "yoga" as const, yogaPoseIds: ["eagle", "dolphin", "cobra", "bridge", "childs"] },
+      { name: "Legs & Hamstrings Flow", description: "Standing and seated leg length", duration: "14 min", type: "yoga" as const, yogaPoseIds: ["forward-fold", "half-splits", "warrior1", "warrior2", "savasana"] },
+      { name: "Calm Evening Flow", description: "Gentle twists and legs up", duration: "10 min", type: "yoga" as const, yogaPoseIds: ["supine-twist", "happy-baby", "legs-up-wall", "childs", "savasana"] },
     ];
     acts.push(flows[dayIndex % flows.length]);
   }
-  acts.push({ name: "Light Walk", description: "20–30 min easy walk", duration: "20-30 min", type: "light-cardio" });
-  acts.push({ name: "Mobility Work", description: "Joint circles, foam rolling", duration: "10 min", type: "mobility" });
+  const walkVariants = [
+    { name: "Light Walk", description: "20–30 min easy walk", duration: "20-30 min", type: "light-cardio" as const },
+    { name: "Easy Bike or Walk", description: "Low-intensity movement", duration: "15-25 min", type: "light-cardio" as const },
+    { name: "Nature Walk", description: "Easy pace, nasal breathing", duration: "25-35 min", type: "light-cardio" as const },
+  ];
+  acts.push(walkVariants[dayIndex % walkVariants.length]);
+  const mobilityVariants = [
+    { name: "Mobility Work", description: "Joint circles, foam rolling", duration: "10 min", type: "mobility" as const },
+    { name: "Dynamic Mobility", description: "Leg swings, thoracic rotations, ankle rocks", duration: "12 min", type: "mobility" as const },
+    { name: "Gentle Stretching", description: "Easy full-body stretches", duration: "8 min", type: "mobility" as const },
+  ];
+  acts.push(mobilityVariants[(dayIndex + 1) % mobilityVariants.length]);
   return acts;
 }
+
+function mulberry32(seed: number) {
+  return function next() {
+    let t = (seed += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function seededShuffle<T>(arr: T[], seed: number): T[] {
+  const rng = mulberry32(seed);
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+const calisthenicsWarmUpVariants: WarmUp[] = [
+  { name: "Warm-Up", duration: "5 min", exercises: ["Jumping jacks × 20", "Arm circles × 10 each", "Leg swings × 10 each", "Wrist circles × 20", "Air squats × 10"] },
+  { name: "Pulse Warm-Up", duration: "5 min", exercises: ["High knees × 20", "Shoulder rolls × 10", "Hip circles × 8 each way", "Scap push-ups × 10", "Bodyweight squats × 12"] },
+  { name: "Mobility First", duration: "5 min", exercises: ["Cat-cow × 10", "World’s greatest stretch × 5 each side", "Band pull-aparts × 15", "Dead bug × 8 each side", "Glute bridge × 12"] },
+  { name: "Upper-Body Prep", duration: "5 min", exercises: ["Arm circles × 12", "Wall slides × 12", "Scapular dips × 10", "Plank shoulder taps × 10 each", "Push-up negatives × 5"] },
+  { name: "Lower-Body Prep", duration: "5 min", exercises: ["Ankle rocks × 10 each", "Cossack squat × 5 each", "Walking lunges × 8 each leg", "Single-leg RDL × 6 each", "Calf raises × 15"] },
+  { name: "Full-Body Wake-Up", duration: "5 min", exercises: ["Burpees × 5 (easy)", "Inchworms × 6", "Bear crawl × 20 steps", "Jump rope or shadow skip × 30s", "Torso twists × 10 each"] },
+];
 
 // ─── CALISTHENICS PLAN ───
 
@@ -124,15 +165,30 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
   const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   const slots = trainingDays === 3 ? [0, 2, 4] : trainingDays === 4 ? [0, 1, 3, 4] : trainingDays === 5 ? [0, 1, 2, 4, 5] : [0, 1, 2, 3, 4, 5];
   const themes = ["Skill & Strength", "Volume & Endurance", "Conditioning", "Power", "Active Recovery", "Full Body"];
-  const warmUp: WarmUp = { name: "Warm-Up", duration: "5 min", exercises: ["Jumping jacks × 20", "Arm circles × 10 each", "Leg swings × 10 each", "Wrist circles × 20", "Air squats × 10"] };
+  const focusHints = ["Main lifts & holds", "Higher reps, controlled tempo", "Circuits & core", "Explosive & tight rest", "Easy pace & form", "Balanced push/pull"];
+
+  const perDayPool: WorkoutExercise[][] = Array.from({ length: trainingDays }, () => []);
+  for (let i = 0; i < workoutExercises.length; i++) {
+    perDayPool[i % trainingDays].push(workoutExercises[i]);
+  }
+  const planSeed = Date.now() % 100000;
+  perDayPool.forEach((list, di) => {
+    perDayPool[di] = seededShuffle(list, planSeed + di * 997);
+  });
 
   const days: DayWorkout[] = [];
   let ti = 0;
   for (let i = 0; i < 7; i++) {
     if (slots.includes(i) && ti < trainingDays) {
+      const dayExercises = perDayPool[ti];
+      const warmUp = calisthenicsWarmUpVariants[(ti + planSeed) % calisthenicsWarmUpVariants.length];
       days.push({
-        day: dayNames[i], name: themes[ti % themes.length], isRest: false,
-        focus: `${workoutExercises.length} exercises`, exercises: workoutExercises, warmUp,
+        day: dayNames[i],
+        name: `${themes[ti % themes.length]} (${dayExercises.length} moves)`,
+        isRest: false,
+        focus: `${focusHints[ti % focusHints.length]} — ${dayExercises.length} exercises`,
+        exercises: dayExercises,
+        warmUp,
       });
       ti++;
     } else {
@@ -141,12 +197,13 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
   }
 
   const goalLabel = { muscle: "Build Muscle", skills: "Master Skills", "weight-loss": "Lose Weight", endurance: "Build Endurance", balanced: "Balanced" }[goal];
+  const weeklyExerciseSlots = days.filter((d) => !d.isRest).reduce((s, d) => s + d.exercises.length, 0);
   return {
     id: `plan-${Date.now()}`, name: selectedSkillIds.length === 1 ? `${targetNames[0]} Program` : "Multi-Skill Program",
     description: `${goalLabel} — progressing toward: ${targetNames.join(", ")}`,
     difficulty: "intermediate", goal: `${goalLabel}: ${targetNames.join(", ")}`,
     trainingGoal: goal, targetSkills: selectedSkillIds, days,
-    estimatedWeeklyMinutes: workoutExercises.length * 5 * trainingDays, createdAt: new Date().toISOString(),
+    estimatedWeeklyMinutes: Math.round(weeklyExerciseSlots * 5), createdAt: new Date().toISOString(),
   };
 }
 
@@ -223,21 +280,25 @@ function generateYogaPlanInternal(goalText: string, duration: number, specificPo
   const warmUpPoses = ["childs", "cobra", "bridge"];
   const coolDownPoses = ["supine-twist", "happy-baby", "legs-up-wall", "savasana"].filter((id) => getYogaPoseById(id));
 
+  const yogaSeed = dur * 7919 + allPoses.length * 13;
   const days: DayWorkout[] = dayNames.map((day, i) => {
     if (i === 3 || i === 6) {
       return { day, name: "Rest", isRest: true, exercises: [], restDayActivities: getRestDayActivities(i) };
     }
 
     const session = sessionTypes[i % sessionTypes.length];
-    // Build session: warm-up poses + main poses + cool-down
     const mainCount = Math.max(3, posesPerSession - warmUpPoses.length - coolDownPoses.length);
-    const shuffled = [...allPoses].sort(() => Math.random() - 0.5 + (i * 0.1)); // Slight variation per day
-    const mainPoses = shuffled.slice(0, mainCount);
+    const shuffled = seededShuffle(allPoses, yogaSeed + i * 104729);
+    const start = allPoses.length <= mainCount ? 0 : (i * 11) % Math.max(1, shuffled.length - mainCount);
+    const doubled = shuffled.length >= mainCount ? [...shuffled, ...shuffled] : [...shuffled, ...shuffled, ...shuffled];
+    const mainPoses = doubled.slice(start, start + mainCount);
     const sessionPoses = [...new Set([...warmUpPoses, ...mainPoses, ...coolDownPoses])].filter((id) => getYogaPoseById(id));
 
     return {
-      day, name: `${session.name} (${dur} min)`, isRest: false,
-      focus: `${focusMuscles.slice(0, 3).join(", ")} focus`,
+      day,
+      name: `${session.name} · Day ${i + 1} (${dur} min)`,
+      isRest: false,
+      focus: `${focusMuscles.slice(0, 3).join(", ")} — varied sequence`,
       exercises: sessionPoses.map((id) => {
         const pose = getYogaPoseById(id);
         return {
@@ -246,7 +307,6 @@ function generateYogaPlanInternal(goalText: string, duration: number, specificPo
           restSeconds: 5, progressionLevel: specificPoseIds?.includes(id) ? "🎯 Target" : undefined,
         };
       }),
-      // Warm-up is built INTO the session (first poses are warm-up)
     };
   });
 

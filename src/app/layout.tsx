@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
+import WorkoutResumeBar from "@/components/WorkoutResumeBar";
 import { WorkoutProvider } from "@/context/WorkoutContext";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -17,6 +18,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className={`${inter.className} antialiased`}>
         <WorkoutProvider>
           <main className="min-h-screen pb-20">{children}</main>
+          <WorkoutResumeBar />
           <Navigation />
         </WorkoutProvider>
       </body>

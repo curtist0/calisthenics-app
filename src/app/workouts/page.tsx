@@ -39,22 +39,6 @@ const skillExercises = exercises.filter(
   (e) => e.category === "skill" || e.id === "handstand-push-up" || e.id === "pistol-squat" || e.id === "dragon-flag"
 );
 
-function getExerciseRelevantLevel(ex: Exercise, skillLevels: Record<string, string>): number {
-  const cats: string[] = ex.muscles.map((m) => {
-    if (["chest", "shoulders", "triceps"].includes(m)) return "push";
-    if (["back", "biceps"].includes(m)) return "pull";
-    if (["quads", "hamstrings", "glutes", "calves"].includes(m)) return "legs";
-    if (m === "core") return "core";
-    return "push";
-  });
-  if (ex.id.includes("handstand") || ex.id.includes("crow") || ex.id.includes("flag")) cats.push("balance");
-  if (ex.id.includes("lever") || ex.id.includes("planche") || ex.id.includes("l-sit") || ex.id.includes("v-sit")) cats.push("balance");
-  const uniqueCats = [...new Set(cats)];
-  let maxLevel = 0;
-  for (const cat of uniqueCats) { maxLevel = Math.max(maxLevel, diffOrder[skillLevels[cat] || "beginner"] || 0); }
-  return maxLevel;
-}
-
 const yogaGoalPresets = [
   { label: "Improve overall flexibility", icon: "🧘" },
   { label: "Achieve the splits", icon: "🤸" },
@@ -80,24 +64,16 @@ export default function WorkoutsPage() {
   useEffect(() => { if (savedPlans.length === 0) setView("type"); }, [savedPlans.length]);
 
   const yogaUnlocked = profile?.yogaSetUp ?? false;
-  const skillLevels = profile?.skillLevels ?? { push: "beginner", pull: "beginner", legs: "beginner", core: "beginner", balance: "beginner", flexibility: "beginner" };
 
-  // Sort skills: recommended first, then by proximity to mastery (next level → already mastered → far away)
-  const recommended: Exercise[] = [];
-  const others: Exercise[] = [];
-  for (const ex of skillExercises) {
-    const userLvl = getExerciseRelevantLevel(ex, skillLevels as unknown as Record<string, string>);
-    if (diffOrder[ex.difficulty] <= userLvl + 1) recommended.push(ex);
-    else others.push(ex);
-  }
-  recommended.sort((a, b) => diffOrder[a.difficulty] - diffOrder[b.difficulty]);
-  // Sort others: closest to user level first, farthest last
-  const userOverallLevel = diffOrder[profile?.overallLevel || "beginner"];
-  others.sort((a, b) => {
-    const distA = Math.abs(diffOrder[a.difficulty] - userOverallLevel);
-    const distB = Math.abs(diffOrder[b.difficulty] - userOverallLevel);
-    return distA - distB;
-  });
+  const userGauged = diffOrder[profile?.overallLevel ?? "beginner"] ?? 0;
+
+  // Plan generator: show only skills at your gauged level or harder; archive easier skills (elite → intermediate → beginner).
+  const suggested = skillExercises
+    .filter((ex) => diffOrder[ex.difficulty] >= userGauged)
+    .sort((a, b) => diffOrder[a.difficulty] - diffOrder[b.difficulty]);
+  const archived = skillExercises
+    .filter((ex) => diffOrder[ex.difficulty] < userGauged)
+    .sort((a, b) => diffOrder[b.difficulty] - diffOrder[a.difficulty]);
 
   const toggle = (id: string) => { setSelected((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; }); };
 
@@ -236,18 +212,19 @@ export default function WorkoutsPage() {
       {/* Calisthenics Skill Pick */}
       {view === "pick" && workoutType === "calisthenics" && (
         <>
-          <p className="text-gray-400 text-sm font-medium mb-3">Recommended for your level</p>
-          <div className="space-y-2 mb-4">{recommended.map(renderSkillButton)}</div>
+          <p className="text-gray-400 text-sm font-medium mb-1">Skills at your level &amp; above</p>
+          <p className="text-xs text-gray-500 mb-3 capitalize">Your profile: {profile?.overallLevel ?? "beginner"}</p>
+          <div className="space-y-2 mb-4">{suggested.map(renderSkillButton)}</div>
 
-          {others.length > 0 && (
+          {archived.length > 0 && (
             <>
-              <button onClick={() => setShowMore(!showMore)} className="w-full py-3 glass rounded-xl text-sm font-medium text-gray-300 hover:text-white mb-2 flex items-center justify-center gap-2">
-                {showMore ? "Hide" : "Show"} more skills ({others.length}) <span className="text-xs">{showMore ? "▲" : "▼"}</span>
+              <button type="button" onClick={() => setShowMore(!showMore)} className="w-full py-3 glass rounded-xl text-sm font-medium text-gray-300 hover:text-white mb-2 flex items-center justify-center gap-2">
+                {showMore ? "Hide" : "Show"} archived skills ({archived.length}) <span className="text-xs">{showMore ? "▲" : "▼"}</span>
               </button>
               {showMore && (
                 <div className="space-y-2 mb-4">
-                  <p className="text-xs text-gray-500 mb-1">Sorted by relevance — closest to your level first</p>
-                  {others.map(renderSkillButton)}
+                  <p className="text-xs text-gray-500 mb-1">Easier skills — next to master first (elite → beginner)</p>
+                  {archived.map(renderSkillButton)}
                 </div>
               )}
             </>

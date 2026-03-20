@@ -30,6 +30,13 @@ const diffColors: Record<string, string> = {
   advanced: "bg-red-500/15 text-red-400", elite: "bg-fuchsia-500/15 text-fuchsia-400",
 };
 
+const difficultyRank: Record<Difficulty, number> = {
+  beginner: 0,
+  intermediate: 1,
+  advanced: 2,
+  elite: 3,
+};
+
 export default function ExercisesPage() {
   const { profile } = useWorkout();
   const yogaUnlocked = profile?.yogaSetUp ?? false;
@@ -40,13 +47,17 @@ export default function ExercisesPage() {
   const [yogaCat, setYogaCat] = useState("all");
   const [selYoga, setSelYoga] = useState<YogaPose | null>(null);
 
-  const filteredEx = exercises.filter((e) => {
-    if (selCat !== "all" && e.category !== selCat) return false;
-    if (selDiff !== "all" && e.difficulty !== selDiff) return false;
-    return true;
-  });
+  const filteredEx = exercises
+    .filter((e) => {
+      if (selCat !== "all" && e.category !== selCat) return false;
+      if (selDiff !== "all" && e.difficulty !== selDiff) return false;
+      return true;
+    })
+    .sort((a, b) => difficultyRank[a.difficulty] - difficultyRank[b.difficulty]);
 
-  const filteredYoga = yogaCat === "all" ? yogaPoses : yogaPoses.filter((p) => p.category === yogaCat);
+  const filteredYoga = (yogaCat === "all" ? yogaPoses : yogaPoses.filter((p) => p.category === yogaCat)).sort(
+    (a, b) => difficultyRank[a.difficulty] - difficultyRank[b.difficulty]
+  );
 
   return (
     <div className="max-w-lg mx-auto px-4 pt-8">

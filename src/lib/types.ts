@@ -80,6 +80,16 @@ export interface WeeklyPlan {
   createdAt: string;
 }
 
+/** Persisted UI state when pausing an in-progress day workout (e.g. to browse the app). */
+export interface WorkoutSessionUIState {
+  planId: string;
+  dayIndex: number;
+  curEx: number;
+  curSet: number;
+  showRest: boolean;
+  isPaused: boolean;
+}
+
 export interface CompletedSet {
   reps: number | null;
   holdSeconds: number | null;

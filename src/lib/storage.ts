@@ -1,4 +1,4 @@
-import { WorkoutLog, UserStats, PersonalRecord, WeeklyPlan, ProgressPhoto, UserProfile, ExerciseLevel, TrainingGoal } from "./types";
+import { WorkoutLog, UserStats, PersonalRecord, WeeklyPlan, ProgressPhoto, UserProfile, ExerciseLevel, TrainingGoal, WorkoutSessionUIState } from "./types";
 import { getExerciseById } from "@/data/exercises";
 import { updateExerciseLevel } from "./progression";
 
@@ -8,6 +8,7 @@ const PRS_KEY = "calisthenics_prs";
 const PLANS_KEY = "calisthenics_plans";
 const PHOTOS_KEY = "calisthenics_photos";
 const PROFILE_KEY = "calisthenics_profile";
+const SESSION_UI_KEY = "calisthenics_session_ui";
 
 function isBrowser(): boolean {
   return typeof window !== "undefined";
@@ -234,6 +235,20 @@ export function getUserProfile(): UserProfile | null {
 export function saveUserProfile(profile: UserProfile): void {
   if (!isBrowser()) return;
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+}
+
+// ── In-progress workout UI (pause / resume across navigation) ──
+
+export function getWorkoutSessionUI(): WorkoutSessionUIState | null {
+  if (!isBrowser()) return null;
+  const data = localStorage.getItem(SESSION_UI_KEY);
+  return data ? JSON.parse(data) : null;
+}
+
+export function saveWorkoutSessionUI(state: WorkoutSessionUIState | null): void {
+  if (!isBrowser()) return;
+  if (state === null) localStorage.removeItem(SESSION_UI_KEY);
+  else localStorage.setItem(SESSION_UI_KEY, JSON.stringify(state));
 }
 
 export function updateLevelsFromLog(log: WorkoutLog): void {
