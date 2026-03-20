@@ -27,6 +27,8 @@ function PlanContent() {
   const [showRest, setShowRest] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [weightInput, setWeightInput] = useState("");
+  const [showWarmUpPrompt, setShowWarmUpPrompt] = useState(false);
+  const [pendingDayIndex, setPendingDayIndex] = useState<number | null>(null);
 
   if (!plan) {
     return (
@@ -45,12 +47,24 @@ function PlanContent() {
   const curExercise = curWE ? getExerciseById(curWE.exerciseId) : null;
 
   const handleStart = (dayIndex: number) => {
+    const day = plan.days[dayIndex];
+    if (day.warmUp) {
+      setPendingDayIndex(dayIndex);
+      setShowWarmUpPrompt(true);
+    } else {
+      beginWorkout(dayIndex);
+    }
+  };
+
+  const beginWorkout = (dayIndex: number) => {
     startDayWorkout(plan, dayIndex);
     setActiveDayIndex(dayIndex);
     setIsActive(true);
     setCurEx(0);
     setCurSet(0);
     setWeightInput("");
+    setShowWarmUpPrompt(false);
+    setPendingDayIndex(null);
   };
 
   const handleCompleteReps = () => {
@@ -84,6 +98,45 @@ function PlanContent() {
   };
 
   const handleCancel = () => { cancelWorkout(); setIsActive(false); };
+
+  // Warm-up prompt
+  if (showWarmUpPrompt && pendingDayIndex !== null) {
+    const warmUpDay = plan.days[pendingDayIndex];
+    const warmUp = warmUpDay.warmUp;
+    return (
+      <div className="max-w-lg mx-auto px-4 pt-8">
+        <div className="text-center mb-6">
+          <span className="text-5xl mb-4 block">🔥</span>
+          <h2 className="text-2xl font-extrabold text-white mb-2">Warm Up First?</h2>
+          <p className="text-gray-400 text-sm">A proper warm-up reduces injury risk and improves performance</p>
+        </div>
+
+        {warmUp && (
+          <div className="glass rounded-2xl p-5 mb-6">
+            <h3 className="text-white font-bold mb-1">{warmUp.name}</h3>
+            <p className="text-gray-400 text-xs mb-3">{warmUp.duration}</p>
+            <ul className="space-y-2">
+              {warmUp.exercises.map((w, i) => (
+                <li key={i} className="flex items-center gap-3 text-sm">
+                  <span className="w-5 h-5 rounded-full bg-orange-500/20 text-orange-400 text-xs flex items-center justify-center font-bold flex-shrink-0">{i + 1}</span>
+                  <span className="text-gray-300">{w}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="space-y-3">
+          <button onClick={() => beginWorkout(pendingDayIndex)} className="w-full py-4 bg-brand-500 text-white rounded-2xl font-bold text-lg hover:bg-brand-600 transition-colors">
+            ✅ Done Warming Up — Start Workout
+          </button>
+          <button onClick={() => beginWorkout(pendingDayIndex)} className="w-full py-3 bg-gray-800 text-gray-400 rounded-2xl font-medium hover:bg-gray-700 transition-colors">
+            Skip Warm-Up →
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Active workout
   if (isActive && activeWorkout && curExercise && curWE && activeDay) {
