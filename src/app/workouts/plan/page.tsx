@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { getExerciseById } from "@/data/exercises";
 import { getYogaPoseById } from "@/data/yoga";
@@ -17,7 +17,7 @@ function PlanContent() {
   const params = useSearchParams();
   const router = useRouter();
   const planId = params.get("id");
-  const { savedPlans, activeWorkout, startDayWorkout, completeSet, finishWorkout, cancelWorkout } = useWorkout();
+  const { savedPlans, activeWorkout, startDayWorkout, completeSet, finishWorkout, cancelWorkout, workoutSessionUI, setWorkoutSessionUI } = useWorkout();
 
   const plan = savedPlans.find((p) => p.id === planId);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
@@ -31,6 +31,39 @@ function PlanContent() {
   const [weightInput, setWeightInput] = useState("");
   const [showWarmUpPrompt, setShowWarmUpPrompt] = useState(false);
   const [pendingDayIndex, setPendingDayIndex] = useState<number | null>(null);
+  const sessionRestoreKey = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!plan || !activeWorkout || activeWorkout.planId !== plan.id) return;
+    const s = workoutSessionUI;
+    if (!s || s.planId !== plan.id || s.dayIndex !== activeWorkout.dayIndex) return;
+    const key = `${plan.id}-${activeWorkout.dayIndex}-${s.isPaused}`;
+    if (sessionRestoreKey.current === key) return;
+    setActiveDayIndex(s.dayIndex);
+    setCurEx(s.curEx);
+    setCurSet(s.curSet);
+    setShowRest(s.showRest);
+    setIsPaused(s.isPaused);
+    // Paused sessions show the plan overview + resume entry; resumed sessions open the active workout UI.
+    setIsActive(!s.isPaused);
+    sessionRestoreKey.current = key;
+  }, [plan, activeWorkout, workoutSessionUI]);
+
+  useEffect(() => {
+    sessionRestoreKey.current = null;
+  }, [plan?.id]);
+
+  useEffect(() => {
+    if (!isActive || !plan || !activeWorkout || activeWorkout.planId !== plan.id) return;
+    setWorkoutSessionUI({
+      planId: plan.id,
+      dayIndex: activeDayIndex,
+      curEx,
+      curSet,
+      showRest,
+      isPaused,
+    });
+  }, [isActive, plan, activeWorkout, activeDayIndex, curEx, curSet, showRest, isPaused, setWorkoutSessionUI]);
 
   if (!plan) {
     return (
@@ -82,11 +115,25 @@ function PlanContent() {
     } else if (curEx < activeDay.exercises.length - 1) {
       setShowRest(true); setCurEx((e) => e + 1); setCurSet(0); setWeightInput("");
     } else {
-      finishWorkout(); setIsActive(false); router.push("/progress");
+      finishWorkout(); setIsActive(false); sessionRestoreKey.current = null; router.push("/progress");
     }
   };
 
-  const handleCancel = () => { cancelWorkout(); setIsActive(false); };
+  const handleCancel = () => { cancelWorkout(); setIsActive(false); sessionRestoreKey.current = null; };
+
+  const handlePauseExplore = () => {
+    if (!plan) return;
+    setIsPaused(true);
+    setWorkoutSessionUI({
+      planId: plan.id,
+      dayIndex: activeDayIndex,
+      curEx,
+      curSet,
+      showRest,
+      isPaused: true,
+    });
+    router.push("/");
+  };
 
   // Helper to render an exercise row (handles both real exercises and conditioning)
   const renderExerciseRow = (we: typeof plan.days[0]["exercises"][0], idx: number, showManualEntry?: boolean) => {
@@ -153,23 +200,6 @@ function PlanContent() {
     );
   }
 
-  // Active workout (paused state)
-  if (isActive && isPaused && activeDay) {
-    return (
-      <div className="max-w-lg mx-auto px-4 pt-8">
-        <div className="text-center mb-6">
-          <span className="text-4xl mb-3 block">⏸️</span>
-          <h2 className="text-xl font-extrabold text-white mb-1">Workout Paused</h2>
-          <p className="text-gray-400 text-sm">Take your time. Resume when ready.</p>
-        </div>
-        <div className="space-y-3">
-          <button onClick={() => setIsPaused(false)} className="w-full py-4 bg-brand-500 text-white rounded-2xl font-bold text-lg">▶ Resume Workout</button>
-          <button onClick={handleCancel} className="w-full py-3 bg-gray-800 text-gray-400 rounded-2xl font-medium">End Workout</button>
-        </div>
-      </div>
-    );
-  }
-
   // Active workout (running)
   if (isActive && activeWorkout && curWE && activeDay) {
     const totalSets = activeDay.exercises.reduce((s, e) => s + e.sets, 0);
@@ -217,7 +247,13 @@ function PlanContent() {
           </div>
         )}
         <div className="flex gap-3 mt-4">
-          <button onClick={() => setIsPaused(true)} className="flex-1 py-3 bg-gray-800 text-gray-400 rounded-2xl font-medium">⏸ Pause</button>
+          <button
+            type="button"
+            onClick={handlePauseExplore}
+            className="flex-1 py-3 bg-gray-800 text-gray-400 rounded-2xl font-medium"
+          >
+            ⏸ Pause & browse
+          </button>
           <button onClick={handleCancel} className="flex-1 py-3 bg-gray-800 text-red-400 rounded-2xl font-medium">✕ End</button>
         </div>
       </div>
@@ -225,9 +261,33 @@ function PlanContent() {
   }
 
   // Plan overview
+  const pausedSamePlan =
+    activeWorkout &&
+    workoutSessionUI?.isPaused &&
+    workoutSessionUI.planId === plan.id &&
+    activeWorkout.planId === plan.id &&
+    activeWorkout.dayIndex === workoutSessionUI.dayIndex;
+
   return (
     <div className="max-w-lg mx-auto px-4 pt-8">
       <button onClick={() => router.push("/workouts")} className="text-gray-400 hover:text-white transition-colors mb-4 inline-block">← Back</button>
+      {pausedSamePlan && workoutSessionUI && (
+        <div className="mb-4 glass rounded-2xl p-4 border border-amber-500/35">
+          <p className="text-amber-200 font-bold text-sm mb-1">Workout paused</p>
+          <p className="text-gray-400 text-xs mb-3">Browse the app anytime — resume when you&apos;re ready.</p>
+          <button
+            type="button"
+            onClick={() => {
+              setWorkoutSessionUI({ ...workoutSessionUI, isPaused: false });
+              setIsPaused(false);
+              setIsActive(true);
+            }}
+            className="w-full py-3 bg-brand-500 text-white rounded-xl font-bold hover:bg-brand-600"
+          >
+            ▶ Resume workout
+          </button>
+        </div>
+      )}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-white mb-2">{plan.name}</h1>
         <p className="text-gray-400 text-sm mb-1">{plan.description}</p>
