@@ -67,13 +67,17 @@ export default function WorkoutsPage() {
 
   const userGauged = diffOrder[profile?.overallLevel ?? "beginner"] ?? 0;
 
-  // Plan generator: show only skills at your gauged level or harder; archive easier skills (elite → intermediate → beginner).
-  const suggested = skillExercises
-    .filter((ex) => diffOrder[ex.difficulty] >= userGauged)
+  // Plan generator: show only skills at your gauged level; expandable box shows recommended next skills (higher difficulties) first, then less likely (lower difficulties).
+  const currentLevel = skillExercises
+    .filter((ex) => diffOrder[ex.difficulty] === userGauged)
     .sort((a, b) => diffOrder[a.difficulty] - diffOrder[b.difficulty]);
-  const archived = skillExercises
+  const higherLevel = skillExercises
+    .filter((ex) => diffOrder[ex.difficulty] > userGauged)
+    .sort((a, b) => diffOrder[a.difficulty] - diffOrder[b.difficulty]);
+  const lowerLevel = skillExercises
     .filter((ex) => diffOrder[ex.difficulty] < userGauged)
     .sort((a, b) => diffOrder[b.difficulty] - diffOrder[a.difficulty]);
+  const archived = [...higherLevel, ...lowerLevel];
 
   const toggle = (id: string) => { setSelected((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; }); };
 
@@ -212,19 +216,29 @@ export default function WorkoutsPage() {
       {/* Calisthenics Skill Pick */}
       {view === "pick" && workoutType === "calisthenics" && (
         <>
-          <p className="text-gray-400 text-sm font-medium mb-1">Skills at your level &amp; above</p>
+          <p className="text-gray-400 text-sm font-medium mb-1">Skills at your level</p>
           <p className="text-xs text-gray-500 mb-3 capitalize">Your profile: {profile?.overallLevel ?? "beginner"}</p>
-          <div className="space-y-2 mb-4">{suggested.map(renderSkillButton)}</div>
+          <div className="space-y-2 mb-4">{currentLevel.map(renderSkillButton)}</div>
 
           {archived.length > 0 && (
             <>
               <button type="button" onClick={() => setShowMore(!showMore)} className="w-full py-3 glass rounded-xl text-sm font-medium text-gray-300 hover:text-white mb-2 flex items-center justify-center gap-2">
-                {showMore ? "Hide" : "Show"} archived skills ({archived.length}) <span className="text-xs">{showMore ? "▲" : "▼"}</span>
+                {showMore ? "Hide" : "Show"} other skill levels ({archived.length}) <span className="text-xs">{showMore ? "▲" : "▼"}</span>
               </button>
               {showMore && (
                 <div className="space-y-2 mb-4">
-                  <p className="text-xs text-gray-500 mb-1">Easier skills — next to master first (elite → beginner)</p>
-                  {archived.map(renderSkillButton)}
+                  {higherLevel.length > 0 && (
+                    <>
+                      <p className="text-xs text-brand-400 font-medium mb-2">🚀 Highly recommended next skills</p>
+                      <div className="space-y-2 mb-3">{higherLevel.map(renderSkillButton)}</div>
+                    </>
+                  )}
+                  {lowerLevel.length > 0 && (
+                    <>
+                      <p className="text-xs text-gray-500 font-medium mb-2">📌 Skills to revisit first</p>
+                      <div className="space-y-2">{lowerLevel.map(renderSkillButton)}</div>
+                    </>
+                  )}
                 </div>
               )}
             </>
