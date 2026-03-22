@@ -26,23 +26,61 @@ function getFullProgressionChain(exerciseId: string): Exercise[] {
   return chain;
 }
 
-const goalConfig: Record<TrainingGoal, { sets: number; reps: number; rest: number; extraDays: number }> = {
-  muscle: { sets: 1.3, reps: 0.8, rest: 1.3, extraDays: 0 },
-  skills: { sets: 1.2, reps: 0.7, rest: 1.5, extraDays: -1 },
-  "weight-loss": { sets: 0.8, reps: 1.4, rest: 0.5, extraDays: 1 },
-  endurance: { sets: 0.9, reps: 1.5, rest: 0.4, extraDays: 1 },
-  balanced: { sets: 1.0, reps: 1.0, rest: 1.0, extraDays: 0 },
+// Daily focus types: Volume, Intensity, or Conditioning
+type DailyFocus = "volume" | "intensity" | "conditioning";
+
+// Goal-specific focus patterns for 6-day training cycles
+const goalFocusPatterns: Record<TrainingGoal, DailyFocus[]> = {
+  muscle: ["volume", "intensity", "conditioning", "volume", "intensity", "conditioning"],
+  skills: ["intensity", "volume", "conditioning", "intensity", "volume", "conditioning"],
+  "weight-loss": ["conditioning", "conditioning", "volume", "conditioning", "conditioning", "volume"],
+  endurance: ["conditioning", "volume", "intensity", "conditioning", "volume", "intensity"],
+  balanced: ["volume", "intensity", "conditioning", "volume", "intensity", "conditioning"],
 };
 
-function makeEx(ex: Exercise, baseSets: number, goal: TrainingGoal, label?: string): WorkoutExercise {
-  const m = goalConfig[goal];
-  const sets = Math.max(2, Math.round(baseSets * m.sets));
+// Focus-specific multipliers for sets, reps, and rest
+const focusConfig: Record<DailyFocus, { sets: number; reps: number; rest: number }> = {
+  volume: { sets: 1.4, reps: 1.2, rest: 0.8 },      // More sets, more reps, less rest
+  intensity: { sets: 1.0, reps: 0.7, rest: 1.4 },   // Moderate sets, low reps, more rest
+  conditioning: { sets: 0.9, reps: 1.3, rest: 0.5 }, // Fewer sets, more reps, minimal rest
+};
+
+// Base goal configuration (goal impact on all days)
+const goalConfig: Record<TrainingGoal, { baseMultiplier: number }> = {
+  muscle: { baseMultiplier: 1.1 },
+  skills: { baseMultiplier: 1.0 },
+  "weight-loss": { baseMultiplier: 0.95 },
+  endurance: { baseMultiplier: 1.05 },
+  balanced: { baseMultiplier: 1.0 },
+};
+
+function makeEx(ex: Exercise, baseSets: number, goal: TrainingGoal, focus: DailyFocus, label?: string): WorkoutExercise {
+  const focusM = focusConfig[focus];
+  const goalM = goalConfig[goal];
+  
+  // Combine goal and focus multipliers
+  const sets = Math.max(2, Math.round(baseSets * focusM.sets * goalM.baseMultiplier));
+  
   if (ex.isHold) {
     const hold = ex.difficulty === "elite" ? 5 : ex.difficulty === "advanced" ? 10 : ex.difficulty === "intermediate" ? 15 : 30;
-    return { exerciseId: ex.id, sets, reps: null, holdSeconds: Math.round(hold * m.reps), restSeconds: Math.round(90 * m.rest), progressionLevel: label };
+    return { 
+      exerciseId: ex.id, 
+      sets, 
+      reps: null, 
+      holdSeconds: Math.round(hold * focusM.reps), 
+      restSeconds: Math.round(90 * focusM.rest), 
+      progressionLevel: label 
+    };
   }
   const reps = ex.difficulty === "elite" ? 3 : ex.difficulty === "advanced" ? 5 : ex.difficulty === "intermediate" ? 8 : 12;
-  return { exerciseId: ex.id, sets, reps: Math.max(1, Math.round(reps * m.reps)), holdSeconds: null, restSeconds: Math.round(90 * m.rest), progressionLevel: label };
+  return { 
+    exerciseId: ex.id, 
+    sets, 
+    reps: Math.max(1, Math.round(reps * focusM.reps)), 
+    holdSeconds: null, 
+    restSeconds: Math.round(90 * focusM.rest), 
+    progressionLevel: label 
+  };
 }
 
 function getRestDayActivities(dayIndex: number): RestDayActivity[] {
@@ -127,7 +165,7 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
         usedIds.add(ex.id);
         const isLast = i === progressions.length - 1;
         const label = isLast ? `⬆ Level up → ${target.name}` : undefined;
-        workoutExercises.push(makeEx(ex, isLast ? 4 : 3, goal, label));
+        workoutExercises.push(makeEx(ex, isLast ? 4 : 3, goal, "volume", label));
       });
     }
 
@@ -151,59 +189,83 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
   for (const cat of ["push", "pull", "core", "legs"]) {
     if (workoutExercises.length >= 8) break;
     const ex = supporters.find((e) => e.category === cat && !usedIds.has(e.id));
-    if (ex) { usedIds.add(ex.id); workoutExercises.push(makeEx(ex, 3, goal)); }
+    if (ex) { usedIds.add(ex.id); workoutExercises.push(makeEx(ex, 3, goal, "volume")); }
   }
   while (workoutExercises.length < 5) {
     const f = supporters.find((e) => !usedIds.has(e.id));
     if (!f) break;
-    usedIds.add(f.id); workoutExercises.push(makeEx(f, 3, goal));
+    usedIds.add(f.id); workoutExercises.push(makeEx(f, 3, goal, "volume"));
   }
 
-  // Build days
-  const baseDays = selectedSkillIds.length <= 1 ? 3 : Math.min(selectedSkillIds.length + 2, 6);
-  const trainingDays = Math.max(3, Math.min(6, baseDays + goalConfig[goal].extraDays));
+  // 6-day training + 1 rest day (Sunday)
   const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-  const slots = trainingDays === 3 ? [0, 2, 4] : trainingDays === 4 ? [0, 1, 3, 4] : trainingDays === 5 ? [0, 1, 2, 4, 5] : [0, 1, 2, 3, 4, 5];
-  const themes = ["Skill & Strength", "Volume & Endurance", "Conditioning", "Power", "Active Recovery", "Full Body"];
-  const focusHints = ["Main lifts & holds", "Higher reps, controlled tempo", "Circuits & core", "Explosive & tight rest", "Easy pace & form", "Balanced push/pull"];
+  const focusPattern = goalFocusPatterns[goal];
+  
+  // Map daily focus to theme and description
+  const focusThemes: Record<DailyFocus, { theme: string; hint: string }> = {
+    volume: { theme: "Volume & Hypertrophy", hint: "High volume, moderate intensity, controlled tempo" },
+    intensity: { theme: "Strength & Power", hint: "Heavy progressions, low reps, full recovery" },
+    conditioning: { theme: "Conditioning & Circuits", hint: "High density, circuit-style, minimal rest" },
+  };
 
+  // Distribute all exercises across 6 training days
+  const trainingDays = 6;
   const perDayPool: WorkoutExercise[][] = Array.from({ length: trainingDays }, () => []);
   for (let i = 0; i < workoutExercises.length; i++) {
     perDayPool[i % trainingDays].push(workoutExercises[i]);
   }
+  
   const planSeed = Date.now() % 100000;
   perDayPool.forEach((list, di) => {
     perDayPool[di] = seededShuffle(list, planSeed + di * 997);
   });
 
   const days: DayWorkout[] = [];
-  let ti = 0;
+  
+  // Build 6 training days + 1 rest day
   for (let i = 0; i < 7; i++) {
-    if (slots.includes(i) && ti < trainingDays) {
-      const dayExercises = perDayPool[ti];
-      const warmUp = calisthenicsWarmUpVariants[(ti + planSeed) % calisthenicsWarmUpVariants.length];
+    if (i === 6) {
+      // Sunday is always rest day
+      days.push({ day: dayNames[i], name: "Rest & Recovery", isRest: true, exercises: [], restDayActivities: getRestDayActivities(i) });
+    } else {
+      // Monday-Saturday: training days with specific focus
+      const dailyFocus = focusPattern[i];
+      const dayExercises = perDayPool[i];
+      
+      // Regenerate exercises with focus-specific multipliers
+      const focusedExercises = dayExercises.map((ex) => {
+        const originalEx = getExerciseById(ex.exerciseId);
+        if (!originalEx) return ex;
+        return makeEx(originalEx, Math.max(2, ex.sets), goal, dailyFocus, ex.progressionLevel);
+      });
+      
+      const { theme, hint } = focusThemes[dailyFocus];
+      const warmUp = calisthenicsWarmUpVariants[(i + planSeed) % calisthenicsWarmUpVariants.length];
+      
       days.push({
         day: dayNames[i],
-        name: `${themes[ti % themes.length]} (${dayExercises.length} moves)`,
+        name: `${theme} (${focusedExercises.length} moves)`,
         isRest: false,
-        focus: `${focusHints[ti % focusHints.length]} — ${dayExercises.length} exercises`,
-        exercises: dayExercises,
+        focus: `${hint} — ${focusedExercises.length} exercises`,
+        exercises: focusedExercises,
         warmUp,
       });
-      ti++;
-    } else {
-      days.push({ day: dayNames[i], name: "Rest & Recovery", isRest: true, exercises: [], restDayActivities: getRestDayActivities(i) });
     }
   }
 
   const goalLabel = { muscle: "Build Muscle", skills: "Master Skills", "weight-loss": "Lose Weight", endurance: "Build Endurance", balanced: "Balanced" }[goal];
   const weeklyExerciseSlots = days.filter((d) => !d.isRest).reduce((s, d) => s + d.exercises.length, 0);
   return {
-    id: `plan-${Date.now()}`, name: selectedSkillIds.length === 1 ? `${targetNames[0]} Program` : "Multi-Skill Program",
+    id: `plan-${Date.now()}`, 
+    name: selectedSkillIds.length === 1 ? `${targetNames[0]} Program` : "Multi-Skill Program",
     description: `${goalLabel} — progressing toward: ${targetNames.join(", ")}`,
-    difficulty: "intermediate", goal: `${goalLabel}: ${targetNames.join(", ")}`,
-    trainingGoal: goal, targetSkills: selectedSkillIds, days,
-    estimatedWeeklyMinutes: Math.round(weeklyExerciseSlots * 5), createdAt: new Date().toISOString(),
+    difficulty: "intermediate", 
+    goal: `${goalLabel}: ${targetNames.join(", ")}`,
+    trainingGoal: goal, 
+    targetSkills: selectedSkillIds, 
+    days,
+    estimatedWeeklyMinutes: Math.round(weeklyExerciseSlots * 5), 
+    createdAt: new Date().toISOString(),
   };
 }
 
