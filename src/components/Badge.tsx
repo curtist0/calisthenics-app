@@ -10,14 +10,20 @@ type Props = {
 
 export default function Badge({ title, subtitle, unlocked = false, emoji }: Props) {
   return (
-    <div className={`flex items-center gap-3 px-3 py-2 rounded-xl border transition-all ${unlocked ? "bg-gradient-to-r from-amber-500/20 via-pink-500/10 to-indigo-500/10 border-amber-400/50 shadow-[0_0_20px_rgba(250,204,21,0.08)]" : "bg-gray-800/40 border-gray-700/60"}`}>
-      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${unlocked ? "bg-amber-400/10" : "bg-gray-900/40"}`}>
-        <span className="text-lg">{emoji || "🏅"}</span>
+    <div
+      className={`group flex flex-col items-center justify-center p-4 rounded-2xl border transition-all ${
+        unlocked
+          ? "bg-gradient-to-b from-amber-500/20 via-amber-400/5 to-transparent border-amber-400/40 shadow-lg hover:shadow-[0_0_20px_rgba(250,204,21,0.15)] hover:border-amber-400/60"
+          : "bg-gradient-to-b from-gray-600/10 to-gray-700/10 border-gray-600/30 shadow-none"
+      }`}
+    >
+      <div className={`text-4xl mb-2 transition-transform ${unlocked ? "group-hover:scale-110" : "opacity-60"}`}>
+        {emoji || "🏅"}
       </div>
-      <div className="flex flex-col">
-        <span className={`text-sm font-semibold ${unlocked ? "text-amber-300" : "text-gray-200"}`}>{title}</span>
-        {subtitle && <span className="text-xs text-gray-400">{subtitle}</span>}
-      </div>
+      <h3 className={`text-sm font-bold text-center ${unlocked ? "text-amber-300" : "text-gray-400"}`}>{title}</h3>
+      {subtitle && <p className={`text-xs text-center mt-1 ${unlocked ? "text-gray-300" : "text-gray-500"}`}>{subtitle}</p>}
+      {!unlocked && <p className="text-xs text-gray-500 mt-2">🔒 Locked</p>}
     </div>
   );
 }
+

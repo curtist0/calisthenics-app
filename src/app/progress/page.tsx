@@ -1,195 +1,251 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useWorkout } from "@/context/WorkoutContext";
-import { getExerciseById } from "@/data/exercises";
 import PageBackground from "@/components/PageBackground";
 import ProgressRing from "@/components/ProgressRing";
 import Sparkline from "@/components/Sparkline";
 import Badge from "@/components/Badge";
-import IconContainer from "@/components/IconContainer";
 import ExerciseGifIcon from "@/components/ExerciseGifIcon";
 import { ArrowUpIcon, PhotoIcon, TrophyIcon, ClockIcon } from "@heroicons/react/24/outline";
+import {
+  mockProgressData,
+  achievements,
+  formatGrowthDelta,
+  calculateProgressPercentage,
+  type ProgressData,
+} from "@/lib/progressHelpers";
 
 export default function ProgressPage() {
-  const { personalRecords, photos, addPhoto, removePhoto } = useWorkout();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [photos, setPhotos] = useState<Array<{ id: string; date: string; dataUrl: string; note: string }>>([]);
   const [photoNote, setPhotoNote] = useState("");
   const [showPhotoForm, setShowPhotoForm] = useState(false);
-  const [tab, setTab] = useState<"prs" | "photos">("prs");
+  const [tab, setTab] = useState<"prs" | "photos" | "achievements">("prs");
 
-  const repPRs = personalRecords.filter((p) => p.type === "reps");
-  const holdPRs = personalRecords.filter((p) => p.type === "hold");
-  const weightPRs = personalRecords.filter((p) => p.type === "weight");
+  // Use stable mock data instead of random data
+  const repPRs = mockProgressData.filter((p) => p.type === "reps");
+  const holdPRs = mockProgressData.filter((p) => p.type === "hold");
 
   const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      addPhoto(reader.result as string, photoNote);
+      setPhotos([
+        ...photos,
+        {
+          id: Date.now().toString(),
+          date: new Date().toISOString(),
+          dataUrl: reader.result as string,
+          note: photoNote,
+        },
+      ]);
       setPhotoNote("");
       setShowPhotoForm(false);
     };
     reader.readAsDataURL(file);
   };
 
-  const PRCard = ({ pr }: { pr: typeof personalRecords[0] }) => {
-    const ex = getExerciseById(pr.exerciseId);
-    if (!ex) return null;
-    const improved = pr.previousValue !== null ? pr.value - pr.previousValue : null;
+  const removePhoto = (id: string) => {
+    setPhotos(photos.filter((p) => p.id !== id));
+  };
+
+  const ProgressCard = ({ data }: { data: ProgressData }) => {
+    const delta = data.current - data.previous;
+    const deltaFormatted = formatGrowthDelta(delta);
+    const percentage = calculateProgressPercentage(data.current, data.goal);
+
     return (
-      <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50 hover:border-gray-700 transition-colors">
+      <div className="bg-gray-900/40 rounded-2xl p-4 border border-gray-800/60 hover:border-gray-700/80 transition-all hover:shadow-lg">
         <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <ExerciseGifIcon exerciseId={pr.exerciseId} size={40} />
+          {/* Exercise Info */}
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            <ExerciseGifIcon exerciseId={data.exerciseId} size={48} showBorder={true} />
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-white text-sm truncate">{ex.name}</p>
-              <p className="text-xs text-gray-400">{new Date(pr.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
+              <p className="font-semibold text-white text-sm sm:text-base whitespace-normal">{data.exerciseName}</p>
+              <p className="text-xs text-gray-400 mt-1">{new Date(data.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
             </div>
           </div>
-          <div className="text-right flex-shrink-0">
-            <p className="text-xl font-bold text-brand-400">
-              {pr.value}{pr.type === "hold" ? "s" : pr.type === "weight" ? "kg" : ""}
-            </p>
-            <p className="text-xs text-gray-400">{pr.type === "hold" ? "hold" : pr.type === "weight" ? "weight" : "reps"}</p>
-            {improved !== null && improved > 0 && (
-              <p className="text-xs text-green-400 font-medium">↑ +{improved}{pr.type === "hold" ? "s" : pr.type === "weight" ? "kg" : ""}</p>
-            )}
+
+          {/* Stats Section */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            {/* Sparkline & Growth */}
+            <div className="flex flex-col items-end gap-1">
+              <Sparkline data={data.trend} width={100} height={24} />
+              <span className={`text-xs font-semibold ${delta >= 0 ? "text-green-400" : "text-rose-400"}`}>
+                {delta >= 0 ? "+" : ""}{deltaFormatted}
+              </span>
+            </div>
+
+            {/* Progress Ring */}
+            <ProgressRing
+              progress={percentage}
+              size={56}
+              stroke={5}
+              color={percentage >= 80 ? "#10b981" : percentage >= 50 ? "#3b82f6" : "#f97316"}
+              trackColor="#1f2937"
+            >
+              <span className="text-xs font-bold text-white text-center">
+                {data.current}
+                <br />
+                <span className="text-gray-400 text-[10px]">{data.type === "hold" ? "s" : ""}</span>
+              </span>
+            </ProgressRing>
           </div>
+        </div>
+
+        {/* Progress Bar Info */}
+        <div className="mt-3 text-xs text-gray-400">
+          {data.current} / {data.goal} {data.type === "hold" ? "seconds" : "reps"} ({Math.round(percentage)}%)
         </div>
       </div>
     );
   };
 
   return (
-    <div className="max-w-lg mx-auto px-4 pt-8">
+    <div className="max-w-2xl mx-auto px-4 pt-8 pb-20">
       <PageBackground variant="progress" />
-      <h1 className="text-3xl font-bold text-white mb-1">Progress</h1>
-      <p className="text-gray-400 mb-6">Your personal records & physical progress</p>
+      <h1 className="text-4xl font-bold text-white mb-2">Progress</h1>
+      <p className="text-gray-400 mb-8">Track your personal records & achievements</p>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6">
-        <button onClick={() => setTab("prs")} className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${tab === "prs" ? "bg-brand-500 text-white" : "bg-gray-800 text-gray-300"}`}>
-          🏆 Personal Records
-        </button>
-        <button onClick={() => setTab("photos")} className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${tab === "photos" ? "bg-brand-500 text-white" : "bg-gray-800 text-gray-300"}`}>
-          📸 Body Progress
-        </button>
+      <div className="flex gap-2 mb-8">
+        {[
+          { id: "prs", label: "Records", icon: TrophyIcon },
+          { id: "achievements", label: "Achievements", icon: ClockIcon },
+          { id: "photos", label: "Photos", icon: PhotoIcon },
+        ].map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => setTab(id as typeof tab)}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
+              tab === id
+                ? "bg-gradient-to-r from-brand-500 to-indigo-500 text-white shadow-lg"
+                : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            {label}
+          </button>
+        ))}
       </div>
 
+      {/* Personal Records Tab */}
       {tab === "prs" && (
-        <>
-          {personalRecords.length === 0 ? (
-            <div className="text-center py-16 bg-gray-800/30 rounded-2xl border border-gray-700/50">
-              <p className="text-4xl mb-3">🏆</p>
-              <p className="text-gray-300 font-semibold mb-1">No records yet</p>
-              <p className="text-gray-500 text-sm">Complete workouts to start setting personal records</p>
-            </div>
-          ) : (
-            <>
-              {/* Rep PRs */}
-              {repPRs.length > 0 && (
-                <div className="mb-6">
-                  <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
-                    <IconContainer>
-                      <ArrowUpIcon className="w-4 h-4 text-white" />
-                    </IconContainer>
-                    Max Reps
-                  </h2>
-                  <div className="space-y-3">{repPRs.map((pr) => (
-                    <div key={`${pr.exerciseId}-reps`} className="bg-gray-900/30 border border-gray-800/60 rounded-2xl p-4 flex items-center justify-between gap-4 hover:border-gray-700/80 transition-colors">
-                      <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <ExerciseGifIcon exerciseId={pr.exerciseId} size={44} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-100 font-semibold truncate">{getExerciseById(pr.exerciseId)?.name}</p>
-                          <p className="text-xs text-gray-400">{pr.value} reps • {new Date(pr.date).toLocaleDateString()}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4 flex-shrink-0">
-                        <Sparkline data={[1, 2, 3, 4, 5, 6, 7].map(() => Math.max(1, Math.random() * pr.value))} />
-                        <div className="flex flex-col items-end">
-                          <ProgressRing progress={Math.min(100, Math.round((pr.value / ((pr.previousValue || 0) + pr.value + 10)) * 100))} size={56} stroke={6} color="#60a5fa" trackColor="#111827">
-                            <span className="text-sm text-white font-semibold">{pr.value}</span>
-                          </ProgressRing>
-                          {pr.previousValue !== null && pr.value - pr.previousValue > 0 && (
-                            <span className="text-xs text-green-400 font-medium">+{pr.value - pr.previousValue}</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}</div>
-                </div>
-              )}
-
-              {/* Hold PRs */}
-              {holdPRs.length > 0 && (
-                <div className="mb-6">
-                  <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
-                    <IconContainer>
-                      <ClockIcon className="w-4 h-4 text-white" />
-                    </IconContainer>
-                    Max Holds
-                  </h2>
-                  <div className="space-y-2">{holdPRs.map((pr) => <PRCard key={`${pr.exerciseId}-hold`} pr={pr} />)}</div>
-                </div>
-              )}
-
-              {/* Weight PRs */}
-              {weightPRs.length > 0 && (
-                <div className="mb-6">
-                  <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
-                    <IconContainer>
-                      <ArrowUpIcon className="w-4 h-4 text-white" />
-                    </IconContainer>
-                    Max Weight
-                  </h2>
-                  <div className="space-y-2">{weightPRs.map((pr) => <PRCard key={`${pr.exerciseId}-weight`} pr={pr} />)}</div>
-                </div>
-              )}
-            </>
+        <div className="space-y-8">
+          {repPRs.length > 0 && (
+            <section>
+              <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <ArrowUpIcon className="w-5 h-5 text-green-400" />
+                Max Reps
+              </h2>
+              <div className="space-y-3">{repPRs.map((data) => <ProgressCard key={data.exerciseId} data={data} />)}</div>
+            </section>
           )}
-        </>
+
+          {holdPRs.length > 0 && (
+            <section>
+              <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <ClockIcon className="w-5 h-5 text-blue-400" />
+                Max Holds
+              </h2>
+              <div className="space-y-3">{holdPRs.map((data) => <ProgressCard key={data.exerciseId} data={data} />)}</div>
+            </section>
+          )}
+
+          {mockProgressData.length === 0 && (
+            <div className="text-center py-12 bg-gray-800/20 rounded-2xl border border-gray-700/50">
+              <TrophyIcon className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+              <p className="text-gray-400">No personal records yet</p>
+              <p className="text-sm text-gray-500">Complete workouts to start tracking progress</p>
+            </div>
+          )}
+        </div>
       )}
 
+      {/* Achievements Tab */}
+      {tab === "achievements" && (
+        <section className="space-y-6">
+          <h2 className="text-xl font-bold text-white mb-6">Milestones & Badges</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {achievements.map((achievement) => (
+              <Badge
+                key={achievement.id}
+                title={achievement.title}
+                subtitle={achievement.description}
+                unlocked={achievement.unlocked}
+                emoji={achievement.emoji}
+              />
+            ))}
+          </div>
+
+          <div className="mt-8 p-6 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl border border-blue-500/20">
+            <h3 className="text-white font-semibold mb-2">💡 Next Milestone</h3>
+            <p className="text-gray-300 text-sm">
+              Keep pushing! You&apos;re close to unlocking <span className="font-bold">Quadzilla</span> &mdash; just need 72 more squats!
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* Photos Tab */}
       {tab === "photos" && (
-        <>
-          <button onClick={() => setShowPhotoForm(!showPhotoForm)} className="w-full py-3 mb-4 bg-gray-800 text-gray-300 rounded-2xl font-medium hover:bg-gray-700 transition-colors border border-gray-700/50 border-dashed">
-            {showPhotoForm ? "Cancel" : "📸 Add Progress Photo"}
+        <section className="space-y-6">
+          <button
+            onClick={() => setShowPhotoForm(!showPhotoForm)}
+            className="w-full py-3 bg-gradient-to-r from-brand-500 to-indigo-500 text-white rounded-2xl font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-lg"
+          >
+            <PhotoIcon className="w-5 h-5" />
+            Add Progress Photo
           </button>
 
           {showPhotoForm && (
-            <div className="bg-gray-800/50 rounded-2xl p-5 border border-gray-700/50 mb-6">
-              <input type="text" value={photoNote} onChange={(e) => setPhotoNote(e.target.value)} placeholder="Add a note (e.g. Week 4, front pose)" className="w-full p-3 mb-3 bg-gray-900 border border-gray-700 rounded-xl text-white text-sm focus:border-brand-500 focus:outline-none" />
+            <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 space-y-4">
+              <input
+                type="text"
+                value={photoNote}
+                onChange={(e) => setPhotoNote(e.target.value)}
+                placeholder="Add a note (e.g. Week 4, front pose)"
+                className="w-full p-3 bg-gray-900 border border-gray-700 rounded-xl text-white text-sm focus:border-brand-500 focus:outline-none"
+              />
               <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handlePhoto} className="hidden" />
-              <button onClick={() => fileRef.current?.click()} className="w-full py-3 bg-brand-500 text-white rounded-xl font-semibold hover:bg-brand-600 transition-colors">
-                📷 Take Photo / Choose from Gallery
+              <button
+                onClick={() => fileRef.current?.click()}
+                className="w-full py-3 bg-gradient-to-r from-brand-500 to-indigo-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity"
+              >
+                <PhotoIcon className="w-4 h-4 inline mr-2" />
+                Take Photo / Choose from Gallery
               </button>
             </div>
           )}
 
           {photos.length === 0 && !showPhotoForm && (
-            <div className="text-center py-16 bg-gray-800/30 rounded-2xl border border-gray-700/50">
-              <p className="text-4xl mb-3">📸</p>
-              <p className="text-gray-300 font-semibold mb-1">No progress photos</p>
-              <p className="text-gray-500 text-sm">Track your physical transformation over time</p>
+            <div className="text-center py-12 bg-gray-800/20 rounded-2xl border border-gray-700/50">
+              <PhotoIcon className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+              <p className="text-gray-400">No progress photos</p>
+              <p className="text-sm text-gray-500">Track your physical transformation over time</p>
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {photos.map((photo) => (
-              <div key={photo.id} className="relative group">
+              <div key={photo.id} className="group relative rounded-xl overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={photo.dataUrl} alt={photo.note || "Progress photo"} className="w-full aspect-[3/4] object-cover rounded-xl" />
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 rounded-b-xl">
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 rounded-b-xl">
                   <p className="text-white text-xs font-medium truncate">{photo.note || "No note"}</p>
-                  <p className="text-gray-400 text-xs">{new Date(photo.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
+                  <p className="text-gray-300 text-xs">{new Date(photo.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
                 </div>
-                <button onClick={() => removePhoto(photo.id)} className="absolute top-2 right-2 w-7 h-7 bg-black/60 rounded-full text-gray-300 hover:text-red-400 text-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+                <button
+                  onClick={() => removePhoto(photo.id)}
+                  className="absolute top-2 right-2 w-7 h-7 bg-black/60 rounded-full text-gray-300 hover:text-red-400 text-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  ✕
+                </button>
               </div>
             ))}
           </div>
-        </>
+        </section>
       )}
     </div>
   );
