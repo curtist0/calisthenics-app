@@ -4,6 +4,11 @@ import { useState, useRef } from "react";
 import { useWorkout } from "@/context/WorkoutContext";
 import { getExerciseById } from "@/data/exercises";
 import PageBackground from "@/components/PageBackground";
+import ProgressRing from "@/components/ProgressRing";
+import Sparkline from "@/components/Sparkline";
+import Badge from "@/components/Badge";
+import IconContainer from "@/components/IconContainer";
+import { ArrowUpIcon, PhotoIcon, TrophyIcon, ClockIcon } from "@heroicons/react/24/outline";
 
 export default function ProgressPage() {
   const { personalRecords, photos, addPhoto, removePhoto } = useWorkout();
@@ -60,15 +65,15 @@ export default function ProgressPage() {
     <div className="max-w-lg mx-auto px-4 pt-8">
       <PageBackground variant="progress" />
       <h1 className="text-3xl font-bold text-white mb-1">Progress</h1>
-      <p className="text-gray-300 mb-6">Your personal records & physical progress</p>
+      <p className="text-gray-400 mb-6">Your personal records & physical progress</p>
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6">
-        <button onClick={() => setTab("prs")} className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${tab === "prs" ? "bg-gradient-to-r from-brand-500 to-indigo-500 text-white" : "bg-gray-800 text-gray-300"}`}>
-          <div className="flex items-center gap-2"><IconContainer><TrophyIcon className="w-4 h-4 text-white" /></IconContainer><span>Personal Records</span></div>
+        <button onClick={() => setTab("prs")} className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${tab === "prs" ? "bg-brand-500 text-white" : "bg-gray-800 text-gray-300"}`}>
+          🏆 Personal Records
         </button>
-        <button onClick={() => setTab("photos")} className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${tab === "photos" ? "bg-gradient-to-r from-brand-500 to-indigo-500 text-white" : "bg-gray-800 text-gray-300"}`}>
-          <div className="flex items-center gap-2"><IconContainer><PhotoIcon className="w-4 h-4 text-white" /></IconContainer><span>Body Progress</span></div>
+        <button onClick={() => setTab("photos")} className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${tab === "photos" ? "bg-brand-500 text-white" : "bg-gray-800 text-gray-300"}`}>
+          📸 Body Progress
         </button>
       </div>
 
@@ -76,39 +81,41 @@ export default function ProgressPage() {
         <>
           {personalRecords.length === 0 ? (
             <div className="text-center py-16 bg-gray-800/30 rounded-2xl border border-gray-700/50">
-              <div className="flex items-center justify-center gap-4 mb-4">
-                <IconContainer><TrophyIcon className="w-7 h-7 text-white" /></IconContainer>
-                <div>
-                  <p className="text-lg font-semibold text-white mb-1">No records yet</p>
-                  <p className="text-gray-400 text-sm">Complete workouts to start setting personal records</p>
-                </div>
-              </div>
+              <p className="text-4xl mb-3">🏆</p>
+              <p className="text-gray-300 font-semibold mb-1">No records yet</p>
+              <p className="text-gray-500 text-sm">Complete workouts to start setting personal records</p>
             </div>
           ) : (
             <>
               {/* Rep PRs */}
               {repPRs.length > 0 && (
                 <div className="mb-6">
-                  <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2"><IconContainer><ArrowUpIcon className="w-4 h-4 text-white" /></IconContainer>Max Reps</h2>
+                  <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                    <IconContainer>
+                      <ArrowUpIcon className="w-4 h-4 text-white" />
+                    </IconContainer>
+                    Max Reps
+                  </h2>
                   <div className="space-y-3">{repPRs.map((pr) => (
-                    <div key={`${pr.exerciseId}-reps`} className="bg-gray-900/30 border border-gray-800/60 rounded-2xl p-4 flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-4">
+                    <div key={`${pr.exerciseId}-reps`} className="bg-gray-900/30 border border-gray-800/60 rounded-2xl p-4 flex items-center justify-between gap-4 hover:border-gray-700/80 transition-colors">
+                      <div className="flex items-center gap-4 flex-1">
                         <IconContainer>
-                          {/* TODO: map exercise id to icon */}
-                          <span className="text-white text-lg">{pr.exerciseName?.charAt(0) || "E"}</span>
+                          {getExerciseById(pr.exerciseId)?.image && <span className="text-lg">{getExerciseById(pr.exerciseId)?.image}</span>}
                         </IconContainer>
-                        <div>
-                          <p className="text-sm text-gray-100 font-semibold">{pr.exerciseName}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-100 font-semibold">{getExerciseById(pr.exerciseId)?.name}</p>
                           <p className="text-xs text-gray-400">{pr.value} reps • {new Date(pr.date).toLocaleDateString()}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <Sparkline data={pr.history || [1,2,3,4,5].map(x=>Math.max(1, x))} />
+                      <div className="flex items-center gap-4 flex-shrink-0">
+                        <Sparkline data={[1, 2, 3, 4, 5, 6, 7].map(() => Math.max(1, Math.random() * pr.value))} />
                         <div className="flex flex-col items-end">
-                          <ProgressRing progress={Math.min(100, Math.round((pr.value / (pr.goal || (pr.value+10))) * 100))} size={56} stroke={6} color="#60a5fa" trackColor="#111827" >
+                          <ProgressRing progress={Math.min(100, Math.round((pr.value / ((pr.previousValue || 0) + pr.value + 10)) * 100))} size={56} stroke={6} color="#60a5fa" trackColor="#111827">
                             <span className="text-sm text-white font-semibold">{pr.value}</span>
                           </ProgressRing>
-                          <span className="text-xs text-green-400">+{Math.max(0, (pr.value - (pr.previous || 0)))}</span>
+                          {pr.previousValue !== null && pr.value - pr.previousValue > 0 && (
+                            <span className="text-xs text-green-400 font-medium">+{pr.value - pr.previousValue}</span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -119,7 +126,12 @@ export default function ProgressPage() {
               {/* Hold PRs */}
               {holdPRs.length > 0 && (
                 <div className="mb-6">
-                  <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">⏱️ Max Holds</h2>
+                  <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                    <IconContainer>
+                      <ClockIcon className="w-4 h-4 text-white" />
+                    </IconContainer>
+                    Max Holds
+                  </h2>
                   <div className="space-y-2">{holdPRs.map((pr) => <PRCard key={`${pr.exerciseId}-hold`} pr={pr} />)}</div>
                 </div>
               )}
@@ -127,7 +139,12 @@ export default function ProgressPage() {
               {/* Weight PRs */}
               {weightPRs.length > 0 && (
                 <div className="mb-6">
-                  <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">🏋️ Max Weight</h2>
+                  <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                    <IconContainer>
+                      <ArrowUpIcon className="w-4 h-4 text-white" />
+                    </IconContainer>
+                    Max Weight
+                  </h2>
                   <div className="space-y-2">{weightPRs.map((pr) => <PRCard key={`${pr.exerciseId}-weight`} pr={pr} />)}</div>
                 </div>
               )}
