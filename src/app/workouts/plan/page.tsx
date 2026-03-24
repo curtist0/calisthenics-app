@@ -8,6 +8,7 @@ import { useWorkout } from "@/context/WorkoutContext";
 import ExerciseCard from "@/components/ExerciseCard";
 import ExerciseModal from "@/components/ExerciseModal";
 import ExerciseAnimation from "@/components/ExerciseAnimation";
+import SetLogCard from "@/components/SetLogCard";
 import Timer from "@/components/Timer";
 import RestTimer from "@/components/RestTimer";
 import { Exercise } from "@/lib/types";
@@ -17,7 +18,7 @@ function PlanContent() {
   const params = useSearchParams();
   const router = useRouter();
   const planId = params.get("id");
-  const { savedPlans, activeWorkout, startDayWorkout, completeSet, finishWorkout, cancelWorkout, workoutSessionUI, setWorkoutSessionUI } = useWorkout();
+  const { savedPlans, activeWorkout, startDayWorkout, completeSet, undoSet, finishWorkout, cancelWorkout, workoutSessionUI, setWorkoutSessionUI } = useWorkout();
 
   const plan = savedPlans.find((p) => p.id === planId);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
@@ -200,61 +201,101 @@ function PlanContent() {
     );
   }
 
-  // Active workout (running)
-  if (isActive && activeWorkout && curWE && activeDay) {
+  // Active workout (flexible set logging mode)
+  if (isActive && activeWorkout && activeDay) {
     const totalSets = activeDay.exercises.reduce((s, e) => s + e.sets, 0);
     const doneSets = activeWorkout.exercises.reduce((s, e) => s + e.sets.filter((x) => x.completed).length, 0);
-    const isHold = curExData?.isHold || curWE.holdSeconds;
+    const allExercisesLogged = activeWorkout.exercises.every(ex => ex.sets.every(s => s.completed));
 
     return (
-      <div className="max-w-lg mx-auto px-4 pt-8">
-        {showRest && <RestTimer seconds={curWE.restSeconds} onComplete={() => setShowRest(false)} />}
-        <div className="mb-6">
+      <div className="max-w-lg mx-auto px-4 pt-8 pb-20">
+        {/* Progress Bar */}
+        <div className="mb-6 sticky top-0 bg-gray-900/95 py-4 -mx-4 px-4 z-10">
           <div className="flex justify-between text-sm text-gray-400 mb-2">
-            <span>Exercise {curEx + 1}/{activeDay.exercises.length}</span>
-            <span>{doneSets}/{totalSets} sets</span>
+            <span>Workout Progress</span>
+            <span>{doneSets}/{totalSets} sets logged</span>
           </div>
-          <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-            <div className="h-full bg-brand-500 rounded-full transition-all" style={{ width: `${(doneSets / totalSets) * 100}%` }} />
+          <div className="h-3 bg-gray-800 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-brand-500 to-brand-600 rounded-full transition-all" style={{ width: `${(doneSets / totalSets) * 100}%` }} />
           </div>
         </div>
 
-        <div className="text-center mb-4">
-          {curExData && <div className="flex justify-center mb-3"><ExerciseAnimation exerciseId={curExData.id} size={120} /></div>}
-          {!curExData && <span className="text-5xl mb-3 block">{curImage}</span>}
-          <h2 className="text-xl font-bold text-white">{curName}</h2>
-          <p className="text-gray-400 text-sm">Set {curSet + 1} of {curWE.sets}</p>
-          {curWE.progressionLevel && <p className="text-brand-400 text-xs mt-1">{curWE.progressionLevel}</p>}
-        </div>
+        {/* Exercise List with Inline Logging */}
+        <div className="space-y-6 mb-6">
+          {activeDay.exercises.map((workoutExercise, exerciseIndex) => {
+            const completedEx = activeWorkout.exercises[exerciseIndex];
+            const exercise = getExerciseById(workoutExercise.exerciseId);
+            const completedSets = completedEx?.sets || [];
+            const exerciseProgress = completedSets.filter(s => s.completed).length;
 
-        {isHold && curWE.holdSeconds ? (
-          <div className="flex flex-col items-center mt-2">
-            <Timer targetSeconds={curWE.holdSeconds} onComplete={handleCompleteHold} label={`Hold for ${curWE.holdSeconds}s`} setNumber={curSet + curEx * 100} />
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-4 mt-2">
-            <div className="bg-gray-800/50 rounded-2xl p-5 text-center w-full">
-              <p className="text-4xl font-bold text-white mb-1">{curWE.reps}</p>
-              <p className="text-gray-400 text-sm">reps</p>
-            </div>
-            {curExData?.supportsWeight && (
-              <div className="w-full">
-                <label className="text-xs text-gray-400 mb-1 block">Added weight (kg)</label>
-                <input type="number" value={weightInput} onChange={(e) => setWeightInput(e.target.value)} placeholder="0" className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl text-white text-center font-mono focus:border-brand-500 focus:outline-none" />
+            return (
+              <div key={exerciseIndex} className="space-y-3">
+                {/* Exercise Header */}
+                <div className="glass rounded-2xl p-4">
+                  <div className="flex items-center gap-4 mb-3">
+                    {exercise && <ExerciseAnimation exerciseId={exercise.id} size={60} />}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-white font-bold">{exercise?.name || "Exercise"}</h3>
+                      {workoutExercise.progressionLevel && (
+                        <p className="text-brand-400 text-xs mt-1">{workoutExercise.progressionLevel}</p>
+                      )}
+                      <p className="text-gray-400 text-xs mt-2">
+                        {workoutExercise.sets} sets × {workoutExercise.holdSeconds ? `${workoutExercise.holdSeconds}s` : `${workoutExercise.reps} reps`}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Progress Indicator */}
+                  <div className="h-1 bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-green-400 transition-all"
+                      style={{ width: `${(exerciseProgress / workoutExercise.sets) * 100}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Set Logging Cards */}
+                <div className="space-y-2">
+                  {Array.from({ length: workoutExercise.sets }).map((_, setIndex) => (
+                    <SetLogCard
+                      key={setIndex}
+                      exerciseIndex={exerciseIndex}
+                      setIndex={setIndex}
+                      workoutExercise={workoutExercise}
+                      setData={completedSets[setIndex]}
+                      exercise={exercise}
+                      onLogSet={completeSet}
+                      onUndoSet={undoSet}
+                    />
+                  ))}
+                </div>
               </div>
-            )}
-            <button onClick={handleCompleteReps} className="w-full py-4 bg-brand-500 text-white rounded-2xl font-bold text-lg hover:bg-brand-600">Complete Set ✓</button>
-          </div>
-        )}
-        <div className="flex gap-3 mt-4">
+            );
+          })}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="fixed bottom-20 left-0 right-0 px-4 py-3 bg-gray-900/95 border-t border-gray-800 flex gap-3">
           <button
-            type="button"
             onClick={handlePauseExplore}
-            className="flex-1 py-3 bg-gray-800 text-gray-400 rounded-2xl font-medium"
+            className="flex-1 py-3 bg-gray-800 text-gray-400 rounded-2xl font-medium hover:bg-gray-700"
           >
-            ⏸ Pause & browse
+            ⏸ Pause
           </button>
-          <button onClick={handleCancel} className="flex-1 py-3 bg-gray-800 text-red-400 rounded-2xl font-medium">✕ End</button>
+          <button
+            onClick={handleCancel}
+            className="flex-1 py-3 bg-gray-800 text-red-400 rounded-2xl font-medium hover:bg-red-500/10"
+          >
+            ✕ End
+          </button>
+          {allExercisesLogged && (
+            <button
+              onClick={() => { finishWorkout(); router.push("/progress"); }}
+              className="flex-1 py-3 bg-green-500 text-white rounded-2xl font-semibold hover:bg-green-600"
+            >
+              ✓ Finish
+            </button>
+          )}
         </div>
       </div>
     );

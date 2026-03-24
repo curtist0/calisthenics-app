@@ -33,12 +33,13 @@ describe("Plan generator", () => {
     expect(restDays.every((d) => d.restDayActivities && d.restDayActivities.length > 0)).toBe(true);
   });
 
-  it("uses distinct exercise selections across training days", () => {
-    const plan = generateWeeklyPlan(["muscle-up", "full-planche"], "balanced");
+  it("uses same exercise routine for all training days (OG neurological adaptation)", () => {
+    const plan = generateWeeklyPlan(["muscle-up", "full-planche"], "strength-skill");
     const training = plan.days.filter((d) => !d.isRest);
     const signatures = training.map((d) => d.exercises.map((e) => e.exerciseId).join(","));
     const unique = new Set(signatures);
-    expect(unique.size).toBeGreaterThan(1);
+    // OG approach: same routine all training days for neurological adaptation
+    expect(unique.size).toBe(1);
   });
 
   it("adjusts for weight-loss goal", () => {

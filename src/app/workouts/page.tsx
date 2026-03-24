@@ -9,12 +9,25 @@ import ExerciseIllustration from "@/components/ExerciseIllustration";
 import Link from "next/link";
 import { TrainingGoal, Exercise } from "@/lib/types";
 
-const goalOptions: { value: TrainingGoal; label: string; icon: string }[] = [
-  { value: "muscle", label: "Build Muscle", icon: "💪" },
-  { value: "skills", label: "Master Skills", icon: "🤸" },
-  { value: "weight-loss", label: "Lose Weight", icon: "🔥" },
-  { value: "endurance", label: "Endurance", icon: "🏃" },
-  { value: "balanced", label: "Balanced", icon: "⚖️" },
+const goalOptions: { value: TrainingGoal; label: string; description: string; icon: string }[] = [
+  {
+    value: "strength-skill",
+    label: "Strength & Skill",
+    description: "Neurological adaptation, 3-8 reps, 3 min rest",
+    icon: "⚡",
+  },
+  {
+    value: "hypertrophy",
+    label: "Muscle Growth",
+    description: "Muscle hypertrophy, 8-15 reps, 90s rest",
+    icon: "💪",
+  },
+  {
+    value: "endurance",
+    label: "Stamina & Endurance",
+    description: "Work capacity, 15-25 reps, 60s rest",
+    icon: "🏃",
+  },
 ];
 
 const diffOrder: Record<string, number> = { beginner: 0, intermediate: 1, advanced: 2, elite: 3 };
@@ -55,7 +68,7 @@ export default function WorkoutsPage() {
   const [view, setView] = useState<"library" | "type" | "pick" | "goal" | "yoga-goal">("library");
   const [workoutType, setWorkoutType] = useState<"calisthenics" | "flexibility" | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [selectedGoal, setSelectedGoal] = useState<TrainingGoal>("balanced");
+  const [selectedGoal, setSelectedGoal] = useState<TrainingGoal>("strength-skill");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [showMore, setShowMore] = useState(false);
   const [yogaGoalText, setYogaGoalText] = useState("");
@@ -256,14 +269,22 @@ export default function WorkoutsPage() {
       {/* Goal Selection */}
       {view === "goal" && (
         <>
-          <p className="text-gray-400 text-sm mb-4">How should your plan be optimized?</p>
+          <p className="text-gray-400 text-sm mb-4">Which Overcoming Gravity approach fits your goals?</p>
           <div className="space-y-3 mb-6">
             {goalOptions.map((g) => (
-              <button key={g.value} onClick={() => setSelectedGoal(g.value)}
-                className={`w-full p-4 rounded-2xl text-left flex items-center gap-4 border-2 ${selectedGoal === g.value ? "border-brand-500 bg-brand-500/10 glass" : "border-transparent glass hover:border-gray-600"}`}>
-                <span className="text-2xl">{g.icon}</span>
-                <p className="text-white font-bold">{g.label}</p>
-                {selectedGoal === g.value && <span className="ml-auto text-brand-400">✓</span>}
+              <button
+                key={g.value}
+                onClick={() => setSelectedGoal(g.value)}
+                className={`w-full p-4 rounded-2xl text-left flex items-start gap-4 border-2 transition-all ${
+                  selectedGoal === g.value ? "border-brand-500 bg-brand-500/10 glass" : "border-transparent glass hover:border-gray-600"
+                }`}
+              >
+                <span className="text-2xl flex-shrink-0 mt-0.5">{g.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-bold">{g.label}</p>
+                  <p className="text-gray-400 text-xs mt-1">{g.description}</p>
+                </div>
+                {selectedGoal === g.value && <span className="ml-auto text-brand-400 text-lg flex-shrink-0 mt-0.5">✓</span>}
               </button>
             ))}
           </div>

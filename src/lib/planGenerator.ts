@@ -3,6 +3,7 @@ import { exercises, getExerciseById } from "@/data/exercises";
 import { yogaPoses, getYogaPoseById } from "@/data/yoga";
 import { getUserProfile } from "./storage";
 import { getConditioningForSkill } from "./conditioning";
+import { OG_GOAL_CONFIG, DIFFICULTY_MODIFIERS, getProgressionLabel } from "./overcomingGravity";
 
 function getFullProgressionChain(exerciseId: string): Exercise[] {
   const chain: Exercise[] = [];
@@ -31,10 +32,13 @@ type DailyFocus = "volume" | "intensity" | "conditioning";
 
 // Goal-specific focus patterns for 6-day training cycles
 const goalFocusPatterns: Record<TrainingGoal, DailyFocus[]> = {
+  "strength-skill": ["intensity", "volume", "conditioning", "intensity", "volume", "conditioning"],
+  hypertrophy: ["volume", "intensity", "conditioning", "volume", "intensity", "conditioning"],
+  endurance: ["conditioning", "volume", "intensity", "conditioning", "volume", "intensity"],
+  // Legacy goals
   muscle: ["volume", "intensity", "conditioning", "volume", "intensity", "conditioning"],
   skills: ["intensity", "volume", "conditioning", "intensity", "volume", "conditioning"],
   "weight-loss": ["conditioning", "conditioning", "volume", "conditioning", "conditioning", "volume"],
-  endurance: ["conditioning", "volume", "intensity", "conditioning", "volume", "intensity"],
   balanced: ["volume", "intensity", "conditioning", "volume", "intensity", "conditioning"],
 };
 
@@ -47,47 +51,58 @@ const focusConfig: Record<DailyFocus, { sets: number; reps: number; rest: number
 
 // Base goal configuration (goal impact on all days)
 const goalConfig: Record<TrainingGoal, { baseMultiplier: number }> = {
+  "strength-skill": { baseMultiplier: 1.0 },
+  hypertrophy: { baseMultiplier: 1.1 },
+  endurance: { baseMultiplier: 1.05 },
+  // Legacy goals
   muscle: { baseMultiplier: 1.1 },
   skills: { baseMultiplier: 1.0 },
   "weight-loss": { baseMultiplier: 0.95 },
-  endurance: { baseMultiplier: 1.05 },
   balanced: { baseMultiplier: 1.0 },
 };
 
-// Updated Set/Rep logic based on standard strength & conditioning principles
+// Updated Set/Rep logic based on Overcoming Gravity principles
 function makeEx(ex: Exercise, isTargetSkill: boolean, goal: TrainingGoal, label?: string): WorkoutExercise {
-  let sets = 3;
-  let reps = 8;
-  let holdSeconds = 15;
-  let restSeconds = 90;
+  // Map legacy goals to new OG goals
+  const ogGoal = 
+    goal === "strength-skill" || goal === "skills" ? "strength-skill" :
+    goal === "hypertrophy" || goal === "muscle" ? "hypertrophy" :
+    goal === "endurance" || goal === "weight-loss" ? "endurance" :
+    "hypertrophy"; // Default fallback
 
-  // Overcoming Gravity Set/Rep ranges based on goals
-  if (goal === "muscle" || goal === "weight-loss") {
-    sets = 3; // 3-4 sets
-    reps = ex.difficulty === "beginner" ? 12 : 8; // 8-15 reps for hypertrophy
-    holdSeconds = 20; 
-    restSeconds = 90; // 1.5 mins
-  } else if (goal === "skills" || goal === "balanced") {
-    sets = isTargetSkill ? 4 : 3; // Extra volume for skills
-    reps = ex.difficulty === "beginner" ? 8 : 5; // 3-8 reps for strength
-    holdSeconds = 10; // Max effort holds
-    restSeconds = 180; // 3 mins for full ATP recovery (OG standard)
-  } else if (goal === "endurance") {
-    sets = 3;
-    reps = 15; // 15+ reps
-    holdSeconds = 30;
-    restSeconds = 60; // 1 min
+  const config = OG_GOAL_CONFIG[ogGoal];
+  const difficulty = ex.difficulty || "beginner";
+  const diffModifier = DIFFICULTY_MODIFIERS[difficulty] || 1.0;
+
+  let sets = config.setsPerExercise;
+  let reps = Math.round((config.targetReps.max - config.targetReps.min) / 2 * diffModifier);
+  let holdSeconds = Math.round((config.targetHolds.max - config.targetHolds.min) / 2 * diffModifier);
+  let restSeconds = config.restSeconds;
+
+  // Adjust for target skills (extra volume for neurological adaptation)
+  if (isTargetSkill && ogGoal === "strength-skill") {
+    sets = Math.min(5, sets + 1);
   }
-
-  // Elite/Advanced modifier (scale down reps/holds as they are much harder)
-  if (ex.difficulty === "elite") { reps = Math.max(1, Math.round(reps * 0.5)); holdSeconds = Math.max(5, Math.round(holdSeconds * 0.5)); }
-  if (ex.difficulty === "advanced") { reps = Math.max(2, Math.round(reps * 0.7)); holdSeconds = Math.max(8, Math.round(holdSeconds * 0.7)); }
 
   if (ex.isHold) {
-    return { exerciseId: ex.id, sets, reps: null, holdSeconds, restSeconds, progressionLevel: label };
+    return {
+      exerciseId: ex.id,
+      sets,
+      reps: null,
+      holdSeconds: Math.max(5, holdSeconds),
+      restSeconds,
+      progressionLevel: label || getProgressionLabel(isTargetSkill, ex.category),
+    };
   }
-  
-  return { exerciseId: ex.id, sets, reps, holdSeconds: null, restSeconds, progressionLevel: label };
+
+  return {
+    exerciseId: ex.id,
+    sets,
+    reps: Math.max(1, reps),
+    holdSeconds: null,
+    restSeconds,
+    progressionLevel: label || getProgressionLabel(isTargetSkill, ex.category),
+  };
 }
 
 function getRestDayActivities(dayIndex: number): RestDayActivity[] {
@@ -181,7 +196,7 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
       });
     }
 
-    // Conditioning / Accessory for the skill
+    // Conditioning / Supplemental for the skill
     const cond = getConditioningForSkill(targetId);
     if (cond.length > 0) {
       const top = cond[0];
@@ -190,7 +205,7 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
         exerciseId: `cond-${targetId}-0`, sets: top.sets,
         reps: isHold ? null : parseInt(top.reps) || 8,
         holdSeconds: isHold ? parseInt(top.reps) || 15 : null,
-        restSeconds: 90, progressionLevel: `🔧 Accessory`,
+        restSeconds: 90, progressionLevel: `🔧 Supplemental Strength`,
       });
     }
   }
@@ -252,7 +267,16 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
     }
   }
 
-  const goalLabel = { muscle: "Build Muscle", skills: "Master Skills", "weight-loss": "Lose Weight", endurance: "Build Endurance", balanced: "Balanced" }[goal];
+  const goalLabel: Record<TrainingGoal, string> = {
+    "strength-skill": "Strength & Skill",
+    hypertrophy: "Muscle Growth",
+    endurance: "Stamina & Endurance",
+    // Legacy
+    muscle: "Build Muscle",
+    skills: "Master Skills",
+    "weight-loss": "Lose Weight",
+    balanced: "Balanced",
+  };
   const weeklyExerciseSlots = days.filter((d) => !d.isRest).reduce((s, d) => s + d.exercises.length, 0);
   
   return {

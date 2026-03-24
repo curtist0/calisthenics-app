@@ -24,6 +24,7 @@ interface WorkoutContextType {
   removePlan: (planId: string) => void;
   startDayWorkout: (plan: WeeklyPlan, dayIndex: number) => WorkoutLog;
   completeSet: (ei: number, si: number, reps: number | null, hold: number | null, weight: number | null) => void;
+  undoSet: (ei: number, si: number) => void;
   finishWorkout: () => void;
   cancelWorkout: () => void;
   refreshData: () => void;
@@ -97,6 +98,16 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const undoSet = useCallback((ei: number, si: number) => {
+    setActiveWorkout((prev) => {
+      if (!prev) return prev;
+      const u = { ...prev, exercises: [...prev.exercises] };
+      u.exercises[ei] = { ...u.exercises[ei], sets: [...u.exercises[ei].sets] };
+      u.exercises[ei].sets[si] = { reps: null, holdSeconds: null, weightKg: null, completed: false };
+      return u;
+    });
+  }, []);
+
   const finishWorkout = useCallback(() => {
     if (!activeWorkout) return;
     saveWorkoutLog({ ...activeWorkout, endTime: new Date().toISOString(), completed: true });
@@ -117,7 +128,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   return (
     <WorkoutContext.Provider value={{
       logs, stats, personalRecords, recentPRs, savedPlans, photos, profile, activeWorkout,
-      addPlan, removePlan, startDayWorkout, completeSet, finishWorkout, cancelWorkout,
+      addPlan, removePlan, startDayWorkout, completeSet, undoSet, finishWorkout, cancelWorkout,
       refreshData, addPhoto, removePhoto, setProfile, workoutSessionUI, setWorkoutSessionUI,
     }}>
       {children}

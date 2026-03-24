@@ -1,7 +1,7 @@
 export type MuscleGroup = "chest" | "back" | "shoulders" | "biceps" | "triceps" | "core" | "quads" | "hamstrings" | "glutes" | "calves" | "full-body";
 export type Difficulty = "beginner" | "intermediate" | "advanced" | "elite";
 export type ExerciseCategory = "push" | "pull" | "legs" | "core" | "full-body" | "skill";
-export type TrainingGoal = "muscle" | "skills" | "weight-loss" | "endurance" | "balanced";
+export type TrainingGoal = "strength-skill" | "hypertrophy" | "endurance" | "muscle" | "skills" | "weight-loss" | "balanced"; // Legacy goals kept for backward compat
 
 export interface Exercise {
   id: string;
@@ -95,6 +95,8 @@ export interface CompletedSet {
   holdSeconds: number | null;
   weightKg: number | null;
   completed: boolean;
+  targetReps?: number; // User-overridden target (e.g., app said 8 but user did 6)
+  targetHold?: number;
 }
 
 export interface CompletedExercise {
