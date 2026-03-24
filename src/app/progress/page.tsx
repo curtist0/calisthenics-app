@@ -8,6 +8,7 @@ import ProgressRing from "@/components/ProgressRing";
 import Sparkline from "@/components/Sparkline";
 import Badge from "@/components/Badge";
 import IconContainer from "@/components/IconContainer";
+import ExerciseGifIcon from "@/components/ExerciseGifIcon";
 import { ArrowUpIcon, PhotoIcon, TrophyIcon, ClockIcon } from "@heroicons/react/24/outline";
 
 export default function ProgressPage() {
@@ -38,16 +39,16 @@ export default function ProgressPage() {
     if (!ex) return null;
     const improved = pr.previousValue !== null ? pr.value - pr.previousValue : null;
     return (
-      <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">{ex.image}</span>
-            <div>
-              <p className="font-semibold text-white text-sm">{ex.name}</p>
+      <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50 hover:border-gray-700 transition-colors">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <ExerciseGifIcon exerciseId={pr.exerciseId} size={40} />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-white text-sm truncate">{ex.name}</p>
               <p className="text-xs text-gray-400">{new Date(pr.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
             </div>
           </div>
-          <div className="text-right">
+          <div className="text-right flex-shrink-0">
             <p className="text-xl font-bold text-brand-400">
               {pr.value}{pr.type === "hold" ? "s" : pr.type === "weight" ? "kg" : ""}
             </p>
@@ -98,12 +99,10 @@ export default function ProgressPage() {
                   </h2>
                   <div className="space-y-3">{repPRs.map((pr) => (
                     <div key={`${pr.exerciseId}-reps`} className="bg-gray-900/30 border border-gray-800/60 rounded-2xl p-4 flex items-center justify-between gap-4 hover:border-gray-700/80 transition-colors">
-                      <div className="flex items-center gap-4 flex-1">
-                        <IconContainer>
-                          {getExerciseById(pr.exerciseId)?.image && <span className="text-lg">{getExerciseById(pr.exerciseId)?.image}</span>}
-                        </IconContainer>
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <ExerciseGifIcon exerciseId={pr.exerciseId} size={44} />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-100 font-semibold">{getExerciseById(pr.exerciseId)?.name}</p>
+                          <p className="text-sm text-gray-100 font-semibold truncate">{getExerciseById(pr.exerciseId)?.name}</p>
                           <p className="text-xs text-gray-400">{pr.value} reps • {new Date(pr.date).toLocaleDateString()}</p>
                         </div>
                       </div>

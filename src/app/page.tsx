@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import PageBackground from "@/components/PageBackground";
 import { getRandomQuote } from "@/data/quotes";
+import ExerciseGifIcon from "@/components/ExerciseGifIcon";
 
 export default function Home() {
   const router = useRouter();
@@ -173,7 +174,7 @@ export default function Home() {
               return (
                 <div key={`${pr.exerciseId}-${pr.type}-${i}`} className="glass rounded-xl p-3 flex items-center justify-between hover:scale-[1.01] transition-transform">
                   <div className="flex items-center gap-3">
-                    <span className="text-xl">{ex.image}</span>
+                    <ExerciseGifIcon exerciseId={pr.exerciseId} size={32} showBorder={false} />
                     <div>
                       <p className="font-bold text-white text-sm">{ex.name}</p>
                       <p className="text-xs text-gray-500">{new Date(pr.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })} · {pr.type}</p>
