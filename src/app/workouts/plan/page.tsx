@@ -11,6 +11,7 @@ import ExerciseAnimation from "@/components/ExerciseAnimation";
 import SetLogCard from "@/components/SetLogCard";
 import Timer from "@/components/Timer";
 import RestTimer from "@/components/RestTimer";
+import { useCoachToast } from "@/components/CoachToast";
 import { Exercise } from "@/lib/types";
 import Link from "next/link";
 
@@ -19,6 +20,7 @@ function PlanContent() {
   const router = useRouter();
   const planId = params.get("id");
   const { savedPlans, activeWorkout, startDayWorkout, completeSet, undoSet, finishWorkout, cancelWorkout, workoutSessionUI, setWorkoutSessionUI } = useWorkout();
+  const { toast, showRandom, dismiss, CoachToastComponent } = useCoachToast();
 
   const plan = savedPlans.find((p) => p.id === planId);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
@@ -394,6 +396,7 @@ function PlanContent() {
         ))}
       </div>
       {selectedExercise && <ExerciseModal exercise={selectedExercise} onClose={() => setSelectedExercise(null)} />}
+      {CoachToastComponent}
     </div>
   );
 }

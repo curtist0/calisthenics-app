@@ -1,9 +1,19 @@
-import { Exercise, WeeklyPlan, DayWorkout, WorkoutExercise, TrainingGoal, WarmUp, RestDayActivity } from "./types";
+import { Exercise, WeeklyPlan, DayWorkout, WorkoutExercise, TrainingGoal, WarmUp, RestDayActivity, Equipment } from "./types";
 import { exercises, getExerciseById } from "@/data/exercises";
 import { yogaPoses, getYogaPoseById } from "@/data/yoga";
 import { getUserProfile } from "./storage";
 import { getConditioningForSkill } from "./conditioning";
 import { OG_GOAL_CONFIG, DIFFICULTY_MODIFIERS, getProgressionLabel } from "./overcomingGravity";
+
+function userHasEquipment(exercise: Exercise | undefined, userEquipment?: Equipment[]): boolean {
+  if (!exercise) return false;
+  // If user has no equipment restrictions, allow all exercises
+  if (!userEquipment || userEquipment.length === 0) return true;
+  // If exercise has no equipment requirements, it's calisthenics (always allowed)
+  if (!exercise.equipment || exercise.equipment.length === 0) return true;
+  // Check if any of the exercise's required equipment matches user's equipment
+  return exercise.equipment.some(eq => userEquipment.includes(eq));
+}
 
 function getFullProgressionChain(exerciseId: string): Exercise[] {
   const chain: Exercise[] = [];
@@ -279,12 +289,16 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
   };
   const weeklyExerciseSlots = days.filter((d) => !d.isRest).reduce((s, d) => s + d.exercises.length, 0);
   
+  // Ensure targetNames are strings (defensive against accidental object insertion)
+  const skillNamesStr = targetNames.filter(n => typeof n === 'string').join(", ");
+  const goalLabelStr = goalLabel[goal] || "Full Body";
+  
   return {
     id: `plan-${Date.now()}`, 
     name: selectedSkillIds.length === 1 ? `${targetNames[0]} Program` : "Full Body Gymnastics Program",
-    description: `${goalLabel} — 3x/week Full Body Routine progressing toward: ${targetNames.join(", ")}`,
+    description: `${goalLabelStr} — Full Body Routine progressing toward: ${skillNamesStr}`,
     difficulty: "intermediate", 
-    goal: `${goalLabel}: ${targetNames.join(", ")}`,
+    goal: `${goalLabelStr}: ${skillNamesStr}`,
     trainingGoal: goal, 
     targetSkills: selectedSkillIds, 
     days,
@@ -295,116 +309,135 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
 
 // ─── YOGA PLAN ───
 
-const muscleStretches: Record<string, string[]> = {
-  "hamstrings": ["forward-fold", "half-splits", "seated-straddle"],
-  "hip flexors": ["lizard", "pigeon", "warrior1", "camel"],
-  "inner thighs": ["butterfly", "seated-straddle", "warrior2"],
-  "hips": ["pigeon", "butterfly", "lizard", "happy-baby", "lotus"],
-  "glutes": ["pigeon", "happy-baby", "supine-twist"],
-  "quads": ["camel", "dancer"],
-  "back": ["cobra", "bridge", "supine-twist", "childs"],
-  "spine": ["cobra", "bridge", "camel", "plow"],
-  "shoulders": ["eagle", "dolphin", "childs"],
-  "chest": ["cobra", "bridge", "camel", "warrior1"],
-  "core": ["boat", "side-plank", "dolphin"],
-  "balance": ["tree", "warrior3", "eagle", "dancer"],
-  "arms": ["dolphin", "side-plank"],
-  "stress": ["childs", "forward-fold", "legs-up-wall", "savasana", "happy-baby", "supine-twist"],
-  "sleep": ["childs", "forward-fold", "legs-up-wall", "supine-twist", "happy-baby", "savasana"],
-  "relaxation": ["childs", "cobra", "butterfly", "forward-fold", "legs-up-wall", "savasana"],
-  "energy": ["warrior1", "warrior2", "chair", "cobra", "bridge", "tree"],
-  "posture": ["cobra", "camel", "bridge", "warrior1", "warrior2", "chair", "tree"],
-  "full body": ["forward-fold", "cobra", "pigeon", "warrior1", "warrior2", "tree", "bridge", "butterfly", "seated-straddle", "half-splits"],
+// Themed flow sequences for each day
+const yogaThemes = {
+  "monday": {
+    name: "Power & Strength",
+    description: "Warrior sequences, arm balances, strength holds",
+    warmup: ["cat-cow", "downward-dog", "cobra"],
+    main: ["warrior1", "warrior2", "warrior3", "chair", "side-plank", "boat"],
+    cooldown: ["forward-fold", "supine-twist", "savasana"]
+  },
+  "tuesday": {
+    name: "Dynamic Hip Openers",
+    description: "Pigeon variants, lizard, bound angle, happy baby",
+    warmup: ["cat-cow", "easy-pose", "butterfly"],
+    main: ["pigeon", "lizard", "fire-log", "bound-angle", "happy-baby", "reclined-pigeon"],
+    cooldown: ["forward-fold", "supine-twist", "childs", "savasana"]
+  },
+  "wednesday": {
+    name: "Spine & Core Flow",
+    description: "Backbends, twists, cobra, bridge, boat",
+    warmup: ["cat-cow", "downward-dog", "sphinx"],
+    main: ["cobra", "bridge", "locust", "seated-twist", "bow", "boat"],
+    cooldown: ["childs", "supine-twist", "legs-up-wall", "savasana"]
+  },
+  "thursday": {
+    name: "Balance & Inversions",
+    description: "Arm balances, handstand prep, headstand prep",
+    warmup: ["shoulder-rolls", "downward-dog", "dolphin"],
+    main: ["crow", "eagle", "tree", "warrior3", "half-shoulder-stand", "handstand-prep"],
+    cooldown: ["forward-fold", "childs", "easy-pose", "savasana"]
+  },
+  "friday": {
+    name: "Hamstring & Flexibility",
+    description: "Forward folds, splits prep, half-splits",
+    warmup: ["cat-cow", "runners-lunge", "downward-dog"],
+    main: ["forward-fold", "half-splits", "standing-splits", "seated-forward-fold", "seated-straddle", "pyramid"],
+    cooldown: ["butterfly", "supine-twist", "happy-baby", "savasana"]
+  },
+  "saturday": {
+    name: "Recovery & Restorative",
+    description: "Gentle poses, supported stretches, yin",
+    warmup: ["easy-pose", "cat-cow", "childs"],
+    main: ["supported-bridge", "supported-child", "yin-pigeon", "supported-shoulder-opener", "eye-of-needle"],
+    cooldown: ["legs-up-wall", "reclined-bound-angle", "savasana"]
+  },
+  "sunday": {
+    name: "Yin Rest & Meditation",
+    description: "Long holds, restorative, savasana focus",
+    warmup: ["easy-pose", "humming-bee", "cat-cow"],
+    main: ["yin-pigeon", "reclined-bound-angle", "supported-child", "legs-up-wall", "thunderbolt"],
+    cooldown: ["seated-meditation", "savasana"]
+  }
 };
 
 export function generateYogaPlanFromGoal(goalText: string, durationMinutes: number): WeeklyPlan {
-  return generateYogaPlanInternal(goalText, durationMinutes);
+  const dur = Math.max(20, durationMinutes || 60);
+  return generateThemedYogaPlan(dur);
 }
 
-function generateYogaPlan(poseIds: string[], durationMinutes: number): WeeklyPlan {
-  return generateYogaPlanInternal("flexibility", durationMinutes, poseIds);
-}
-
-function generateYogaPlanInternal(goalText: string, duration: number, specificPoseIds?: string[]): WeeklyPlan {
+function generateThemedYogaPlan(duration: number): WeeklyPlan {
   const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-  const dur = Math.max(10, duration || 60);
-  const posesPerSession = Math.max(5, Math.round(dur / 3));
-
-  // Determine which muscle groups to focus on based on goal
-  const goalLower = goalText.toLowerCase();
-  let focusMuscles: string[] = [];
-  if (goalLower.includes("split") || goalLower.includes("flex")) focusMuscles = ["hamstrings", "hip flexors", "inner thighs", "hips"];
-  else if (goalLower.includes("back") || goalLower.includes("bend")) focusMuscles = ["back", "spine", "shoulders", "chest"];
-  else if (goalLower.includes("balance") || goalLower.includes("handstand")) focusMuscles = ["balance", "core", "arms"];
-  else if (goalLower.includes("stress") || goalLower.includes("relax") || goalLower.includes("anxiety")) focusMuscles = ["stress", "relaxation"];
-  else if (goalLower.includes("sleep")) focusMuscles = ["sleep", "relaxation"];
-  else if (goalLower.includes("energy") || goalLower.includes("morning")) focusMuscles = ["energy", "posture"];
-  else if (goalLower.includes("posture")) focusMuscles = ["posture", "back", "chest"];
-  else focusMuscles = ["full body", "hips", "hamstrings", "back"];
-
-  // Build pose pool from muscle groups
-  const posePool = new Set<string>();
-  for (const muscle of focusMuscles) {
-    (muscleStretches[muscle] || []).forEach((id) => { if (getYogaPoseById(id)) posePool.add(id); });
-  }
-  // Add specific poses if provided
-  if (specificPoseIds) specificPoseIds.forEach((id) => { if (getYogaPoseById(id)) posePool.add(id); });
-  // Always include fundamentals
-  ["forward-fold", "cobra", "childs", "butterfly", "bridge"].forEach((id) => posePool.add(id));
-  const allPoses = [...posePool].filter((id) => getYogaPoseById(id));
-
-  // Session templates
-  const sessionTypes = [
-    { name: "Flow Session", holdMult: 1.0 },
-    { name: "Deep Stretch", holdMult: 1.5 },
-    { name: "Active Flexibility", holdMult: 0.8 },
-    { name: "Restorative", holdMult: 1.3 },
-    { name: "Strength & Stretch", holdMult: 0.9 },
-  ];
-
-  const twoSided = new Set(["pigeon", "lizard", "half-splits", "warrior1", "warrior2", "warrior3", "eagle", "dancer", "tree", "standing-splits"]);
-  const warmUpPoses = ["childs", "cobra", "bridge"];
-  const coolDownPoses = ["supine-twist", "happy-baby", "legs-up-wall", "savasana"].filter((id) => getYogaPoseById(id));
-
-  const yogaSeed = dur * 7919 + allPoses.length * 13;
+  const dur = Math.max(20, duration || 60);
+  
+  // Calculate hold time adjustments based on duration
+  const holdMultiplier = dur / 60;
+  
   const days: DayWorkout[] = dayNames.map((day, i) => {
-    if (i === 3 || i === 6) {
+    const dayLower = day.toLowerCase();
+    const theme = yogaThemes[dayLower as keyof typeof yogaThemes];
+    
+    if (!theme) {
       return { day, name: "Rest", isRest: true, exercises: [], restDayActivities: getRestDayActivities(i) };
     }
 
-    const session = sessionTypes[i % sessionTypes.length];
-    const mainCount = Math.max(3, posesPerSession - warmUpPoses.length - coolDownPoses.length);
-    const shuffled = seededShuffle(allPoses, yogaSeed + i * 104729);
-    const start = allPoses.length <= mainCount ? 0 : (i * 11) % Math.max(1, shuffled.length - mainCount);
-    const doubled = shuffled.length >= mainCount ? [...shuffled, ...shuffled] : [...shuffled, ...shuffled, ...shuffled];
-    const mainPoses = doubled.slice(start, start + mainCount);
-    const sessionPoses = [...new Set([...warmUpPoses, ...mainPoses, ...coolDownPoses])].filter((id) => getYogaPoseById(id));
+    // Build the flow: warmup -> main sequence -> cooldown
+    const flowPoses = [...theme.warmup, ...theme.main, ...theme.cooldown];
+    
+    // Two-sided poses need 2 sets
+    const twoSided = new Set(["pigeon", "lizard", "half-splits", "warrior1", "warrior2", "warrior3", "eagle", "dancer", "tree", "standing-splits", "reclined-pigeon", "fire-log", "sleeping-swan", "runners-lunge", "low-lunge", "high-lunge", "eye-of-needle", "thread-the-needle", "yin-pigeon"]);
+    
+    // Adjust hold times: warmup shorter, main normal/longer, cooldown longer
+    const getHoldSeconds = (poseId: string): number => {
+      const pose = getYogaPoseById(poseId);
+      if (!pose) return 20;
+      
+      if (theme.warmup.includes(poseId)) {
+        return Math.round(pose.holdSeconds * 0.7 * holdMultiplier);
+      } else if (theme.cooldown.includes(poseId)) {
+        return Math.round(pose.holdSeconds * 1.2 * holdMultiplier);
+      } else {
+        return Math.round(pose.holdSeconds * 0.9 * holdMultiplier);
+      }
+    };
 
     return {
       day,
-      name: `${session.name} · Day ${i + 1} (${dur} min)`,
+      name: `${theme.name} (${dur} min)`,
       isRest: false,
-      focus: `${focusMuscles.slice(0, 3).join(", ")} — varied sequence`,
-      exercises: sessionPoses.map((id) => {
-        const pose = getYogaPoseById(id);
+      focus: theme.description,
+      exercises: flowPoses.map((poseId) => {
+        const pose = getYogaPoseById(poseId);
         return {
-          exerciseId: id, sets: twoSided.has(id) ? 2 : 1, reps: null,
-          holdSeconds: Math.round((pose?.holdSeconds || 30) * session.holdMult),
-          restSeconds: 5, progressionLevel: specificPoseIds?.includes(id) ? "🎯 Target" : undefined,
+          exerciseId: poseId,
+          sets: twoSided.has(poseId) ? 2 : 1,
+          reps: null,
+          holdSeconds: getHoldSeconds(poseId),
+          restSeconds: 5,
         };
       }),
     };
   });
 
-  const goalDesc = specificPoseIds
-    ? specificPoseIds.map((id) => getYogaPoseById(id)?.name).filter(Boolean).join(", ")
-    : goalText;
-
   return {
-    id: `yoga-${Date.now()}`, name: `Yoga: ${goalDesc.slice(0, 30)}`,
-    description: `${dur}-min yoga sessions — ${goalDesc}`,
-    difficulty: "intermediate", goal: goalDesc,
-    trainingGoal: "balanced", targetSkills: specificPoseIds || [], days,
-    estimatedWeeklyMinutes: dur * 5, createdAt: new Date().toISOString(),
+    id: `yoga-${Date.now()}`,
+    name: `Yoga: Weekly Flow (${dur} min)`,
+    description: `${dur}-minute daily yoga flows with themed sequences — strength, flexibility, balance, and recovery`,
+    difficulty: "intermediate",
+    goal: "Complete weekly yoga practice with varied daily themes",
+    trainingGoal: "balanced",
+    targetSkills: ["flexibility", "balance", "core-strength", "mobility"],
+    days,
+    estimatedWeeklyMinutes: dur * 7,
+    createdAt: new Date().toISOString(),
   };
+}
+
+function generateYogaPlan(poseIds: string[], durationMinutes: number): WeeklyPlan {
+  return generateThemedYogaPlan(durationMinutes);
+}
+
+function generateYogaPlanInternal(goalText: string, duration: number, specificPoseIds?: string[]): WeeklyPlan {
+  return generateThemedYogaPlan(duration);
 }

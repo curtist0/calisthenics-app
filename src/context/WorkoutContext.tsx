@@ -10,6 +10,7 @@ import {
   getUserProfile, saveUserProfile,
   getWorkoutSessionUI, saveWorkoutSessionUI,
 } from "@/lib/storage";
+import { calculateRanks } from "@/lib/rankingSystem";
 
 interface WorkoutContextType {
   logs: WorkoutLog[];
@@ -53,19 +54,47 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     setWorkoutSessionUIState(state);
   }, []);
 
-  const refreshData = useCallback(() => {
-    setLogs(getWorkoutLogs()); setStats(recalculateStats()); setPersonalRecords(getPersonalRecords());
-    setRecentPRs(getRecentPRs()); setSavedPlans(getSavedPlans()); setPhotos(getProgressPhotos());
-    setProfileState(getUserProfile());
-    setWorkoutSessionUIState(getWorkoutSessionUI());
+  const calculateUserRanks = useCallback((logsData: WorkoutLog[], profileData: UserProfile | null) => {
+    if (!profileData) return;
+    const ranks = calculateRanks(profileData, logsData);
+    const updatedProfile = { ...profileData, ranks };
+    saveUserProfile(updatedProfile);
+    setProfileState(updatedProfile);
   }, []);
 
-  useEffect(() => {
-    setLogs(getWorkoutLogs()); setStats(getUserStats()); setPersonalRecords(getPersonalRecords());
-    setRecentPRs(getRecentPRs()); setSavedPlans(getSavedPlans()); setPhotos(getProgressPhotos());
-    setProfileState(getUserProfile());
+  const refreshData = useCallback(() => {
+    const newLogs = getWorkoutLogs();
+    const newProfile = getUserProfile();
+    setLogs(newLogs);
+    setStats(recalculateStats());
+    setPersonalRecords(getPersonalRecords());
+    setRecentPRs(getRecentPRs());
+    setSavedPlans(getSavedPlans());
+    setPhotos(getProgressPhotos());
+    setProfileState(newProfile);
     setWorkoutSessionUIState(getWorkoutSessionUI());
-  }, []);
+    // Calculate and update ranks
+    if (newProfile) {
+      calculateUserRanks(newLogs, newProfile);
+    }
+  }, [calculateUserRanks]);
+
+  useEffect(() => {
+    const logsData = getWorkoutLogs();
+    const profileData = getUserProfile();
+    setLogs(logsData);
+    setStats(getUserStats());
+    setPersonalRecords(getPersonalRecords());
+    setRecentPRs(getRecentPRs());
+    setSavedPlans(getSavedPlans());
+    setPhotos(getProgressPhotos());
+    setProfileState(profileData);
+    setWorkoutSessionUIState(getWorkoutSessionUI());
+    // Calculate and update ranks on initial load
+    if (profileData) {
+      calculateUserRanks(logsData, profileData);
+    }
+  }, [calculateUserRanks]);
 
   const setProfile = useCallback((p: UserProfile) => { saveUserProfile(p); setProfileState(p); }, []);
   const addPlan = useCallback((plan: WeeklyPlan) => { savePlan(plan); setSavedPlans(getSavedPlans()); }, []);

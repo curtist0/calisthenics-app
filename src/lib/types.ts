@@ -1,7 +1,9 @@
 export type MuscleGroup = "chest" | "back" | "shoulders" | "biceps" | "triceps" | "core" | "quads" | "hamstrings" | "glutes" | "calves" | "full-body";
 export type Difficulty = "beginner" | "intermediate" | "advanced" | "elite";
 export type ExerciseCategory = "push" | "pull" | "legs" | "core" | "full-body" | "skill";
+export type Rank = "F" | "E" | "D" | "C" | "B" | "A" | "S";
 export type TrainingGoal = "strength-skill" | "hypertrophy" | "endurance" | "muscle" | "skills" | "weight-loss" | "balanced"; // Legacy goals kept for backward compat
+export type Equipment = "rings" | "parallettes" | "pull-up-bar" | "weights" | "wall" | "calisthenics";
 
 export interface Exercise {
   id: string;
@@ -16,6 +18,7 @@ export interface Exercise {
   supportsWeight: boolean;
   videoUrl: string;
   imageUrl: string;
+  equipment?: Equipment[];
   progressionFrom?: string;
   progressionTo?: string;
 }
@@ -146,9 +149,11 @@ export interface UserProfile {
   skillLevels: SkillLevels;
   exerciseLevels: ExerciseLevel[];
   trainingGoal: TrainingGoal;
+  userEquipment?: Equipment[];
   yogaSetUp: boolean;
   yogaLevel: Difficulty;
   createdAt: string;
+  ranks?: { push: Rank; pull: Rank; core: Rank; legs: Rank };
 }
 
 export interface ProgressPhoto {

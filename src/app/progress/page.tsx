@@ -5,8 +5,10 @@ import PageBackground from "@/components/PageBackground";
 import ProgressRing from "@/components/ProgressRing";
 import Sparkline from "@/components/Sparkline";
 import Badge from "@/components/Badge";
+import RankDisplay from "@/components/RankDisplay";
 import ExerciseGifIcon from "@/components/ExerciseGifIcon";
 import { ArrowUpIcon, PhotoIcon, TrophyIcon, ClockIcon } from "@heroicons/react/24/outline";
+import { useWorkout } from "@/context/WorkoutContext";
 import {
   mockProgressData,
   achievements,
@@ -17,14 +19,18 @@ import {
 
 export default function ProgressPage() {
   const fileRef = useRef<HTMLInputElement>(null);
+  const { profile } = useWorkout();
   const [photos, setPhotos] = useState<Array<{ id: string; date: string; dataUrl: string; note: string }>>([]);
   const [photoNote, setPhotoNote] = useState("");
   const [showPhotoForm, setShowPhotoForm] = useState(false);
-  const [tab, setTab] = useState<"prs" | "photos" | "achievements">("prs");
+  const [tab, setTab] = useState<"prs" | "ranks" | "photos" | "achievements">("prs");
 
   // Use stable mock data instead of random data
   const repPRs = mockProgressData.filter((p) => p.type === "reps");
   const holdPRs = mockProgressData.filter((p) => p.type === "hold");
+
+  // Default ranks for new users
+  const userRanks = profile?.ranks || { push: "F", pull: "F", core: "F", legs: "F" };
 
   const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -109,9 +115,10 @@ export default function ProgressPage() {
       <p className="text-gray-400 mb-8">Track your personal records & achievements</p>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-8">
+      <div className="flex gap-2 mb-8 flex-wrap">
         {[
           { id: "prs", label: "Records", icon: TrophyIcon },
+          { id: "ranks", label: "Ranks", icon: null },
           { id: "achievements", label: "Achievements", icon: ClockIcon },
           { id: "photos", label: "Photos", icon: PhotoIcon },
         ].map(({ id, label, icon: Icon }) => (
@@ -124,7 +131,11 @@ export default function ProgressPage() {
                 : "bg-gray-800 text-gray-300 hover:bg-gray-700"
             }`}
           >
-            <Icon className="w-4 h-4" />
+            {Icon ? (
+              <Icon className="w-4 h-4" />
+            ) : (
+              <span className="text-lg">⚔️</span>
+            )}
             {label}
           </button>
         ))}
@@ -161,6 +172,50 @@ export default function ProgressPage() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Ranks Tab */}
+      {tab === "ranks" && (
+        <section className="space-y-6">
+          <div className="bg-gray-900/40 rounded-2xl p-6 border border-gray-800/60">
+            <h2 className="text-xl font-bold text-white mb-6">RPG Rank System</h2>
+            <p className="text-gray-400 text-sm mb-6">
+              Track your progress across 4 movement planes. Complete more workouts in each category to level up!
+            </p>
+            <RankDisplay ranks={userRanks} size="lg" />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            <div className="bg-gradient-to-br from-gray-600 to-gray-700 rounded-lg p-4 border border-white/10">
+              <span className="font-bold text-white">F</span>
+              <p className="text-gray-300 text-xs mt-1">0-2 avg reps</p>
+            </div>
+            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg p-4 border border-white/10">
+              <span className="font-bold text-white">E</span>
+              <p className="text-gray-300 text-xs mt-1">2-4 avg reps</p>
+            </div>
+            <div className="bg-gradient-to-br from-cyan-600 to-cyan-700 rounded-lg p-4 border border-white/10">
+              <span className="font-bold text-white">D</span>
+              <p className="text-gray-300 text-xs mt-1">4-6 avg reps</p>
+            </div>
+            <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-lg p-4 border border-white/10">
+              <span className="font-bold text-white">C</span>
+              <p className="text-gray-300 text-xs mt-1">6-8 avg reps</p>
+            </div>
+            <div className="bg-gradient-to-br from-yellow-600 to-yellow-700 rounded-lg p-4 border border-white/10">
+              <span className="font-bold text-white">B</span>
+              <p className="text-gray-300 text-xs mt-1">8-10 avg reps</p>
+            </div>
+            <div className="bg-gradient-to-br from-orange-600 to-orange-700 rounded-lg p-4 border border-white/10 shadow-lg shadow-orange-500/30">
+              <span className="font-bold text-white">A</span>
+              <p className="text-gray-300 text-xs mt-1">10-12 avg reps</p>
+            </div>
+            <div className="bg-gradient-to-br from-rose-600 to-rose-700 rounded-lg p-4 border border-white/10 shadow-lg shadow-rose-500/30 sm:col-span-2">
+              <span className="font-bold text-white">S</span>
+              <p className="text-gray-300 text-xs mt-1">12+ avg reps (Elite)</p>
+            </div>
+          </div>
+        </section>
       )}
 
       {/* Achievements Tab */}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useWorkout } from "@/context/WorkoutContext";
-import { Difficulty, UserProfile, SkillLevels } from "@/lib/types";
+import { Difficulty, UserProfile, SkillLevels, Equipment } from "@/lib/types";
 import PageBackground from "@/components/PageBackground";
 
 const assessmentQuestions = [
@@ -27,7 +27,16 @@ const assessmentQuestions = [
     options: [{ label: "No — not close", value: 0 }, { label: "Fingertips to shins", value: 1 }, { label: "Touch toes", value: 2 }, { label: "Palms flat on floor", value: 3 }] },
 ];
 
-type Phase = "assess" | "yoga-ask";
+const equipmentOptions: { id: Equipment; label: string; icon: string; description: string }[] = [
+  { id: "calisthenics", label: "Bodyweight Only", icon: "🏃", description: "Push-ups, squats, pull-ups on a bar" },
+  { id: "pull-up-bar", label: "Pull-Up Bar", icon: "🍌", description: "Includes standard bar exercises" },
+  { id: "parallettes", label: "Parallettes", icon: "║", description: "Parallel bars for L-sits and dips" },
+  { id: "rings", label: "Gymnastic Rings", icon: "🔴", description: "Ring push-ups, muscle-ups, levers" },
+  { id: "wall", label: "Wall Space", icon: "🧱", description: "Handstands, wall-assisted exercises" },
+  { id: "weights", label: "Dumbbells/Weights", icon: "⚖️", description: "Weighted variations" },
+];
+
+type Phase = "assess" | "equipment" | "yoga-ask";
 
 function scoreToLevel(score: number): Difficulty {
   if (score >= 3) return "advanced";
@@ -41,15 +50,31 @@ export default function OnboardingPage() {
   const [phase, setPhase] = useState<Phase>("assess");
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [selectedEquipment, setSelectedEquipment] = useState<Set<Equipment>>(new Set(["calisthenics"]));
 
-  const totalSteps = assessmentQuestions.length + 1;
-  const currentStep = phase === "assess" ? step + 1 : totalSteps;
+  const totalSteps = assessmentQuestions.length + 2; // +2 for equipment and yoga
+  const currentStep = phase === "assess" ? step + 1 : phase === "equipment" ? assessmentQuestions.length + 1 : totalSteps;
   const progress = (currentStep / totalSteps) * 100;
 
   const handleAnswer = (id: string, value: number) => {
     setAnswers((p) => ({ ...p, [id]: value }));
     if (step < assessmentQuestions.length - 1) setStep((s) => s + 1);
-    else setPhase("yoga-ask");
+    else setPhase("equipment");
+  };
+
+  const toggleEquipment = (eq: Equipment) => {
+    setSelectedEquipment((prev) => {
+      const next = new Set(prev);
+      if (next.has(eq)) next.delete(eq);
+      else next.add(eq);
+      // Always include calisthenics
+      next.add("calisthenics");
+      return next;
+    });
+  };
+
+  const finishEquipment = () => {
+    setPhase("yoga-ask");
   };
 
   const finish = (wantsYoga: boolean) => {
@@ -82,6 +107,7 @@ export default function OnboardingPage() {
     const profile: UserProfile = {
       onboarded: true, overallLevel, skillLevels, exerciseLevels,
       trainingGoal: "balanced",
+      userEquipment: Array.from(selectedEquipment),
       yogaSetUp: wantsYoga, yogaLevel: skillLevels.flexibility,
       createdAt: new Date().toISOString(),
     };
@@ -116,6 +142,51 @@ export default function OnboardingPage() {
                 </button>
               ))}
             </div>
+          </div>
+        )}
+
+        {phase === "equipment" && (
+          <div className="flex-1 flex flex-col">
+            <div className="text-center mb-6">
+              <div className="text-4xl mb-4">⚙️</div>
+              <h2 className="text-2xl font-extrabold text-white mb-2">What Equipment Do You Have?</h2>
+              <p className="text-gray-400 text-sm">Select all that apply. Bodyweight is always included.</p>
+            </div>
+            <div className="space-y-3 flex-1 overflow-y-auto">
+              {equipmentOptions.map((eq) => {
+                const isSelected = selectedEquipment.has(eq.id);
+                const isRequired = eq.id === "calisthenics";
+                return (
+                  <button
+                    key={eq.id}
+                    onClick={() => toggleEquipment(eq.id)}
+                    disabled={isRequired}
+                    className={`w-full p-4 rounded-2xl border-2 transition-all text-left ${
+                      isSelected
+                        ? "border-brand-500 bg-brand-500/10"
+                        : "border-gray-700/50 bg-gray-800/30 hover:bg-gray-800/50"
+                    } ${isRequired ? "opacity-100" : ""}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{eq.icon}</span>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-white">{eq.label}</h3>
+                        <p className="text-xs text-gray-400">{eq.description}</p>
+                      </div>
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${isSelected ? "border-brand-500 bg-brand-500" : "border-gray-600"}`}>
+                        {isSelected && <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M3 7L6 10L11 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={finishEquipment}
+              className="w-full py-4 bg-brand-500 text-white rounded-2xl font-bold mt-6 hover:bg-brand-600 transition-all"
+            >
+              Continue →
+            </button>
           </div>
         )}
 

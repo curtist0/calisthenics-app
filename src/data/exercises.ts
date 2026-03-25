@@ -20,6 +20,8 @@ export const exercises: Exercise[] = [
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=push+up+proper+form+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0662.gif",
+
+    equipment: ["calisthenics"],
     progressionFrom: "incline-push-up",
     progressionTo: "diamond-push-up",
   },
@@ -41,6 +43,8 @@ export const exercises: Exercise[] = [
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=diamond+push+up+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0283.gif",
+
+    equipment: ["calisthenics"],
     progressionFrom: "push-up",
     progressionTo: "pike-push-up",
   },
@@ -62,6 +66,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=pike+push+up+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3662.gif",
+
+    equipment: ["calisthenics", "wall"],
     progressionFrom: "diamond-push-up",
     progressionTo: "handstand-push-up",
   },
@@ -83,6 +89,8 @@ export const exercises: Exercise[] = [
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=parallel+bar+dips+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0251.gif",
+
+    equipment: ["parallettes", "pull-up-bar", "rings"],
     progressionFrom: "push-up",
   },
   {
@@ -103,6 +111,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=wall+handstand+push+up+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0471.gif",
+
+    equipment: ["wall", "calisthenics"],
     progressionFrom: "pike-push-up",
     progressionTo: "freestanding-hspu",
   },
@@ -124,6 +134,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=freestanding+handstand+push+up+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0471.gif",
+
+    equipment: ["calisthenics"],
     progressionFrom: "handstand-push-up",
   },
   {
@@ -144,6 +156,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=pseudo+planche+push+up+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3327.gif",
+
+    equipment: ["calisthenics"],
     progressionFrom: "planche-lean",
     progressionTo: "tuck-planche",
   },
@@ -167,6 +181,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=australian+pull+up+inverted+row+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0499.gif",
+
+    equipment: ["pull-up-bar"],
     progressionTo: "negative-pull-up",
   },
   {
@@ -187,6 +203,8 @@ export const exercises: Exercise[] = [
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=pull+up+proper+form+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0652.gif",
+
+    equipment: ["pull-up-bar"],
     progressionFrom: "negative-pull-up",
     progressionTo: "muscle-up",
   },
@@ -208,6 +226,8 @@ export const exercises: Exercise[] = [
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=chin+up+proper+form+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/1326.gif",
+
+    equipment: ["pull-up-bar"],
     progressionFrom: "australian-pull-up",
   },
   {
@@ -228,6 +248,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=bar+muscle+up+tutorial+progression",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0631.gif",
+
+    equipment: ["rings", "pull-up-bar"],
     progressionFrom: "pull-up",
   },
 
@@ -250,6 +272,8 @@ export const exercises: Exercise[] = [
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=bodyweight+squat+proper+form",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/1685.gif",
+
+    equipment: ["calisthenics"],
     progressionTo: "lunge",
   },
   {
@@ -270,6 +294,8 @@ export const exercises: Exercise[] = [
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=pistol+squat+tutorial+progression",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/1759.gif",
+
+    equipment: ["calisthenics"],
     progressionFrom: "squat",
   },
   {
@@ -290,6 +316,8 @@ export const exercises: Exercise[] = [
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=walking+lunge+proper+form",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/1460.gif",
+
+    equipment: ["calisthenics"],
     progressionTo: "pistol-squat",
   },
   {
@@ -310,6 +338,8 @@ export const exercises: Exercise[] = [
     supportsWeight: true,
     videoUrl: "https://www.youtube.com/results?search_query=single+leg+calf+raise+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/1373.gif",
+
+    equipment: ["calisthenics"],
   },
   {
     id: "jump-squat",
@@ -329,6 +359,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=jump+squat+proper+form",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0514.gif",
+
+    equipment: ["calisthenics"],
     progressionFrom: "squat",
   },
 
@@ -351,6 +383,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=plank+proper+form+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0464.gif",
+
+    equipment: ["calisthenics"],
     progressionTo: "hollow-body-hold",
   },
   {
@@ -371,6 +405,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=hollow+body+hold+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0871.gif",
+
+    equipment: ["calisthenics"],
     progressionFrom: "plank",
     progressionTo: "dragon-flag",
   },
@@ -392,6 +428,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=hanging+leg+raise+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0472.gif",
+
+    equipment: ["pull-up-bar"],
     progressionTo: "dragon-flag",
   },
   {
@@ -412,6 +450,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=dragon+flag+tutorial+progression",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3304.gif",
+
+    equipment: ["rings", "pull-up-bar"],
     progressionFrom: "hanging-leg-raise",
   },
 
@@ -434,6 +474,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=l+sit+tutorial+progression",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3419.gif",
+
+    equipment: ["parallettes", "pull-up-bar", "calisthenics"],
     progressionFrom: "tucked-l-sit",
     progressionTo: "v-sit",
   },
@@ -455,6 +497,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=v+sit+tutorial+calisthenics",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3420.gif",
+
+    equipment: ["parallettes", "calisthenics"],
     progressionFrom: "l-sit",
     progressionTo: "manna",
   },
@@ -476,6 +520,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=manna+tutorial+calisthenics",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3300.gif",
+
+    equipment: ["parallettes", "calisthenics"],
     progressionFrom: "v-sit",
   },
   {
@@ -496,6 +542,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=tuck+planche+tutorial+progression",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3301.gif",
+
+    equipment: ["rings", "calisthenics"],
     progressionFrom: "pseudo-planche-push-up",
     progressionTo: "straddle-planche",
   },
@@ -517,6 +565,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=straddle+planche+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3298.gif",
+
+    equipment: ["rings", "calisthenics"],
     progressionFrom: "tuck-planche",
     progressionTo: "full-planche",
   },
@@ -538,6 +588,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=full+planche+tutorial+progression",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3299.gif",
+
+    equipment: ["rings", "calisthenics"],
     progressionFrom: "straddle-planche",
   },
   {
@@ -558,6 +610,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=tuck+front+lever+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3295.gif",
+
+    equipment: ["rings", "pull-up-bar"],
     progressionFrom: "tuck-fl-raise",
     progressionTo: "front-lever",
   },
@@ -579,6 +633,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=front+lever+tutorial+progression",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3296.gif",
+
+    equipment: ["rings", "pull-up-bar"],
     progressionFrom: "tuck-front-lever",
   },
   {
@@ -599,6 +655,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=back+lever+tutorial+progression",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3297.gif",
+
+    equipment: ["rings", "pull-up-bar"],
     progressionFrom: "skin-the-cat",
   },
   {
@@ -619,6 +677,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=90+degree+push+up+hold+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3300.gif",
+
+    equipment: ["rings", "pull-up-bar"],
     progressionFrom: "tuck-planche",
   },
   {
@@ -639,6 +699,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=human+flag+tutorial+progression",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3303.gif",
+
+    equipment: ["pull-up-bar"],
     progressionFrom: "back-lever",
   },
 
@@ -661,6 +723,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=burpee+proper+form+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/1160.gif",
+
+    equipment: ["calisthenics"],
   },
   {
     id: "bear-crawl",
@@ -680,6 +744,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=bear+crawl+exercise+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3360.gif",
+
+    equipment: ["calisthenics"],
   },
   {
     id: "freestanding-handstand",
@@ -699,6 +765,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=freestanding+handstand+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3302.gif",
+
+    equipment: ["calisthenics"],
     progressionFrom: "handstand-push-up",
     progressionTo: "freestanding-hspu",
   },
@@ -720,6 +788,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=crow+pose+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3301.gif",
+
+    equipment: ["calisthenics"],
     progressionTo: "tuck-planche",
   },
   {
@@ -740,6 +810,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=elbow+lever+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3300.gif",
+
+    equipment: ["calisthenics"],
     progressionTo: "tuck-planche",
   },
   {
@@ -760,6 +832,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=skin+the+cat+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3304.gif",
+
+    equipment: ["rings", "pull-up-bar"],
     progressionTo: "back-lever",
   },
 
@@ -782,6 +856,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=wall+push+up+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0659.gif",
+
+    equipment: ["wall", "calisthenics"],
     progressionTo: "knee-push-up",
   },
   {
@@ -802,6 +878,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=knee+push+up+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3211.gif",
+
+    equipment: ["calisthenics"],
     progressionFrom: "wall-push-up",
     progressionTo: "incline-push-up",
   },
@@ -823,6 +901,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=dead+hang+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0652.gif",
+
+    equipment: ["pull-up-bar"],
     progressionTo: "australian-pull-up",
   },
   {
@@ -843,6 +923,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=dead+bug+exercise+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0276.gif",
+
+    equipment: ["calisthenics"],
     progressionTo: "plank",
   },
   {
@@ -863,6 +945,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=incline+push+up+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0493.gif",
+
+    equipment: ["calisthenics"],
     progressionFrom: "knee-push-up",
     progressionTo: "push-up",
   },
@@ -885,6 +969,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=seated+leg+raise+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0689.gif",
+
+    equipment: ["calisthenics"],
     progressionTo: "tucked-l-sit",
   },
   {
@@ -905,6 +991,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=tucked+l+sit+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3419.gif",
+
+    equipment: ["parallettes", "pull-up-bar", "calisthenics"],
     progressionFrom: "seated-leg-raise",
     progressionTo: "l-sit",
   },
@@ -927,6 +1015,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=negative+pull+up+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/0652.gif",
+
+    equipment: ["pull-up-bar"],
     progressionFrom: "australian-pull-up",
     progressionTo: "pull-up",
   },
@@ -949,6 +1039,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=planche+lean+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3300.gif",
+
+    equipment: ["calisthenics"],
     progressionTo: "pseudo-planche-push-up",
   },
   {
@@ -970,6 +1062,8 @@ export const exercises: Exercise[] = [
     supportsWeight: false,
     videoUrl: "https://www.youtube.com/results?search_query=tuck+front+lever+raise+tutorial",
     imageUrl: "https://raw.githubusercontent.com/omercotkd/exercises-gifs/main/assets/3295.gif",
+
+    equipment: ["rings", "pull-up-bar"],
     progressionTo: "tuck-front-lever",
   },
 ];
