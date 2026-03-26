@@ -181,7 +181,7 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
   }
 
   const profile = getUserProfile();
-  const userEquipment = profile?.equipment || [];
+  const userEquipment = profile?.userEquipment || [];
   const userSkillLevel = profile?.overallLevel || "beginner";
 
   // 1. STRICT EQUIPMENT FILTERING: Only pull exercises the user can actually do
