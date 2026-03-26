@@ -533,6 +533,12 @@ function PlanContent() {
 
             {selectedDay === i && !day.isRest && (
               <div className="mt-4 pt-4 border-t border-gray-700/50">
+                {day.focus && (
+                  <div className="mb-4 bg-blue-500/10 border border-blue-500/30 rounded-xl p-3">
+                    <p className="text-blue-300 text-xs font-bold mb-1">📊 Today&apos;s Focus</p>
+                    <p className="text-blue-200 text-sm font-semibold">{day.focus}</p>
+                  </div>
+                )}
                 {day.warmUp && (
                   <div className="mb-4 bg-orange-500/10 border border-orange-500/20 rounded-xl p-3">
                     <p className="text-orange-400 text-xs font-bold mb-1">🔥 {day.warmUp.name} ({day.warmUp.duration})</p>

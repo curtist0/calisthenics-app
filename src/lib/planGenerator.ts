@@ -37,10 +37,63 @@ function getFullProgressionChain(exerciseId: string): Exercise[] {
   return chain;
 }
 
-// Daily focus types: Volume, Intensity, or Conditioning
-type DailyFocus = "volume" | "intensity" | "conditioning";
+// Daily focus types: Volume, Intensity, Conditioning, or Light (for deload)
+type DailyFocus = "volume" | "intensity" | "conditioning" | "light";
 
-// Goal-specific focus patterns for 6-day training cycles
+// ═══ DAILY UNDULATING PERIODIZATION (DUP) CONFIGURATION ═══
+// Detailed configuration for each daily focus following Overcoming Gravity principles
+
+interface DailyFocusConfig {
+  name: string;                           // Human-readable focus name
+  description: string;                    // Goal of this training day
+  setMultiplier: number;                  // Applied to base sets
+  repMultiplier: number;                  // Applied to reps (or holds for isHold exercises)
+  restMultiplier: number;                 // Applied to rest seconds
+  holdSecondMultiplier: number;           // Applied to hold durations specifically
+  restPeriod: string;                     // Rest period guidance (e.g., "3+ minutes")
+}
+
+const dailyFocusConfig: Record<DailyFocus, DailyFocusConfig> = {
+  intensity: {
+    name: "Intensity & Heavy Holds",
+    description: "Strength/Neurological Adaptation (Heavy strength, lower reps/shorter holds, high sets, 3+ minute rest)",
+    setMultiplier: 1.0,
+    repMultiplier: 0.7,
+    restMultiplier: 1.4,
+    holdSecondMultiplier: 0.75,
+    restPeriod: "3+ minutes",
+  },
+  volume: {
+    name: "Volume & Hypertrophy",
+    description: "Muscle Growth (Moderate reps, 3-4 sets, 90-120s rest)",
+    setMultiplier: 1.4,
+    repMultiplier: 1.2,
+    restMultiplier: 0.8,
+    holdSecondMultiplier: 1.2,
+    restPeriod: "90-120 seconds",
+  },
+  conditioning: {
+    name: "Conditioning & Blood Flow",
+    description: "Stamina/Blood Flow (Higher reps, lower sets, 60s rest)",
+    setMultiplier: 0.9,
+    repMultiplier: 1.3,
+    restMultiplier: 0.5,
+    holdSecondMultiplier: 1.1,
+    restPeriod: "60 seconds",
+  },
+  light: {
+    name: "Light & Recovery",
+    description: "CNS & Joint Recovery (Reduced volume, focus on movement quality)",
+    setMultiplier: 0.5,
+    repMultiplier: 0.7,
+    restMultiplier: 1.0,
+    holdSecondMultiplier: 0.7,
+    restPeriod: "2-3 minutes",
+  },
+};
+
+// Goal-specific focus patterns for weekly training (DUP cycling)
+// Maps training day position within week to focus type
 const goalFocusPatterns: Record<TrainingGoal, DailyFocus[]> = {
   "strength-skill": ["intensity", "volume", "conditioning", "intensity", "volume", "conditioning"],
   hypertrophy: ["volume", "intensity", "conditioning", "volume", "intensity", "conditioning"],
@@ -52,11 +105,39 @@ const goalFocusPatterns: Record<TrainingGoal, DailyFocus[]> = {
   balanced: ["volume", "intensity", "conditioning", "volume", "intensity", "conditioning"],
 };
 
-// Focus-specific multipliers for sets, reps, and rest
-const focusConfig: Record<DailyFocus, { sets: number; reps: number; rest: number }> = {
-  volume: { sets: 1.4, reps: 1.2, rest: 0.8 },      // More sets, more reps, less rest
-  intensity: { sets: 1.0, reps: 0.7, rest: 1.4 },   // Moderate sets, low reps, more rest
-  conditioning: { sets: 0.9, reps: 1.3, rest: 0.5 }, // Fewer sets, more reps, minimal rest
+// Week-based progressive overload multipliers (applied to all exercises' sets for that week)
+const weeklyProgressionMultipliers: Record<number, number> = {
+  1: 1.0,  // Baseline week
+  2: 1.1,  // +10% volume
+  3: 1.2,  // +20% volume
+  4: 1.3,  // +30% volume
+  5: 1.2,  // Slight pullback before deload
+  6: 0.5,  // Deload week (50% of baseline)
+};
+
+// Training day to focus mapping: for 3x/week (Mon/Wed/Fri) and 4x/week schedules
+// Returns which focus to use based on training schedule position and training days per week
+function getFocusForTrainingDay(
+  trainingDayIndex: number,      // 0 = first training day of week, 1 = second, etc.
+  trainingDaysPerWeek: number,    // 3 or 4
+  goal: TrainingGoal
+): DailyFocus {
+  const pattern = goalFocusPatterns[goal] || goalFocusPatterns.balanced;
+  
+  // For 3x/week: use positions 0, 2, 4 from pattern
+  // For 4x/week: use positions 0, 1, 3, 4 from pattern
+  const patternIndices = trainingDaysPerWeek === 3 ? [0, 2, 4] : [0, 1, 3, 4];
+  const patternIndex = patternIndices[trainingDayIndex] || 0;
+  
+  return pattern[patternIndex] || "volume";
+}
+
+// Legacy support: converts old focusConfig to new format
+const focusConfigLegacy: Record<DailyFocus, { sets: number; reps: number; rest: number }> = {
+  volume: { sets: 1.4, reps: 1.2, rest: 0.8 },
+  intensity: { sets: 1.0, reps: 0.7, rest: 1.4 },
+  conditioning: { sets: 0.9, reps: 1.3, rest: 0.5 },
+  light: { sets: 0.5, reps: 0.7, rest: 1.0 },
 };
 
 // Base goal configuration (goal impact on all days)
@@ -71,8 +152,15 @@ const goalConfig: Record<TrainingGoal, { baseMultiplier: number }> = {
   balanced: { baseMultiplier: 1.0 },
 };
 
-// Updated Set/Rep logic based on Overcoming Gravity principles
-function makeEx(ex: Exercise, isTargetSkill: boolean, goal: TrainingGoal, label?: string): WorkoutExercise {
+// Updated Set/Rep logic based on Overcoming Gravity principles + DUP focus modifiers
+function makeEx(
+  ex: Exercise,
+  isTargetSkill: boolean,
+  goal: TrainingGoal,
+  label?: string,
+  focus?: DailyFocus,
+  weekNumber?: number
+): WorkoutExercise {
   // Map legacy goals to new OG goals
   const ogGoal = 
     goal === "strength-skill" || goal === "skills" ? "strength-skill" :
@@ -92,6 +180,28 @@ function makeEx(ex: Exercise, isTargetSkill: boolean, goal: TrainingGoal, label?
   // Adjust for target skills (extra volume for neurological adaptation)
   if (isTargetSkill && ogGoal === "strength-skill") {
     sets = Math.min(5, sets + 1);
+  }
+
+  // Apply DUP focus modifiers if provided
+  if (focus && focus !== "light") {
+    const focusConfig = dailyFocusConfig[focus];
+    sets = Math.round(sets * focusConfig.setMultiplier);
+    reps = Math.round(reps * focusConfig.repMultiplier);
+    holdSeconds = Math.round(holdSeconds * focusConfig.holdSecondMultiplier);
+    restSeconds = Math.round(restSeconds * focusConfig.restMultiplier);
+  } else if (focus === "light") {
+    // Deload week: use light focus config
+    const focusConfig = dailyFocusConfig.light;
+    sets = Math.round(sets * focusConfig.setMultiplier);
+    reps = Math.round(reps * focusConfig.repMultiplier);
+    holdSeconds = Math.round(holdSeconds * focusConfig.holdSecondMultiplier);
+    restSeconds = Math.round(restSeconds * focusConfig.restMultiplier);
+  }
+
+  // Apply week-based progressive overload (affects sets only)
+  if (weekNumber && weekNumber >= 1 && weekNumber <= 6) {
+    const weekMultiplier = weeklyProgressionMultipliers[weekNumber] || 1.0;
+    sets = Math.max(1, Math.round(sets * weekMultiplier));
   }
 
   if (ex.isHold) {
@@ -190,10 +300,11 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
   const usedIdsB = new Set<string>();
   
   const targetNames: string[] = [];
-  const skillWorkA: WorkoutExercise[] = [];
-  const skillWorkB: WorkoutExercise[] = [];
 
   // 2. PROCESS SKILLS (Must be performed first in the workout while CNS is fresh)
+  const skillExercisesA: Exercise[] = [];
+  const skillExercisesB: Exercise[] = [];
+  
   for (const targetId of selectedSkillIds) {
     const target = getExerciseById(targetId);
     if (!target) continue;
@@ -210,53 +321,113 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
       if (mainSkill) {
         usedIdsA.add(mainSkill.id);
         usedIdsB.add(mainSkill.id); // Skills are high frequency, practiced in both A and B
-        skillWorkA.push(makeEx(mainSkill, true, goal, `🎯 Target Skill`));
-        skillWorkB.push(makeEx(mainSkill, true, goal, `🎯 Target Skill`));
+        skillExercisesA.push(mainSkill);
+        skillExercisesB.push(mainSkill);
       }
     }
   }
 
-  // Helper to safely pop an unused exercise from a category
-  const getNextEx = (category: string, usedSet: Set<string>) => {
-    const ex = availableExercises.find(e => e.category === category && !usedSet.has(e.id) && e.difficulty !== "elite");
-    if (ex) usedSet.add(ex.id);
-    return ex;
+  // 3. PRE-BUILD EXERCISE POOLS FOR A & B WORKOUTS (but apply modifiers inside loop)
+  // We need stable exercise selections to maintain balance, but apply focus modifiers dynamically
+  
+  const exercisePoolA = {
+    push: [] as Exercise[],
+    pull: [] as Exercise[],
+    core: [] as Exercise[],
+    legs: [] as Exercise[],
   };
-
-  // 3. BUILD WORKOUT A & WORKOUT B (A/B Full Body Split for variety)
-  const buildRoutine = (usedSet: Set<string>, skillWork: WorkoutExercise[]) => {
+  
+  const exercisePoolB = {
+    push: [] as Exercise[],
+    pull: [] as Exercise[],
+    core: [] as Exercise[],
+    legs: [] as Exercise[],
+  };
+  
+  // Pre-select exercises for each pool and category
+  const selectExercisesForPool = (
+    pool: Record<string, Exercise[]>,
+    usedSet: Set<string>,
+    skillUsed: Set<string>
+  ) => {
+    // Select 2 push, 2 pull, 1 core, 1 leg for this pool
+    for (let i = 0; i < 2; i++) {
+      const push = availableExercises.find(e => e.category === "push" && !usedSet.has(e.id) && !skillUsed.has(e.id) && e.difficulty !== "elite");
+      if (push) {
+        pool.push.push(push);
+        usedSet.add(push.id);
+      }
+      
+      const pull = availableExercises.find(e => e.category === "pull" && !usedSet.has(e.id) && !skillUsed.has(e.id) && e.difficulty !== "elite");
+      if (pull) {
+        pool.pull.push(pull);
+        usedSet.add(pull.id);
+      }
+    }
+    
+    const core = availableExercises.find(e => e.category === "core" && !usedSet.has(e.id) && !skillUsed.has(e.id) && e.difficulty !== "elite");
+    if (core) {
+      pool.core.push(core);
+      usedSet.add(core.id);
+    }
+    
+    const legs = availableExercises.find(e => e.category === "legs" && !usedSet.has(e.id) && !skillUsed.has(e.id) && e.difficulty !== "elite");
+    if (legs) {
+      pool.legs.push(legs);
+      usedSet.add(legs.id);
+    }
+  };
+  
+  const allUsedIds = new Set([...usedIdsA, ...usedIdsB]);
+  selectExercisesForPool(exercisePoolA, allUsedIds, allUsedIds);
+  selectExercisesForPool(exercisePoolB, allUsedIds, allUsedIds);
+  
+  // Helper to build routine from pre-selected exercise pool with DUP modifiers
+  const buildRoutineFromPool = (
+    pool: Record<string, Exercise[]>,
+    skillExercises: Exercise[],
+    focus: DailyFocus,
+    weekNumber: number
+  ) => {
+    const skillWork: WorkoutExercise[] = [];
     const strengthWork: WorkoutExercise[] = [];
     const coreLegsWork: WorkoutExercise[] = [];
 
-    // Structural Balance: 2 Push, 2 Pull per workout
-    for (let i = 0; i < 2; i++) {
-      const push = getNextEx("push", usedSet);
-      if (push) strengthWork.push(makeEx(push, false, goal, "Strength: Push"));
-      
-      const pull = getNextEx("pull", usedSet);
-      if (pull) strengthWork.push(makeEx(pull, false, goal, "Strength: Pull"));
-    }
+    // Build skill work with DUP modifiers
+    skillExercises.forEach(ex => {
+      skillWork.push(makeEx(ex, true, goal, `🎯 Target Skill`, focus, weekNumber));
+    });
 
-    // Core & Legs at the end to prevent CNS fatigue
-    const core = getNextEx("core", usedSet);
-    if (core) coreLegsWork.push(makeEx(core, false, goal, "Core Finisher"));
+    // Use 2 push, 2 pull from pool
+    pool.push.forEach(ex => {
+      strengthWork.push(makeEx(ex, false, goal, "Strength: Push", focus, weekNumber));
+    });
+    
+    pool.pull.forEach(ex => {
+      strengthWork.push(makeEx(ex, false, goal, "Strength: Pull", focus, weekNumber));
+    });
 
-    const legs = getNextEx("legs", usedSet);
-    if (legs) coreLegsWork.push(makeEx(legs, false, goal, "Leg Finisher"));
+    // Use core and leg finishers
+    pool.core.forEach(ex => {
+      coreLegsWork.push(makeEx(ex, false, goal, "Core Finisher", focus, weekNumber));
+    });
+    
+    pool.legs.forEach(ex => {
+      coreLegsWork.push(makeEx(ex, false, goal, "Leg Finisher", focus, weekNumber));
+    });
 
     // Strict OG Order: Skills -> Strength -> Core/Legs
     return [...skillWork, ...strengthWork, ...coreLegsWork];
   };
 
-  const routineA = buildRoutine(usedIdsA, skillWorkA);
-  const routineB = buildRoutine(usedIdsB, skillWorkB); // Will pull different exercises than A if available
-
-  // 4. GENERATE 42-DAY (6-WEEK) SCHEDULE
+  // 4. GENERATE 42-DAY (6-WEEK) SCHEDULE WITH DYNAMIC DUP
   const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   const days: DayWorkout[] = [];
   
   // Beginners need 3x/week for rapid neurological adaptation. Adv can handle 4x.
   const trainingSchedule = userSkillLevel === "advanced" ? [0, 1, 3, 4] : [0, 2, 4]; // 0=Mon, 2=Wed, 4=Fri
+  const trainingDaysPerWeek = trainingSchedule.length;
+  let trainingDayCounter = 0; // Tracks which training day position we're at within the week
   let isWorkoutA = true;
 
   for (let dayNum = 0; dayNum < 42; dayNum++) {
@@ -268,38 +439,48 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
     const isTrainingDay = trainingSchedule.includes(dayOfWeek);
     
     if (isTrainingDay) {
-      // Toggle between Workout A and Workout B
-      const baseRoutine = isWorkoutA ? routineA : routineB;
-      const workoutLabel = isWorkoutA ? "Workout A" : "Workout B";
-      isWorkoutA = !isWorkoutA; // Flip for the next training day
-
-      // Week 6 is ALWAYS a Deload week in Overcoming Gravity
-      const isDeload = weekNumber === 6;
+      // Determine focus for this training day using DUP pattern
+      const trainingDayPositionInWeek = trainingDayCounter % trainingDaysPerWeek;
+      let dailyFocus: DailyFocus;
       
-      const scaledRoutine = baseRoutine.map((ex) => {
-        const scaled = { ...ex };
-        if (isDeload) {
-          // Deload: Cut sets to 1-2, reduce reps/holds to aid joint/CNS recovery
-          scaled.sets = Math.max(1, Math.floor(ex.sets * 0.5));
-          if (scaled.reps) scaled.reps = Math.max(1, Math.floor(scaled.reps * 0.7));
-          if (scaled.holdSeconds) scaled.holdSeconds = Math.max(5, Math.floor(scaled.holdSeconds * 0.7));
-          scaled.progressionLevel = `${scaled.progressionLevel} (Deload)`;
-        } else {
-          // Progressive Overload (Weeks 1-5)
-          const setsMultiplier = userSkillLevel === "beginner" ? 1.0 : 1.1;
-          scaled.sets = Math.ceil(ex.sets * setsMultiplier);
-        }
-        return scaled;
-      });
-
+      if (weekNumber === 6) {
+        // Week 6 is always deload (light focus)
+        dailyFocus = "light";
+      } else {
+        // Get focus based on training day position and goal
+        dailyFocus = getFocusForTrainingDay(trainingDayPositionInWeek, trainingDaysPerWeek, goal);
+      }
+      
+      // Build routine from pre-selected pool with DUP modifiers for this specific day
+      const focusConfig = dailyFocusConfig[dailyFocus];
+      const currentPool = isWorkoutA ? exercisePoolA : exercisePoolB;
+      const skillExercises = isWorkoutA ? skillExercisesA : skillExercisesB;
+      
+      const dayRoutine = buildRoutineFromPool(
+        currentPool,
+        skillExercises,
+        dailyFocus,
+        weekNumber
+      );
+      
+      const workoutLabel = isWorkoutA ? "Workout A" : "Workout B";
+      isWorkoutA = !isWorkoutA; // Flip for next training day
+      
+      // Build focus label for UI
+      const focusLabel = weekNumber === 6
+        ? "Light & Recovery (Deload)"
+        : `${focusConfig.name} (${focusConfig.description})`;
+      
       days.push({
         day: `${dayOfWeekName} (Week ${weekNumber})`,
         name: `Full Body - ${workoutLabel}`,
         isRest: false,
-        focus: isDeload ? `Deload Week - CNS & Joint Recovery` : `Structural balance & Progressive Overload`,
-        exercises: scaledRoutine,
+        focus: focusLabel,
+        exercises: dayRoutine,
         warmUp: calisthenicsWarmUpVariants[dayOfWeek % calisthenicsWarmUpVariants.length],
       });
+      
+      trainingDayCounter++;
     } else {
       days.push({
         day: `${dayOfWeekName} (Week ${weekNumber})`,

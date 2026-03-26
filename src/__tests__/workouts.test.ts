@@ -2,9 +2,9 @@ import { getExerciseById } from "@/data/exercises";
 import { generateWeeklyPlan } from "@/lib/planGenerator";
 
 describe("Plan generator", () => {
-  it("generates a 7-day plan for a single skill", () => {
+  it("generates a 42-day mesocycle plan (6 weeks) for a single skill", () => {
     const plan = generateWeeklyPlan(["muscle-up"], "balanced");
-    expect(plan.days.length).toBe(7);
+    expect(plan.days.length).toBe(42); // 6 weeks × 7 days
     expect(plan.name).toContain("Muscle-Up");
     expect(plan.trainingGoal).toBe("balanced");
   });
@@ -33,13 +33,45 @@ describe("Plan generator", () => {
     expect(restDays.every((d) => d.restDayActivities && d.restDayActivities.length > 0)).toBe(true);
   });
 
-  it("uses same exercise routine for all training days (OG neurological adaptation)", () => {
+  it("applies Daily Undulating Periodization (DUP) with varying focus per training day", () => {
     const plan = generateWeeklyPlan(["muscle-up", "full-planche"], "strength-skill");
     const training = plan.days.filter((d) => !d.isRest);
-    const signatures = training.map((d) => d.exercises.map((e) => e.exerciseId).join(","));
-    const unique = new Set(signatures);
-    // OG approach: same routine all training days for neurological adaptation
-    expect(unique.size).toBe(1);
+    
+    // Extract focuses from the first week (days 0-6)
+    const week1Training = plan.days.slice(0, 7).filter((d) => !d.isRest);
+    const focuses = week1Training.map(d => d.focus ? d.focus.split('&')[0].trim() : null);
+    
+    // Should have varying focuses (Intensity, Volume, Conditioning pattern)
+    const uniqueFocuses = new Set(focuses);
+    expect(uniqueFocuses.size).toBeGreaterThan(1);
+  });
+
+  it("week 6 is mandatory deload week with light focus", () => {
+    const plan = generateWeeklyPlan(["muscle-up"], "strength-skill");
+    const week6Days = plan.days.slice(35, 42); // Days 35-41 are week 6
+    const trainingDaysWeek6 = week6Days.filter((d) => !d.isRest);
+    
+    // All training days in week 6 should be "Light & Recovery"
+    trainingDaysWeek6.forEach(day => {
+      expect(day.focus).toContain("Light & Recovery");
+    });
+  });
+
+  it("applies progressive overload across weeks (sets increase weeks 1-4, pullback week 5, deload week 6)", () => {
+    const plan = generateWeeklyPlan(["muscle-up"], "hypertrophy");
+    
+    // Get first training day of each week
+    const week1FirstTrain = plan.days.slice(0, 7).find(d => !d.isRest);
+    const week4FirstTrain = plan.days.slice(21, 28).find(d => !d.isRest);
+    const week6FirstTrain = plan.days.slice(35, 42).find(d => !d.isRest);
+    
+    // Week 4 should have more sets than week 1 (progressive overload)
+    const week1Sets = week4FirstTrain?.exercises[0]?.sets ?? 0;
+    const week4Sets = week4FirstTrain?.exercises[0]?.sets ?? 0;
+    const week6Sets = week6FirstTrain?.exercises[0]?.sets ?? 0;
+    
+    // Week 6 deload should have significantly fewer sets
+    expect(week6Sets).toBeLessThan(week1Sets);
   });
 
   it("adjusts for weight-loss goal", () => {

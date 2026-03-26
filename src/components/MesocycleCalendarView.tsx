@@ -137,6 +137,9 @@ export default function MesocycleCalendarView({ plan, onSelectDay }: MesocycleCa
                     <p className={`text-sm mt-1 ${day.isRest ? "text-gray-500" : "text-white/70"}`}>
                       {day.isRest ? "Rest day" : day.name}
                     </p>
+                    {day.focus && !day.isRest && (
+                      <p className="text-xs text-blue-300 mt-2">📊 {day.focus.split('(')[0].trim()}</p>
+                    )}
                   </div>
 
                   <div className="text-right">
