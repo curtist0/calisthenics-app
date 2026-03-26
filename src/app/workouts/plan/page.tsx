@@ -9,6 +9,9 @@ import ExerciseCard from "@/components/ExerciseCard";
 import ExerciseModal from "@/components/ExerciseModal";
 import ExerciseAnimation from "@/components/ExerciseAnimation";
 import SetLogCard from "@/components/SetLogCard";
+import YogaActiveScreen from "@/components/YogaActiveScreen";
+import MesocycleCalendarView from "@/components/MesocycleCalendarView";
+import YogaPlanCalendarView from "@/components/YogaPlanCalendarView";
 import Timer from "@/components/Timer";
 import RestTimer from "@/components/RestTimer";
 import { useCoachToast } from "@/components/CoachToast";
@@ -26,6 +29,7 @@ function PlanContent() {
 
   const plan = savedPlans.find((p) => p.id === planId);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [showCalendarView, setShowCalendarView] = useState(false);
   const [isActive, setIsActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [activeDayIndex, setActiveDayIndex] = useState(0);
@@ -165,6 +169,20 @@ function PlanContent() {
     }
   };
 
+  // Helper to detect if workout is yoga-based
+  const isYogaWorkout = () => {
+    if (!activeDay) return false;
+    return activeDay.exercises.some((ex) => getYogaPoseById(ex.exerciseId));
+  };
+
+  // For yoga workouts, we don't manually log - just advance automatically
+  const handleYogaPoseComplete = () => {
+    if (!activeDay || !curWE) return;
+    // Mark as completed automatically
+    completeSet(curEx, curSet, null, curWE.holdSeconds, null);
+    advance();
+  };
+
   const handleCancel = () => { cancelWorkout(); setIsActive(false); sessionRestoreKey.current = null; };
 
   const handlePauseExplore = () => {
@@ -246,8 +264,32 @@ function PlanContent() {
     );
   }
 
-  // Active workout (flexible set logging mode)
+  // Active workout (flexible set logging mode or yoga auto-timer)
   if (isActive && activeWorkout && activeDay) {
+    const yogaWorkout = isYogaWorkout();
+    
+    // YOGA WORKOUT SCREEN
+    if (yogaWorkout && curWE) {
+      const yogaPose = getYogaPoseById(curWE.exerciseId);
+      if (yogaPose) {
+        const totalPoses = activeDay.exercises.reduce((sum, ex) => sum + ex.sets, 0);
+        const completedPoses = activeWorkout.exercises.reduce((sum, ex) => sum + ex.sets.filter(s => s.completed).length, 0);
+        const currentPoseIndex = completedPoses + 1;
+
+        return (
+          <YogaActiveScreen
+            currentPose={yogaPose}
+            currentSet={currentPoseIndex}
+            totalSets={totalPoses}
+            onPoseComplete={handleYogaPoseComplete}
+            onPause={handlePauseExplore}
+            imageUrl={yogaPose.imageUrl}
+          />
+        );
+      }
+    }
+
+    // CALISTHENICS WORKOUT SCREEN (existing logic)
     const totalSets = activeDay.exercises.reduce((s, e) => s + e.sets, 0);
     const doneSets = activeWorkout.exercises.reduce((s, e) => s + e.sets.filter((x) => x.completed).length, 0);
     const allExercisesLogged = activeWorkout.exercises.every(ex => ex.sets.every(s => s.completed));
@@ -396,8 +438,42 @@ function PlanContent() {
         </div>
       )}
 
-      <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Full Week</h3>
-      <div className="space-y-3 mb-8">
+      {/* View Toggle */}
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => setShowCalendarView(false)}
+          className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-colors text-sm ${
+            !showCalendarView
+              ? "bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-900"
+              : "glass text-white hover:bg-white/10"
+          }`}
+        >
+          📅 Week View
+        </button>
+        <button
+          onClick={() => setShowCalendarView(true)}
+          className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-colors text-sm ${
+            showCalendarView
+              ? "bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-900"
+              : "glass text-white hover:bg-white/10"
+          }`}
+        >
+          📊 Full Schedule
+        </button>
+      </div>
+
+      {showCalendarView ? (
+        <>
+          {plan.days.some((d) => getYogaPoseById(d.exercises?.[0]?.exerciseId)) ? (
+            <YogaPlanCalendarView plan={plan} onSelectDay={(idx) => { setSelectedDay(idx); setShowCalendarView(false); }} />
+          ) : (
+            <MesocycleCalendarView plan={plan} onSelectDay={(idx, day) => { setSelectedDay(idx); setShowCalendarView(false); }} />
+          )}
+        </>
+      ) : (
+        <>
+          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Full Week</h3>
+          <div className="space-y-3 mb-8">
         {plan.days.map((day, i) => (
           <div key={i} className={`rounded-xl border transition-all ${day.isRest ? "bg-gray-800/30 border-gray-700/30 p-4" : selectedDay === i ? "bg-gray-800 border-brand-500/50 p-4" : "bg-gray-800/50 border-gray-700/50 p-4 hover:bg-gray-800/70 cursor-pointer"}`} onClick={() => !day.isRest && setSelectedDay(selectedDay === i ? null : i)}>
             <div className="flex justify-between items-center">
@@ -438,6 +514,8 @@ function PlanContent() {
           </div>
         ))}
       </div>
+        </>
+      )}
       {selectedExercise && <ExerciseModal exercise={selectedExercise} onClose={() => setSelectedExercise(null)} />}
       {CoachToastComponent}
     </div>
