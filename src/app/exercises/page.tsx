@@ -5,9 +5,19 @@ import { exercises } from "@/data/exercises";
 import { yogaPoses } from "@/data/yoga";
 import ExerciseCard from "@/components/ExerciseCard";
 import ExerciseModal from "@/components/ExerciseModal";
-import { Exercise, ExerciseCategory, Difficulty, YogaPose } from "@/lib/types";
+import { Exercise, ExerciseCategory, Difficulty, YogaPose, Equipment } from "@/lib/types";
 import PageBackground from "@/components/PageBackground";
 import { useWorkout } from "@/context/WorkoutContext";
+
+// Check if user has required equipment for an exercise
+function userCanDoExercise(exercise: Exercise, userEquipment?: Equipment[]): boolean {
+  // If user has no equipment restrictions, allow all exercises
+  if (!userEquipment || userEquipment.length === 0) return true;
+  // If exercise has no equipment requirements, it's pure bodyweight (always allowed)
+  if (!exercise.equipment || exercise.equipment.length === 0) return true;
+  // Check if any of the exercise's required equipment matches user's equipment
+  return exercise.equipment.some((eq) => userEquipment.includes(eq));
+}
 
 const exCategories: { value: ExerciseCategory | "all"; label: string }[] = [
   { value: "all", label: "All" }, { value: "push", label: "Push" }, { value: "pull", label: "Pull" },
@@ -39,9 +49,11 @@ const difficultyRank: Record<Difficulty, number> = {
 export default function ExercisesPage() {
   const { profile } = useWorkout();
   const yogaUnlocked = profile?.yogaSetUp ?? false;
+  const userEquipment = profile?.userEquipment || [];
   const [tab, setTab] = useState<"exercises" | "yoga">("exercises");
   const [selCat, setSelCat] = useState<ExerciseCategory | "all">("all");
   const [selDiff, setSelDiff] = useState<Difficulty | "all">("all");
+  const [filterByEquipment, setFilterByEquipment] = useState(true);
   const [selExercise, setSelExercise] = useState<Exercise | null>(null);
   const [yogaCat, setYogaCat] = useState("all");
   const [selYoga, setSelYoga] = useState<YogaPose | null>(null);
@@ -50,6 +62,8 @@ export default function ExercisesPage() {
     .filter((e) => {
       if (selCat !== "all" && e.category !== selCat) return false;
       if (selDiff !== "all" && e.difficulty !== selDiff) return false;
+      // When filter is ON, only show exercises user can do
+      if (filterByEquipment && !userCanDoExercise(e, userEquipment)) return false;
       return true;
     })
     .sort((a, b) => difficultyRank[a.difficulty] - difficultyRank[b.difficulty]);
@@ -81,6 +95,26 @@ export default function ExercisesPage() {
       {/* Exercises Tab */}
       {tab === "exercises" && (
         <>
+          {/* Equipment Filter Toggle */}
+          <div className="flex items-center justify-between mb-4 px-2 py-2 bg-white/5 rounded-xl border border-white/10">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-white/80">🎯 Filter by My Equipment</span>
+              {userEquipment.length === 0 && <span className="text-[10px] bg-amber-500/30 text-amber-300 px-2 py-0.5 rounded">Not set</span>}
+            </div>
+            <button
+              onClick={() => setFilterByEquipment(!filterByEquipment)}
+              className={`relative inline-flex h-6 w-11 rounded-full transition-colors ${
+                filterByEquipment ? "bg-emerald-600" : "bg-gray-600"
+              }`}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                  filterByEquipment ? "translate-x-5" : "translate-x-0.5"
+                }`}
+              />
+            </button>
+          </div>
+
           <div className="flex gap-2 mb-3 overflow-x-auto scrollbar-hide pb-1">
             {exCategories.map((c) => (
               <button key={c.value} onClick={() => setSelCat(c.value)} className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${selCat === c.value ? "bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-900" : "glass"}`}>{c.label}</button>
@@ -91,11 +125,29 @@ export default function ExercisesPage() {
               <button key={d.value} onClick={() => setSelDiff(d.value)} className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${selDiff === d.value ? "bg-white/15 text-white border border-white/20" : "glass"}`}>{d.label}</button>
             ))}
           </div>
-          <p className="text-xs text-white/60 mb-3">{filteredEx.length} exercises</p>
+          <p className="text-xs text-white/60 mb-3">{filteredEx.length} exercises {filterByEquipment && userEquipment.length > 0 ? "(unlocked)" : ""}</p>
           <div className="space-y-3">
-            {filteredEx.map((ex) => (
-              <ExerciseCard key={ex.id} exercise={ex} onClick={() => setSelExercise(ex)} />
-            ))}
+            {filteredEx.length > 0 ? (
+              filteredEx.map((ex) => {
+                const canDo = userCanDoExercise(ex, userEquipment);
+                return (
+                  <div key={ex.id} className={`transition-opacity ${!filterByEquipment && !canDo ? "opacity-50" : ""}`}>
+                    <ExerciseCard exercise={ex} onClick={() => setSelExercise(ex)} />
+                    {/* Equipment Badge when not filtering */}
+                    {!filterByEquipment && !canDo && ex.equipment && ex.equipment.length > 0 && (
+                      <div className="mt-1 text-[10px] text-white/60 px-3">
+                        Requires: {ex.equipment.map((eq) => (eq === "pull-up-bar" ? "🏋️ Bar" : eq === "rings" ? "🔗 Rings" : eq === "wall" ? "🧗 Wall" : eq === "parallettes" ? "📐 Bars" : "⚙️ " + eq)).join(", ")}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-white/60 text-sm">No exercises available</p>
+                {filterByEquipment && userEquipment.length === 0 && <p className="text-white/40 text-xs mt-2">Set your equipment in profile to see exercises</p>}
+              </div>
+            )}
           </div>
           {selExercise && <ExerciseModal exercise={selExercise} onClose={() => setSelExercise(null)} />}
         </>
