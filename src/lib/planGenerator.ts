@@ -173,128 +173,134 @@ const calisthenicsWarmUpVariants: WarmUp[] = [
 
 // ─── CALISTHENICS PLAN ───
 
+// ─── CALISTHENICS PLAN (OVERCOMING GRAVITY 6-WEEK MESOCYCLE) ───
+
 export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoal): WeeklyPlan {
   if (selectedSkillIds.some((id) => getYogaPoseById(id) !== undefined)) {
-    return generateYogaPlan(selectedSkillIds, 60); // Assuming this exists elsewhere
+    return generateYogaPlan(selectedSkillIds, 60); 
   }
 
-  const targetNames: string[] = [];
-  const skillWork: WorkoutExercise[] = [];
-  const strengthWork: WorkoutExercise[] = [];
-  const coreLegsWork: WorkoutExercise[] = [];
-  const usedIds = new Set<string>();
+  const profile = getUserProfile();
+  const userEquipment = profile?.equipment || [];
+  const userSkillLevel = profile?.overallLevel || "beginner";
 
-  // 1. Process Skills (These MUST go first in the workout)
+  // 1. STRICT EQUIPMENT FILTERING: Only pull exercises the user can actually do
+  const availableExercises = exercises.filter(ex => userHasEquipment(ex, userEquipment));
+  const usedIdsA = new Set<string>();
+  const usedIdsB = new Set<string>();
+  
+  const targetNames: string[] = [];
+  const skillWorkA: WorkoutExercise[] = [];
+  const skillWorkB: WorkoutExercise[] = [];
+
+  // 2. PROCESS SKILLS (Must be performed first in the workout while CNS is fresh)
   for (const targetId of selectedSkillIds) {
     const target = getExerciseById(targetId);
     if (!target) continue;
     targetNames.push(target.name);
 
-    const chain = getFullProgressionChain(targetId);
-    const targetIdx = chain.findIndex((e) => e.id === targetId);
-    const progressions = targetIdx > 0 ? chain.slice(0, targetIdx) : [];
+    // Get progression chain and filter it by user's equipment
+    const fullChain = getFullProgressionChain(targetId).filter(ex => userHasEquipment(ex, userEquipment));
+    const targetIdx = fullChain.findIndex((e) => e.id === targetId);
+    const progressions = targetIdx > 0 ? fullChain.slice(0, targetIdx) : fullChain.slice(0, 2);
 
     if (progressions.length > 0) {
-      // Only take the last 1-2 progressions so we don't fatigue before the main work
-      const relevantProgressions = progressions.slice(-2); 
-      relevantProgressions.forEach((ex, i) => {
-        if (usedIds.has(ex.id)) return;
-        usedIds.add(ex.id);
-        const isLast = i === relevantProgressions.length - 1;
-        const label = isLast ? `🎯 Target Progression` : `Warm-up Progression`;
-        skillWork.push(makeEx(ex, true, goal, label));
-      });
-    }
-
-    // Conditioning / Supplemental for the skill
-    const cond = getConditioningForSkill(targetId);
-    if (cond.length > 0) {
-      const top = cond[0];
-      const isHold = top.reps.includes("s");
-      strengthWork.push({
-        exerciseId: `cond-${targetId}-0`, sets: top.sets,
-        reps: isHold ? null : parseInt(top.reps) || 8,
-        holdSeconds: isHold ? parseInt(top.reps) || 15 : null,
-        restSeconds: 90, progressionLevel: `🔧 Supplemental Strength`,
-      });
+      // Pick the highest progression they can do for Skill Work
+      const mainSkill = progressions[progressions.length - 1];
+      if (mainSkill) {
+        usedIdsA.add(mainSkill.id);
+        usedIdsB.add(mainSkill.id); // Skills are high frequency, practiced in both A and B
+        skillWorkA.push(makeEx(mainSkill, true, goal, `🎯 Target Skill`));
+        skillWorkB.push(makeEx(mainSkill, true, goal, `🎯 Target Skill`));
+      }
     }
   }
 
-  // 2. Fill out Full Body Strength (Push & Pull)
-  const supporters = exercises.filter(
-    (e) => !usedIds.has(e.id) && (e.difficulty === "beginner" || e.difficulty === "intermediate") && e.category !== "skill"
-  );
-  
-  // Get 2 Pushes and 2 Pulls for structural balance
-  const pushes = supporters.filter(e => e.category === "push").slice(0, 2);
-  const pulls = supporters.filter(e => e.category === "pull").slice(0, 2);
-  
-  [...pushes, ...pulls].forEach(ex => {
-    if (!usedIds.has(ex.id)) {
-      usedIds.add(ex.id);
-      strengthWork.push(makeEx(ex, false, goal, "Strength Core"));
+  // Helper to safely pop an unused exercise from a category
+  const getNextEx = (category: string, usedSet: Set<string>) => {
+    const ex = availableExercises.find(e => e.category === category && !usedSet.has(e.id) && e.difficulty !== "elite");
+    if (ex) usedSet.add(ex.id);
+    return ex;
+  };
+
+  // 3. BUILD WORKOUT A & WORKOUT B (A/B Full Body Split for variety)
+  const buildRoutine = (usedSet: Set<string>, skillWork: WorkoutExercise[]) => {
+    const strengthWork: WorkoutExercise[] = [];
+    const coreLegsWork: WorkoutExercise[] = [];
+
+    // Structural Balance: 2 Push, 2 Pull per workout
+    for (let i = 0; i < 2; i++) {
+      const push = getNextEx("push", usedSet);
+      if (push) strengthWork.push(makeEx(push, false, goal, "Strength: Push"));
+      
+      const pull = getNextEx("pull", usedSet);
+      if (pull) strengthWork.push(makeEx(pull, false, goal, "Strength: Pull"));
     }
-  });
 
-  // 3. Fill out Legs & Core (Placed at the end to prevent CNS fatigue)
-  const core = supporters.filter(e => e.category === "core").slice(0, 1);
-  const legs = supporters.filter(e => e.category === "legs").slice(0, 1);
-  
-  [...core, ...legs].forEach(ex => {
-    if (!usedIds.has(ex.id)) {
-      usedIds.add(ex.id);
-      coreLegsWork.push(makeEx(ex, false, goal, "Finisher"));
-    }
-  });
+    // Core & Legs at the end to prevent CNS fatigue
+    const core = getNextEx("core", usedSet);
+    if (core) coreLegsWork.push(makeEx(core, false, goal, "Core Finisher"));
 
-  // Combine in STRICT Overcoming Gravity order: Skill -> Strength -> Core/Legs
-  const fullBodyRoutine = [...skillWork, ...strengthWork, ...coreLegsWork];
+    const legs = getNextEx("legs", usedSet);
+    if (legs) coreLegsWork.push(makeEx(legs, false, goal, "Leg Finisher"));
 
-  // 4. Build a 42-Day (6-Week) Schedule with Intensity/Volume Scaling
+    // Strict OG Order: Skills -> Strength -> Core/Legs
+    return [...skillWork, ...strengthWork, ...coreLegsWork];
+  };
+
+  const routineA = buildRoutine(usedIdsA, skillWorkA);
+  const routineB = buildRoutine(usedIdsB, skillWorkB); // Will pull different exercises than A if available
+
+  // 4. GENERATE 42-DAY (6-WEEK) SCHEDULE
   const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   const days: DayWorkout[] = [];
-  const profile = getUserProfile();
-  const userSkillLevel = profile?.overallLevel || "beginner";
   
-  // Adjust training frequency based on skill level
-  const trainingDaysPerWeek = userSkillLevel === "beginner" ? 3 : userSkillLevel === "intermediate" ? 3 : 4;
-  const trainingSchedule = userSkillLevel === "beginner" 
-    ? [0, 2, 4] // Mon, Wed, Fri
-    : userSkillLevel === "intermediate"
-    ? [0, 2, 4] // Mon, Wed, Fri (same for intermediate)
-    : [0, 1, 3, 4]; // Mon, Tue, Thu, Fri (4x per week for advanced)
+  // Beginners need 3x/week for rapid neurological adaptation. Adv can handle 4x.
+  const trainingSchedule = userSkillLevel === "advanced" ? [0, 1, 3, 4] : [0, 2, 4]; // 0=Mon, 2=Wed, 4=Fri
+  let isWorkoutA = true;
 
-  // Week-by-week intensity progression (adjust volume/intensity over 6 weeks)
-  const weekIntensityModifiers = [0.85, 0.90, 0.95, 1.0, 1.05, 1.10]; // Progressive overload
-  
   for (let dayNum = 0; dayNum < 42; dayNum++) {
     const weekNumber = Math.floor(dayNum / 7) + 1;
     const dayOfWeek = dayNum % 7;
     const dayOfWeekName = dayNames[dayOfWeek];
-    const weekIntensity = weekIntensityModifiers[weekNumber - 1] || 1.0;
     
     // Check if this day is a training day
     const isTrainingDay = trainingSchedule.includes(dayOfWeek);
     
     if (isTrainingDay) {
-      // Scale exercise volume/intensity based on skill level and week progression
-      const scaledRoutine = fullBodyRoutine.map((ex) => {
-        const setsMultiplier = userSkillLevel === "beginner" ? 1.0 : userSkillLevel === "intermediate" ? 1.1 : 1.2;
+      // Toggle between Workout A and Workout B
+      const baseRoutine = isWorkoutA ? routineA : routineB;
+      const workoutLabel = isWorkoutA ? "Workout A" : "Workout B";
+      isWorkoutA = !isWorkoutA; // Flip for the next training day
+
+      // Week 6 is ALWAYS a Deload week in Overcoming Gravity
+      const isDeload = weekNumber === 6;
+      
+      const scaledRoutine = baseRoutine.map((ex) => {
         const scaled = { ...ex };
-        scaled.sets = Math.ceil(ex.sets * setsMultiplier * weekIntensity);
+        if (isDeload) {
+          // Deload: Cut sets to 1-2, reduce reps/holds to aid joint/CNS recovery
+          scaled.sets = Math.max(1, Math.floor(ex.sets * 0.5));
+          if (scaled.reps) scaled.reps = Math.max(1, Math.floor(scaled.reps * 0.7));
+          if (scaled.holdSeconds) scaled.holdSeconds = Math.max(5, Math.floor(scaled.holdSeconds * 0.7));
+          scaled.progressionLevel = `${scaled.progressionLevel} (Deload)`;
+        } else {
+          // Progressive Overload (Weeks 1-5)
+          const setsMultiplier = userSkillLevel === "beginner" ? 1.0 : 1.1;
+          scaled.sets = Math.ceil(ex.sets * setsMultiplier);
+        }
         return scaled;
       });
 
       days.push({
         day: `${dayOfWeekName} (Week ${weekNumber})`,
-        name: `Full Body Routine`,
+        name: `Full Body - ${workoutLabel}`,
         isRest: false,
-        focus: `Skill acquisition & structural balance - Week ${weekNumber}`,
+        focus: isDeload ? `Deload Week - CNS & Joint Recovery` : `Structural balance & Progressive Overload`,
         exercises: scaledRoutine,
         warmUp: calisthenicsWarmUpVariants[dayOfWeek % calisthenicsWarmUpVariants.length],
       });
     } else {
-      // Rest / Active recovery days
       days.push({
         day: `${dayOfWeekName} (Week ${weekNumber})`,
         name: "Active Recovery",
@@ -305,32 +311,30 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
     }
   }
 
-  const goalLabel: Record<TrainingGoal, string> = {
+  const goalLabel: Record<string, string> = {
     "strength-skill": "Strength & Skill",
     hypertrophy: "Muscle Growth",
     endurance: "Stamina & Endurance",
-    // Legacy
     muscle: "Build Muscle",
     skills: "Master Skills",
     "weight-loss": "Lose Weight",
     balanced: "Balanced",
   };
-  const weeklyExerciseSlots = days.filter((d) => !d.isRest).reduce((s, d) => s + d.exercises.length, 0);
   
-  // Ensure targetNames are strings (defensive against accidental object insertion)
+  const weeklyExerciseSlots = days.filter((d) => !d.isRest).reduce((s, d) => s + d.exercises.length, 0);
   const skillNamesStr = targetNames.filter(n => typeof n === 'string').join(", ");
   const goalLabelStr = goalLabel[goal] || "Full Body";
   
   return {
     id: `plan-${Date.now()}`, 
-    name: selectedSkillIds.length === 1 ? `${targetNames[0]} Program` : "Full Body Gymnastics Program",
-    description: `${goalLabelStr} — Full Body Routine progressing toward: ${skillNamesStr}`,
-    difficulty: "intermediate", 
+    name: selectedSkillIds.length === 1 ? `${targetNames[0]} Program` : "OG Full Body Mesocycle",
+    description: `6-Week ${goalLabelStr} A/B Split progressing toward: ${skillNamesStr}`,
+    difficulty: userSkillLevel, 
     goal: `${goalLabelStr}: ${skillNamesStr}`,
     trainingGoal: goal, 
     targetSkills: selectedSkillIds, 
     days,
-    estimatedWeeklyMinutes: Math.round(weeklyExerciseSlots * 5), 
+    estimatedWeeklyMinutes: Math.round((weeklyExerciseSlots / 6) * 5), // Avg per week
     createdAt: new Date().toISOString(),
   };
 }
