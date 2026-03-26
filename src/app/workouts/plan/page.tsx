@@ -12,7 +12,9 @@ import SetLogCard from "@/components/SetLogCard";
 import Timer from "@/components/Timer";
 import RestTimer from "@/components/RestTimer";
 import { useCoachToast } from "@/components/CoachToast";
+import ScheduleOverrideModal from "@/components/ScheduleOverrideModal";
 import { Exercise } from "@/lib/types";
+import { isScheduledForToday, getDayOfWeekName } from "@/lib/storage";
 import Link from "next/link";
 
 function PlanContent() {
@@ -34,6 +36,9 @@ function PlanContent() {
   const [weightInput, setWeightInput] = useState("");
   const [showWarmUpPrompt, setShowWarmUpPrompt] = useState(false);
   const [pendingDayIndex, setPendingDayIndex] = useState<number | null>(null);
+  const [showOverrideModal, setShowOverrideModal] = useState(false);
+  const [scheduleOverride, setScheduleOverride] = useState(false);
+  const [pendingOverrideDayIndex, setPendingOverrideDayIndex] = useState<number | null>(null);
   const sessionRestoreKey = useRef<string | null>(null);
 
   useEffect(() => {
@@ -88,6 +93,17 @@ function PlanContent() {
 
   const handleStart = (dayIndex: number) => {
     const day = plan.days[dayIndex];
+    const dayOfWeek = dayIndex;
+    const isToday = isScheduledForToday(dayOfWeek);
+
+    // If not today and no override, show modal
+    if (!isToday && !scheduleOverride) {
+      setPendingOverrideDayIndex(dayIndex);
+      setShowOverrideModal(true);
+      return;
+    }
+
+    // If it is today or override is set, proceed with workout start
     if (day.warmUp) { setPendingDayIndex(dayIndex); setShowWarmUpPrompt(true); }
     else beginWorkout(dayIndex);
   };
@@ -97,6 +113,33 @@ function PlanContent() {
     setActiveDayIndex(dayIndex); setIsActive(true); setIsPaused(false);
     setCurEx(0); setCurSet(0); setWeightInput("");
     setShowWarmUpPrompt(false); setPendingDayIndex(null);
+    setShowOverrideModal(false); setScheduleOverride(false);
+  };
+
+  const handleOverrideModalStartToday = () => {
+    setShowOverrideModal(false);
+    setScheduleOverride(false);
+    setPendingOverrideDayIndex(null);
+    const todayDay = plan.days[todayIndex];
+    if (todayDay && !todayDay.isRest) {
+      if (todayDay.warmUp) { setPendingDayIndex(todayIndex); setShowWarmUpPrompt(true); }
+      else beginWorkout(todayIndex);
+    }
+  };
+
+  const handleOverrideModalFollowSchedule = () => {
+    if (pendingOverrideDayIndex === null) return;
+    setShowOverrideModal(false);
+    setScheduleOverride(true);
+    const day = plan.days[pendingOverrideDayIndex];
+    if (day.warmUp) { setPendingDayIndex(pendingOverrideDayIndex); setShowWarmUpPrompt(true); }
+    else beginWorkout(pendingOverrideDayIndex);
+  };
+
+  const handleOverrideModalCancel = () => {
+    setShowOverrideModal(false);
+    setScheduleOverride(false);
+    setPendingOverrideDayIndex(null);
   };
 
   const handleCompleteReps = () => {

@@ -1,6 +1,6 @@
 export type MuscleGroup = "chest" | "back" | "shoulders" | "biceps" | "triceps" | "core" | "quads" | "hamstrings" | "glutes" | "calves" | "full-body";
 export type Difficulty = "beginner" | "intermediate" | "advanced" | "elite";
-export type ExerciseCategory = "push" | "pull" | "legs" | "core" | "full-body" | "skill";
+export type ExerciseCategory = "push" | "pull" | "legs" | "core" | "skill";
 export type Rank = "F" | "E" | "D" | "C" | "B" | "A" | "S";
 export type TrainingGoal = "strength-skill" | "hypertrophy" | "endurance" | "muscle" | "skills" | "weight-loss" | "balanced"; // Legacy goals kept for backward compat
 export type Equipment = "rings" | "parallettes" | "pull-up-bar" | "weights" | "wall" | "calisthenics";
@@ -91,6 +91,7 @@ export interface WorkoutSessionUIState {
   curSet: number;
   showRest: boolean;
   isPaused: boolean;
+  scheduleOverride?: boolean;
 }
 
 export interface CompletedSet {
@@ -169,4 +170,20 @@ export interface UserStats {
   currentStreak: number;
   longestStreak: number;
   lastWorkoutDate: string | null;
+}
+
+export interface PoseLog {
+  poseId: string;
+  duration: number;
+}
+
+export interface YogaSession {
+  id: string;
+  planId: string;
+  dayIndex: number;
+  currentPoseIndex: number;
+  flowId: string;
+  startTime: number;
+  pausedTime?: number;
+  completedPoses: PoseLog[];
 }

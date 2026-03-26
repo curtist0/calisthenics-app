@@ -41,7 +41,6 @@ describe("Exercise data", () => {
     expect(categories.has("pull")).toBe(true);
     expect(categories.has("legs")).toBe(true);
     expect(categories.has("core")).toBe(true);
-    expect(categories.has("full-body")).toBe(true);
     expect(categories.has("skill")).toBe(true);
   });
 

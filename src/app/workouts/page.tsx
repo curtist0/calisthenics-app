@@ -111,14 +111,14 @@ export default function WorkoutsPage() {
     const isSel = selected.has(ex.id);
     const endpoint = getProgressionEndpoint(ex.id);
     return (
-      <button key={ex.id} onClick={() => toggle(ex.id)} className={`w-full flex items-center gap-3 p-3 rounded-2xl border-2 transition-all text-left ${isSel ? "border-brand-500 bg-brand-500/10" : "border-gray-700/50 bg-gray-800/30 hover:bg-gray-800/50"}`}>
+      <button key={ex.id} onClick={() => toggle(ex.id)} className={`w-full flex items-center gap-3 p-3 rounded-2xl border-2 transition-all text-left ${isSel ? "border-emerald-400 bg-emerald-400/10 glass-card" : "border-white/10 bg-white/5 glass hover:bg-white/8"}`}>
         <ExerciseIllustration exerciseId={ex.id} size={50} className="flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-white text-sm">{ex.name}</h3>
           <span className={`text-xs font-medium capitalize ${diffText[ex.difficulty]}`}>{ex.difficulty}</span>
-          {endpoint && <p className="text-xs text-gray-500 mt-0.5">→ <span className="text-brand-400">{endpoint}</span></p>}
+          {endpoint && <p className="text-xs text-white/50 mt-0.5">→ <span className="text-emerald-400">{endpoint}</span></p>}
         </div>
-        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSel ? "border-brand-500 bg-brand-500" : "border-gray-600"}`}>
+        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSel ? "border-emerald-400 bg-emerald-400" : "border-white/30"}`}>
           {isSel && <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7L6 10L11 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
         </div>
       </button>
@@ -131,12 +131,12 @@ export default function WorkoutsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-extrabold text-white">Workouts</h1>
-          <p className="text-gray-400 text-sm">{view === "library" ? `${savedPlans.length} plan${savedPlans.length !== 1 ? "s" : ""}` : view === "type" ? "Choose type" : view === "yoga-goal" ? "Yoga setup" : view === "pick" ? "Select skills" : "Choose goal"}</p>
+          <p className="text-white/60 text-sm">{view === "library" ? `${savedPlans.length} plan${savedPlans.length !== 1 ? "s" : ""}` : view === "type" ? "Choose type" : view === "yoga-goal" ? "Yoga setup" : view === "pick" ? "Select skills" : "Choose goal"}</p>
         </div>
         {view === "library" ? (
-          <button onClick={() => setView("type")} className="px-4 py-2 bg-gray-800 text-gray-300 rounded-full text-sm font-medium hover:bg-gray-700">+ New</button>
+          <button onClick={() => setView("type")} className="glass px-4 py-2 rounded-full text-sm font-medium hover:bg-white/10">+ New</button>
         ) : savedPlans.length > 0 ? (
-          <button onClick={() => { setView("library"); setWorkoutType(null); setSelected(new Set()); setShowMore(false); }} className="px-4 py-2 bg-gray-800 text-gray-300 rounded-full text-sm font-medium">My Plans</button>
+          <button onClick={() => { setView("library"); setWorkoutType(null); setSelected(new Set()); setShowMore(false); }} className="glass px-4 py-2 rounded-full text-sm font-medium">My Plans</button>
         ) : null}
       </div>
 
@@ -144,47 +144,47 @@ export default function WorkoutsPage() {
       {view === "library" && (
         <div className="space-y-4">
           {savedPlans.map((plan) => (
-            <div key={plan.id} className="glass rounded-2xl overflow-hidden">
-              <Link href={`/workouts/plan?id=${plan.id}`} className="block p-5 hover:bg-gray-800/30">
+            <div key={plan.id} className="glass-card overflow-hidden">
+              <Link href={`/workouts/plan?id=${plan.id}`} className="block p-5 hover:bg-white/8">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-bold text-white text-lg">{plan.name}</h3>
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-brand-500/20 text-brand-400 capitalize">{plan.difficulty}</span>
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 capitalize">{plan.difficulty}</span>
                 </div>
-                <p className="text-gray-400 text-sm mb-1">{plan.description}</p>
-                <div className="flex gap-3 text-xs text-gray-300 mt-2">
+                <p className="text-white/60 text-sm mb-1">{plan.description}</p>
+                <div className="flex gap-3 text-xs text-white/60 mt-2">
                   <span>📅 {plan.days.filter((d) => !d.isRest).length} days/wk</span>
                   <span>⏱ ~{plan.estimatedWeeklyMinutes} min/wk</span>
                 </div>
               </Link>
               <div className="px-5 pb-4 flex gap-2">
-                <Link href={`/workouts/plan?id=${plan.id}`} className="flex-1 py-2 bg-brand-500 text-white rounded-xl text-center text-sm font-semibold hover:bg-brand-600">Open</Link>
+                <Link href={`/workouts/plan?id=${plan.id}`} className="flex-1 py-2 bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-900 font-semibold rounded-xl text-center text-sm hover:shadow-lg hover:shadow-emerald-500/30">Open</Link>
                 {confirmDelete === plan.id ? (
                   <div className="flex gap-2">
-                    <button onClick={() => { removePlan(plan.id); setConfirmDelete(null); }} className="px-4 py-2 bg-red-500 text-white rounded-xl text-sm font-semibold">Delete</button>
-                    <button onClick={() => setConfirmDelete(null)} className="px-3 py-2 bg-gray-700 text-gray-300 rounded-xl text-sm">Cancel</button>
+                    <button onClick={() => { removePlan(plan.id); setConfirmDelete(null); }} className="px-4 py-2 bg-red-500/30 text-red-300 rounded-xl text-sm font-semibold border border-red-500/50 hover:bg-red-500/50">Delete</button>
+                    <button onClick={() => setConfirmDelete(null)} className="px-3 py-2 glass text-sm">Cancel</button>
                   </div>
                 ) : (
-                  <button onClick={() => setConfirmDelete(plan.id)} className="px-3 py-2 bg-gray-700 text-gray-400 rounded-xl text-sm hover:bg-red-500/20 hover:text-red-400">🗑</button>
+                  <button onClick={() => setConfirmDelete(plan.id)} className="px-3 py-2 glass text-sm hover:bg-red-500/10 hover:text-red-400">🗑</button>
                 )}
               </div>
             </div>
           ))}
-          {savedPlans.length === 0 && <div className="text-center py-12 glass rounded-2xl"><p className="text-4xl mb-3">📋</p><p className="text-gray-300 font-semibold">No plans yet</p></div>}
+          {savedPlans.length === 0 && <div className="text-center py-12 glass-card"><p className="text-4xl mb-3">📋</p><p className="text-white/70 font-semibold">No plans yet</p></div>}
         </div>
       )}
 
       {/* Choose Type */}
       {view === "type" && (
         <div className="space-y-4">
-          <button onClick={() => { setWorkoutType("calisthenics"); setView("pick"); setSelected(new Set()); }} className="w-full glass rounded-2xl p-6 text-left hover:scale-[1.02] transition-all">
-            <div className="flex items-center gap-4"><span className="text-4xl">💪</span><div><p className="text-white font-extrabold text-lg">Calisthenics</p><p className="text-gray-400 text-sm">Strength & skill progressions</p></div></div>
+          <button onClick={() => { setWorkoutType("calisthenics"); setView("pick"); setSelected(new Set()); }} className="w-full glass-card p-6 text-left hover:bg-white/8 hover:scale-[1.02] transition-all">
+            <div className="flex items-center gap-4"><span className="text-4xl">💪</span><div><p className="text-white font-extrabold text-lg">Calisthenics</p><p className="text-white/60 text-sm">Strength & skill progressions</p></div></div>
           </button>
           {yogaUnlocked ? (
-            <button onClick={() => { setWorkoutType("flexibility"); setView("yoga-goal"); }} className="w-full glass rounded-2xl p-6 text-left hover:scale-[1.02] transition-all">
-              <div className="flex items-center gap-4"><span className="text-4xl">🧘</span><div><p className="text-white font-extrabold text-lg">Yoga & Flexibility</p><p className="text-gray-400 text-sm">Custom yoga routine for your goals</p></div></div>
+            <button onClick={() => { setWorkoutType("flexibility"); setView("yoga-goal"); }} className="w-full glass-card p-6 text-left hover:bg-white/8 hover:scale-[1.02] transition-all">
+              <div className="flex items-center gap-4"><span className="text-4xl">🧘</span><div><p className="text-white font-extrabold text-lg">Yoga & Flexibility</p><p className="text-white/60 text-sm">Custom yoga routine for your goals</p></div></div>
             </button>
           ) : (
-            <div className="w-full glass rounded-2xl p-6 opacity-50"><div className="flex items-center gap-4"><span className="text-4xl">🔒</span><div><p className="text-white font-bold">Yoga</p><p className="text-gray-400 text-sm">Set up yoga to unlock</p></div></div></div>
+            <div className="w-full glass-card p-6 opacity-60"><div className="flex items-center gap-4"><span className="text-4xl">🔒</span><div><p className="text-white font-bold">Yoga</p><p className="text-white/60 text-sm">Set up yoga to unlock</p></div></div></div>
           )}
         </div>
       )}
@@ -197,22 +197,22 @@ export default function WorkoutsPage() {
             <div className="grid grid-cols-2 gap-2 mb-4">
               {yogaGoalPresets.map((p) => (
                 <button key={p.label} onClick={() => setYogaGoalText(p.label)}
-                  className={`p-3 rounded-xl text-left text-sm transition-all ${yogaGoalText === p.label ? "glass border-2 border-brand-500" : "glass border-2 border-transparent hover:border-gray-600"}`}>
+                  className={`p-3 rounded-xl text-left text-sm transition-all ${yogaGoalText === p.label ? "glass-card border-2 border-emerald-400" : "glass border-2 border-transparent hover:border-white/20"}`}>
                   <span className="text-lg">{p.icon}</span>
                   <p className="text-white font-medium mt-1 text-xs">{p.label}</p>
                 </button>
               ))}
             </div>
-            <input type="text" value={yogaGoalText} onChange={(e) => setYogaGoalText(e.target.value)} placeholder="Or type your own goal..." className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl text-white text-sm focus:border-brand-500 focus:outline-none" />
+            <input type="text" value={yogaGoalText} onChange={(e) => setYogaGoalText(e.target.value)} placeholder="Or type your own goal..." className="glass-input" />
           </div>
 
           <div>
             <p className="text-white font-bold mb-2">Session length</p>
-            <p className="text-gray-400 text-xs mb-3">How long would you like each yoga session?</p>
+            <p className="text-white/60 text-xs mb-3">How long would you like each yoga session?</p>
             <div className="flex gap-2">
               {[10, 20, 30, 45, 60].map((min) => (
                 <button key={min} onClick={() => setYogaDuration(min)}
-                  className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${yogaDuration === min ? "bg-brand-500 text-white" : "glass text-gray-300"}`}>
+                  className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${yogaDuration === min ? "bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-900" : "glass"}`}>
                   {min}m
                 </button>
               ))}
@@ -220,7 +220,7 @@ export default function WorkoutsPage() {
           </div>
 
           <button onClick={handleGenerateYoga} disabled={!yogaGoalText.trim()}
-            className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${yogaGoalText.trim() ? "bg-purple-500 text-white hover:bg-purple-600" : "bg-gray-800 text-gray-500 cursor-not-allowed"}`}>
+            className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${yogaGoalText.trim() ? "glass-button" : "glass opacity-50 cursor-not-allowed"}`}>
             Generate Yoga Routine 🧘
           </button>
         </div>
@@ -229,26 +229,26 @@ export default function WorkoutsPage() {
       {/* Calisthenics Skill Pick */}
       {view === "pick" && workoutType === "calisthenics" && (
         <>
-          <p className="text-gray-400 text-sm font-medium mb-1">Skills at your level</p>
-          <p className="text-xs text-gray-500 mb-3 capitalize">Your profile: {profile?.overallLevel ?? "beginner"}</p>
+          <p className="text-white/60 text-sm font-medium mb-1">Skills at your level</p>
+          <p className="text-xs text-white/40 mb-3 capitalize">Your profile: {profile?.overallLevel ?? "beginner"}</p>
           <div className="space-y-2 mb-4">{currentLevel.map(renderSkillButton)}</div>
 
           {archived.length > 0 && (
             <>
-              <button type="button" onClick={() => setShowMore(!showMore)} className="w-full py-3 glass rounded-xl text-sm font-medium text-gray-300 hover:text-white mb-2 flex items-center justify-center gap-2">
+              <button type="button" onClick={() => setShowMore(!showMore)} className="w-full py-3 glass rounded-xl text-sm font-medium text-white/60 hover:text-white mb-2 flex items-center justify-center gap-2">
                 {showMore ? "Hide" : "Show"} other skill levels ({archived.length}) <span className="text-xs">{showMore ? "▲" : "▼"}</span>
               </button>
               {showMore && (
                 <div className="space-y-2 mb-4">
                   {higherLevel.length > 0 && (
                     <>
-                      <p className="text-xs text-brand-400 font-medium mb-2">🚀 Highly recommended next skills</p>
+                      <p className="text-xs text-emerald-400 font-medium mb-2">🚀 Highly recommended next skills</p>
                       <div className="space-y-2 mb-3">{higherLevel.map(renderSkillButton)}</div>
                     </>
                   )}
                   {lowerLevel.length > 0 && (
                     <>
-                      <p className="text-xs text-gray-500 font-medium mb-2">📌 Skills to revisit first</p>
+                      <p className="text-xs text-white/40 font-medium mb-2">📌 Skills to revisit first</p>
                       <div className="space-y-2">{lowerLevel.map(renderSkillButton)}</div>
                     </>
                   )}
@@ -259,7 +259,7 @@ export default function WorkoutsPage() {
 
           <div className="sticky bottom-20 z-40 pb-2">
             <button onClick={() => { if (selected.size > 0) setView("goal"); }} disabled={selected.size === 0}
-              className={`w-full py-4 rounded-2xl font-bold text-lg shadow-lg ${selected.size > 0 ? "bg-brand-500 text-white hover:bg-brand-600" : "bg-gray-800 text-gray-500 cursor-not-allowed"}`}>
+              className={`w-full py-4 rounded-2xl font-bold text-lg shadow-lg ${selected.size > 0 ? "glass-button" : "glass opacity-50 cursor-not-allowed"}`}>
               {selected.size === 0 ? "Select skills" : "Next: Choose Goal →"}
             </button>
           </div>
@@ -269,28 +269,28 @@ export default function WorkoutsPage() {
       {/* Goal Selection */}
       {view === "goal" && (
         <>
-          <p className="text-gray-400 text-sm mb-4">Which Overcoming Gravity approach fits your goals?</p>
+          <p className="text-white/60 text-sm mb-4">Which Overcoming Gravity approach fits your goals?</p>
           <div className="space-y-3 mb-6">
             {goalOptions.map((g) => (
               <button
                 key={g.value}
                 onClick={() => setSelectedGoal(g.value)}
                 className={`w-full p-4 rounded-2xl text-left flex items-start gap-4 border-2 transition-all ${
-                  selectedGoal === g.value ? "border-brand-500 bg-brand-500/10 glass" : "border-transparent glass hover:border-gray-600"
+                  selectedGoal === g.value ? "border-emerald-400 bg-emerald-400/10 glass-card" : "border-white/10 glass hover:border-white/20"
                 }`}
               >
                 <span className="text-2xl flex-shrink-0 mt-0.5">{g.icon}</span>
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-bold">{g.label}</p>
-                  <p className="text-gray-400 text-xs mt-1">{g.description}</p>
+                  <p className="text-white/60 text-xs mt-1">{g.description}</p>
                 </div>
-                {selectedGoal === g.value && <span className="ml-auto text-brand-400 text-lg flex-shrink-0 mt-0.5">✓</span>}
+                {selectedGoal === g.value && <span className="ml-auto text-emerald-400 text-lg flex-shrink-0 mt-0.5">✓</span>}
               </button>
             ))}
           </div>
           <div className="flex gap-3 sticky bottom-20 z-40 pb-2">
-            <button onClick={() => setView("pick")} className="px-6 py-4 bg-gray-800 text-gray-300 rounded-2xl font-bold">← Back</button>
-            <button onClick={handleGenerateCalisthenics} className="flex-1 py-4 bg-brand-500 text-white rounded-2xl font-bold text-lg hover:bg-brand-600">Generate Plan 🚀</button>
+            <button onClick={() => setView("pick")} className="glass px-6 py-4 rounded-2xl font-bold">← Back</button>
+            <button onClick={handleGenerateCalisthenics} className="glass-button flex-1 py-4 text-lg">Generate Plan 🚀</button>
           </div>
         </>
       )}

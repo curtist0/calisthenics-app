@@ -362,24 +362,218 @@ const yogaThemes = {
   }
 };
 
-export function generateYogaPlanFromGoal(goalText: string, durationMinutes: number): WeeklyPlan {
-  const dur = Math.max(20, durationMinutes || 60);
-  return generateThemedYogaPlan(dur);
+// Goal-based yoga themes for different training focuses
+type YogaGoalType = "flexibility" | "core" | "relaxation";
+
+const yogaGoalThemes: Record<YogaGoalType, Record<string, typeof yogaThemes["monday"]>> = {
+  flexibility: {
+    "monday": {
+      name: "Deep Hip Openers",
+      description: "Pigeon, lizard, bound angle, splits prep",
+      warmup: ["cat-cow", "easy-pose", "butterfly"],
+      main: ["pigeon", "lizard", "fire-log", "bound-angle", "half-splits", "standing-splits"],
+      cooldown: ["forward-fold", "supine-twist", "savasana"]
+    },
+    "tuesday": {
+      name: "Hamstring & Forward Folds",
+      description: "Hamstring stretches, seated folds, splits progression",
+      warmup: ["cat-cow", "downward-dog", "runners-lunge"],
+      main: ["forward-fold", "seated-forward-fold", "seated-straddle", "pyramid", "half-splits", "happy-baby"],
+      cooldown: ["childs", "supine-twist", "legs-up-wall", "savasana"]
+    },
+    "wednesday": {
+      name: "Shoulder & Chest Openers",
+      description: "Shoulder stretches, chest openers, backbends",
+      warmup: ["shoulder-rolls", "cat-cow", "cobra"],
+      main: ["cow-face", "eagle-arms", "supported-shoulder-opener", "bridge", "bow", "camel"],
+      cooldown: ["childs", "easy-pose", "savasana"]
+    },
+    "thursday": {
+      name: "Full Body Flexibility",
+      description: "Mix of all major joints and planes of motion",
+      warmup: ["cat-cow", "downward-dog", "world-greatest-stretch"],
+      main: ["warrior1", "warrior2", "low-lunge", "pigeon", "seated-twist", "cobra"],
+      cooldown: ["forward-fold", "supine-twist", "savasana"]
+    },
+    "friday": {
+      name: "Groin & Inner Thigh",
+      description: "Bound angle, butterfly, low lunges, splits",
+      warmup: ["easy-pose", "butterfly", "cat-cow"],
+      main: ["bound-angle", "butterfly", "low-lunge", "dragon-lunge", "fire-log", "pigeon"],
+      cooldown: ["forward-fold", "supine-twist", "happy-baby", "savasana"]
+    },
+    "saturday": {
+      name: "Active Recovery",
+      description: "Gentle movement with flexibility focus",
+      warmup: ["easy-pose", "cat-cow", "childs"],
+      main: ["supported-bridge", "thread-the-needle", "reclined-pigeon", "happy-baby", "eye-of-needle"],
+      cooldown: ["legs-up-wall", "savasana"]
+    },
+    "sunday": {
+      name: "Restorative Flexibility",
+      description: "Passive stretches, supported poses, long holds",
+      warmup: ["easy-pose", "cat-cow"],
+      main: ["yin-pigeon", "reclined-bound-angle", "supported-child", "sleeping-swan", "supported-shoulder-opener"],
+      cooldown: ["legs-up-wall", "savasana"]
+    }
+  },
+  core: {
+    "monday": {
+      name: "Power & Core Strength",
+      description: "Warrior sequences, planks, boat pose",
+      warmup: ["cat-cow", "downward-dog", "cobra"],
+      main: ["warrior1", "warrior2", "warrior3", "side-plank", "boat", "plank"],
+      cooldown: ["forward-fold", "supine-twist", "savasana"]
+    },
+    "tuesday": {
+      name: "Core Holds & Twists",
+      description: "Planks, boats, twists, core engagement",
+      warmup: ["cat-cow", "downward-dog", "sphinx"],
+      main: ["plank", "side-plank", "boat", "seated-twist", "windshield-wipers", "hollow-body"],
+      cooldown: ["childs", "supine-twist", "savasana"]
+    },
+    "wednesday": {
+      name: "Spine & Core Flow",
+      description: "Backbends, core activation, spinal mobility",
+      warmup: ["cat-cow", "cobra", "updog"],
+      main: ["cobra", "bridge", "locust", "bow", "boat", "wheel"],
+      cooldown: ["childs", "supine-twist", "savasana"]
+    },
+    "thursday": {
+      name: "Balance & Stability",
+      description: "Standing balance, core stability, arm balances",
+      warmup: ["shoulder-rolls", "downward-dog", "warrior2"],
+      main: ["tree", "warrior3", "eagle", "crow", "side-plank", "boat"],
+      cooldown: ["forward-fold", "childs", "savasana"]
+    },
+    "friday": {
+      name: "Inversions & Core",
+      description: "Handstand prep, inversions, core engagement",
+      warmup: ["downward-dog", "dolphin", "shoulderstand-prep"],
+      main: ["handstand-prep", "half-shoulder-stand", "crow", "boat", "hollow-body", "plank"],
+      cooldown: ["easy-pose", "savasana"]
+    },
+    "saturday": {
+      name: "Active Recovery Core",
+      description: "Gentle core engagement, stability work",
+      warmup: ["easy-pose", "cat-cow", "childs"],
+      main: ["supported-bridge", "boat", "locust", "side-plank-prep", "hollow-body-hold"],
+      cooldown: ["legs-up-wall", "savasana"]
+    },
+    "sunday": {
+      name: "Restorative Core Calm",
+      description: "Gentle core work, meditation, relaxation",
+      warmup: ["easy-pose", "cat-cow"],
+      main: ["supported-bridge", "supported-child", "legs-up-wall", "savasana-focus"],
+      cooldown: ["meditation", "savasana"]
+    }
+  },
+  relaxation: {
+    "monday": {
+      name: "Gentle Stress Relief",
+      description: "Easy flows, gentle stretches, breathing",
+      warmup: ["easy-pose", "cat-cow", "childs"],
+      main: ["supported-child", "butterfly", "forward-fold", "easy-twist", "happy-baby"],
+      cooldown: ["legs-up-wall", "savasana"]
+    },
+    "tuesday": {
+      name: "Restorative Yin",
+      description: "Long holds, passive poses, grounding",
+      warmup: ["easy-pose", "humming-bee", "breath-work"],
+      main: ["yin-pigeon", "supported-child", "reclined-bound-angle", "sleeping-swan"],
+      cooldown: ["legs-up-wall", "savasana"]
+    },
+    "wednesday": {
+      name: "Evening Wind-Down",
+      description: "Calming flows, gentle stretches, relaxation",
+      warmup: ["easy-pose", "cat-cow", "childs"],
+      main: ["forward-fold", "supine-twist", "reclined-pigeon", "happy-baby", "supported-shoulder-opener"],
+      cooldown: ["legs-up-wall", "meditation", "savasana"]
+    },
+    "thursday": {
+      name: "Breathing & Meditation",
+      description: "Pranayama, meditation, breathing exercises",
+      warmup: ["easy-pose", "humming-bee", "alternate-nostril"],
+      main: ["easy-pose", "lotus", "meditation-pose", "breathing-focus", "humming-bee"],
+      cooldown: ["meditation", "savasana"]
+    },
+    "friday": {
+      name: "Gentle Full Body",
+      description: "Accessible poses for all areas, relaxation focus",
+      warmup: ["easy-pose", "cat-cow"],
+      main: ["supported-child", "easy-twist", "butterfly", "supported-bridge", "eye-of-needle"],
+      cooldown: ["legs-up-wall", "savasana"]
+    },
+    "saturday": {
+      name: "Deep Relaxation",
+      description: "Restorative, supported, long holds",
+      warmup: ["easy-pose", "cat-cow"],
+      main: ["reclined-bound-angle", "supported-child", "yin-pigeon", "supported-shoulder-opener"],
+      cooldown: ["legs-up-wall", "meditation", "savasana"]
+    },
+    "sunday": {
+      name: "Complete Rest & Restoration",
+      description: "Full restorative session, deep relaxation",
+      warmup: ["easy-pose"],
+      main: ["supported-child", "reclined-bound-angle", "legs-up-wall", "meditation-focus"],
+      cooldown: ["savasana-extended"]
+    }
+  }
+};
+
+function detectYogaGoal(goalText: string): YogaGoalType {
+  const text = goalText.toLowerCase();
+  if (text.includes("flexibility") || text.includes("split") || text.includes("hip") || text.includes("stretch")) {
+    return "flexibility";
+  }
+  if (text.includes("core") || text.includes("strength") || text.includes("abs") || text.includes("power")) {
+    return "core";
+  }
+  if (text.includes("stress") || text.includes("sleep") || text.includes("calm") || text.includes("relax") || text.includes("anxiety")) {
+    return "relaxation";
+  }
+  return "flexibility"; // default
 }
 
-function generateThemedYogaPlan(duration: number): WeeklyPlan {
+export function generateYogaPlanFromGoal(goalText: string, durationMinutes: number): WeeklyPlan {
+  const dur = Math.max(20, durationMinutes || 60);
+  const goal = detectYogaGoal(goalText);
+  return generateYogaPlanWithGoal(dur, goal, 28); // 28 days = 4 weeks
+}
+
+function generateYogaPlanWithGoal(duration: number, goal: YogaGoalType, totalDays: number = 28): WeeklyPlan {
   const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   const dur = Math.max(20, duration || 60);
   
-  // Calculate hold time adjustments based on duration
-  const holdMultiplier = dur / 60;
+  // Cap yoga hold times to 15 seconds max for beginners
+  const maxHoldSeconds = 15;
   
-  const days: DayWorkout[] = dayNames.map((day, i) => {
-    const dayLower = day.toLowerCase();
-    const theme = yogaThemes[dayLower as keyof typeof yogaThemes];
+  // Calculate hold time adjustments based on duration, but cap at maxHoldSeconds
+  const holdMultiplier = Math.min(1, dur / 60);
+  
+  const themeSet = yogaGoalThemes[goal];
+  
+  const days: DayWorkout[] = [];
+  
+  // Generate 4 weeks of yoga
+  for (let dayNum = 0; dayNum < totalDays; dayNum++) {
+    const dayOfWeekIndex = dayNum % 7;
+    const dayOfWeekName = dayNames[dayOfWeekIndex];
+    const dayOfWeekLower = dayOfWeekName.toLowerCase();
+    const weekNumber = Math.floor(dayNum / 7) + 1;
+    const dayLabel = `${dayOfWeekName} (Week ${weekNumber})`;
+    
+    const theme = themeSet[dayOfWeekLower as keyof typeof themeSet];
     
     if (!theme) {
-      return { day, name: "Rest", isRest: true, exercises: [], restDayActivities: getRestDayActivities(i) };
+      days.push({ 
+        day: dayLabel, 
+        name: "Rest", 
+        isRest: true, 
+        exercises: [], 
+        restDayActivities: getRestDayActivities(dayOfWeekIndex) 
+      });
+      continue;
     }
 
     // Build the flow: warmup -> main sequence -> cooldown
@@ -388,22 +582,27 @@ function generateThemedYogaPlan(duration: number): WeeklyPlan {
     // Two-sided poses need 2 sets
     const twoSided = new Set(["pigeon", "lizard", "half-splits", "warrior1", "warrior2", "warrior3", "eagle", "dancer", "tree", "standing-splits", "reclined-pigeon", "fire-log", "sleeping-swan", "runners-lunge", "low-lunge", "high-lunge", "eye-of-needle", "thread-the-needle", "yin-pigeon"]);
     
-    // Adjust hold times: warmup shorter, main normal/longer, cooldown longer
+    // Adjust hold times: warmup shorter, main medium, cooldown slightly longer
+    // BUT cap at maxHoldSeconds (15s for beginners)
     const getHoldSeconds = (poseId: string): number => {
       const pose = getYogaPoseById(poseId);
-      if (!pose) return 20;
+      if (!pose) return Math.min(10, maxHoldSeconds);
       
+      let baseHold = pose.holdSeconds;
       if (theme.warmup.includes(poseId)) {
-        return Math.round(pose.holdSeconds * 0.7 * holdMultiplier);
+        baseHold = Math.round(baseHold * 0.7 * holdMultiplier);
       } else if (theme.cooldown.includes(poseId)) {
-        return Math.round(pose.holdSeconds * 1.2 * holdMultiplier);
+        baseHold = Math.round(baseHold * 1.0 * holdMultiplier);
       } else {
-        return Math.round(pose.holdSeconds * 0.9 * holdMultiplier);
+        baseHold = Math.round(baseHold * 0.9 * holdMultiplier);
       }
+      
+      // Cap at maxHoldSeconds (15 seconds)
+      return Math.min(baseHold, maxHoldSeconds);
     };
 
-    return {
-      day,
+    days.push({
+      day: dayLabel,
       name: `${theme.name} (${dur} min)`,
       isRest: false,
       focus: theme.description,
@@ -414,24 +613,30 @@ function generateThemedYogaPlan(duration: number): WeeklyPlan {
           sets: twoSided.has(poseId) ? 2 : 1,
           reps: null,
           holdSeconds: getHoldSeconds(poseId),
-          restSeconds: 5,
+          restSeconds: 3,
         };
       }),
-    };
-  });
+    });
+  }
+
+  const goalLabel = goal === "flexibility" ? "Flexibility & Mobility" : goal === "core" ? "Core Strength & Stability" : "Relaxation & Recovery";
 
   return {
     id: `yoga-${Date.now()}`,
-    name: `Yoga: Weekly Flow (${dur} min)`,
-    description: `${dur}-minute daily yoga flows with themed sequences — strength, flexibility, balance, and recovery`,
-    difficulty: "intermediate",
-    goal: "Complete weekly yoga practice with varied daily themes",
+    name: `Yoga: ${goalLabel} (4-Week Program)`,
+    description: `${dur}-minute daily yoga flows focused on ${goalLabel} with 4 weeks of varied sequences`,
+    difficulty: "beginner",
+    goal: `Build ${goalLabel.toLowerCase()} through consistent daily practice`,
     trainingGoal: "balanced",
     targetSkills: ["flexibility", "balance", "core-strength", "mobility"],
     days,
-    estimatedWeeklyMinutes: dur * 7,
+    estimatedWeeklyMinutes: dur * 6, // 6 training days per week on average
     createdAt: new Date().toISOString(),
   };
+}
+
+function generateThemedYogaPlan(duration: number): WeeklyPlan {
+  return generateYogaPlanWithGoal(duration, "flexibility", 7); // 7-day default
 }
 
 function generateYogaPlan(poseIds: string[], durationMinutes: number): WeeklyPlan {

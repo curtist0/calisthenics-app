@@ -1,4 +1,4 @@
-import { WorkoutLog, UserStats, PersonalRecord, WeeklyPlan, ProgressPhoto, UserProfile, ExerciseLevel, TrainingGoal, WorkoutSessionUIState } from "./types";
+import { WorkoutLog, UserStats, PersonalRecord, WeeklyPlan, ProgressPhoto, UserProfile, ExerciseLevel, TrainingGoal, WorkoutSessionUIState, YogaSession } from "./types";
 import { getExerciseById } from "@/data/exercises";
 import { updateExerciseLevel } from "./progression";
 
@@ -9,6 +9,8 @@ const PLANS_KEY = "calisthenics_plans";
 const PHOTOS_KEY = "calisthenics_photos";
 const PROFILE_KEY = "calisthenics_profile";
 const SESSION_UI_KEY = "calisthenics_session_ui";
+const ACTIVE_CALISTHENICS_SESSION_KEY = "calisthenics_active_session";
+const ACTIVE_YOGA_SESSION_KEY = "yoga_active_session";
 
 function isBrowser(): boolean {
   return typeof window !== "undefined";
@@ -261,4 +263,56 @@ export function updateLevelsFromLog(log: WorkoutLog): void {
   }
   profile.exerciseLevels = levels;
   saveUserProfile(profile);
+}
+
+// ── Active Calisthenics Session ──
+
+export function getActiveCalisthenicsSession(): WorkoutLog | null {
+  if (!isBrowser()) return null;
+  const data = localStorage.getItem(ACTIVE_CALISTHENICS_SESSION_KEY);
+  return data ? JSON.parse(data) : null;
+}
+
+export function saveActiveCalisthenicsSession(session: WorkoutLog | null): void {
+  if (!isBrowser()) return;
+  if (session === null) localStorage.removeItem(ACTIVE_CALISTHENICS_SESSION_KEY);
+  else localStorage.setItem(ACTIVE_CALISTHENICS_SESSION_KEY, JSON.stringify(session));
+}
+
+// ── Active Yoga Session ──
+
+export function getActiveYogaSession(): YogaSession | null {
+  if (!isBrowser()) return null;
+  const data = localStorage.getItem(ACTIVE_YOGA_SESSION_KEY);
+  return data ? JSON.parse(data) : null;
+}
+
+export function saveActiveYogaSession(session: YogaSession | null): void {
+  if (!isBrowser()) return;
+  if (session === null) localStorage.removeItem(ACTIVE_YOGA_SESSION_KEY);
+  else localStorage.setItem(ACTIVE_YOGA_SESSION_KEY, JSON.stringify(session));
+}
+
+// ── Schedule Helpers ──
+
+/**
+ * Check if a day of the week matches today's date.
+ * Convention: 0=Monday, 1=Tuesday, ..., 6=Sunday
+ * JavaScript Date.getDay(): 0=Sunday, 1=Monday, ..., 6=Saturday
+ * Conversion: (jsDay + 6) % 7
+ */
+export function isScheduledForToday(dayOfWeek: number): boolean {
+  if (!isBrowser()) return false;
+  const jsDay = new Date().getDay(); // 0=Sunday
+  const appConventionToday = (jsDay + 6) % 7; // Convert to 0=Monday
+  return dayOfWeek === appConventionToday;
+}
+
+/**
+ * Get the day of the week name from index.
+ * Convention: 0=Monday, 1=Tuesday, ..., 6=Sunday
+ */
+export function getDayOfWeekName(dayOfWeek: number): string {
+  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  return days[dayOfWeek] || "Unknown";
 }

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${inter.className} antialiased bg-slate-950`}>
         <WorkoutProvider>
           <main className="min-h-screen pb-20">{children}</main>
           <WorkoutResumeBar />

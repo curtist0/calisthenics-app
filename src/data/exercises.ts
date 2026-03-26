@@ -704,12 +704,12 @@ export const exercises: Exercise[] = [
     progressionFrom: "back-lever",
   },
 
-  // ──────── FULL-BODY ────────
+  // ──────── SKILL (Advanced Conditioning) ────────
   {
     id: "burpee",
     name: "Burpee",
     description: "The ultimate full-body conditioning exercise.",
-    category: "full-body",
+    category: "skill",
     muscles: ["full-body"],
     difficulty: "intermediate",
     instructions: [
@@ -730,7 +730,7 @@ export const exercises: Exercise[] = [
     id: "bear-crawl",
     name: "Bear Crawl",
     description: "A primal movement pattern that builds coordination and endurance.",
-    category: "full-body",
+    category: "skill",
     muscles: ["shoulders", "core", "quads"],
     difficulty: "beginner",
     instructions: [
