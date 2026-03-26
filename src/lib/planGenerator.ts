@@ -3,7 +3,7 @@ import { exercises, getExerciseById } from "@/data/exercises";
 import { yogaPoses, getYogaPoseById } from "@/data/yoga";
 import { getUserProfile } from "./storage";
 import { getConditioningForSkill } from "./conditioning";
-import { OG_GOAL_CONFIG, DIFFICULTY_MODIFIERS, getProgressionLabel } from "./overcomingGravity";
+import { OG_GOAL_CONFIG, DIFFICULTY_MODIFIERS, SKILL_LEVEL_SET_MODIFIERS, SKILL_LEVEL_REP_ADJUSTMENTS, getProgressionLabel } from "./overcomingGravity";
 
 function userHasEquipment(exercise: Exercise | undefined, userEquipment?: Equipment[]): boolean {
   if (!exercise) return false;
@@ -152,14 +152,15 @@ const goalConfig: Record<TrainingGoal, { baseMultiplier: number }> = {
   balanced: { baseMultiplier: 1.0 },
 };
 
-// Updated Set/Rep logic based on Overcoming Gravity principles + DUP focus modifiers
+// Updated Set/Rep logic based on Overcoming Gravity principles + DUP focus modifiers + Skill Level
 function makeEx(
   ex: Exercise,
   isTargetSkill: boolean,
   goal: TrainingGoal,
   label?: string,
   focus?: DailyFocus,
-  weekNumber?: number
+  weekNumber?: number,
+  userSkillLevel?: string
 ): WorkoutExercise {
   // Map legacy goals to new OG goals
   const ogGoal = 
@@ -169,11 +170,21 @@ function makeEx(
     "hypertrophy"; // Default fallback
 
   const config = OG_GOAL_CONFIG[ogGoal];
-  const difficulty = ex.difficulty || "beginner";
-  const diffModifier = DIFFICULTY_MODIFIERS[difficulty] || 1.0;
+  const exerciseDifficulty = ex.difficulty || "beginner";
+  const diffModifier = DIFFICULTY_MODIFIERS[exerciseDifficulty] || 1.0;
 
-  let sets = config.setsPerExercise;
-  let reps = Math.round((config.targetReps.max - config.targetReps.min) / 2 * diffModifier);
+  // USER SKILL LEVEL MODIFIERS (beginner gets fewer sets but higher reps for learning)
+  const skillLevel = (userSkillLevel || "beginner") as keyof typeof SKILL_LEVEL_SET_MODIFIERS;
+  const setModifier = SKILL_LEVEL_SET_MODIFIERS[skillLevel] || 1.0;
+  const repAdjustment = SKILL_LEVEL_REP_ADJUSTMENTS[skillLevel] || 1.0;
+
+  // Base calculation: apply user skill level to sets and reps separately
+  let sets = Math.round(config.setsPerExercise * setModifier);
+  
+  // Reps use BOTH exercise difficulty modifier AND user skill level rep adjustment
+  let baseReps = (config.targetReps.max + config.targetReps.min) / 2;
+  let reps = Math.round(baseReps * diffModifier * repAdjustment);
+  
   let holdSeconds = Math.round((config.targetHolds.max - config.targetHolds.min) / 2 * diffModifier);
   let restSeconds = config.restSeconds;
 
@@ -387,7 +398,8 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
     pool: Record<string, Exercise[]>,
     skillExercises: Exercise[],
     focus: DailyFocus,
-    weekNumber: number
+    weekNumber: number,
+    userSkillLvl: string
   ) => {
     const skillWork: WorkoutExercise[] = [];
     const strengthWork: WorkoutExercise[] = [];
@@ -395,25 +407,25 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
 
     // Build skill work with DUP modifiers
     skillExercises.forEach(ex => {
-      skillWork.push(makeEx(ex, true, goal, `🎯 Target Skill`, focus, weekNumber));
+      skillWork.push(makeEx(ex, true, goal, `🎯 Target Skill`, focus, weekNumber, userSkillLvl));
     });
 
     // Use 2 push, 2 pull from pool
     pool.push.forEach(ex => {
-      strengthWork.push(makeEx(ex, false, goal, "Strength: Push", focus, weekNumber));
+      strengthWork.push(makeEx(ex, false, goal, "Strength: Push", focus, weekNumber, userSkillLvl));
     });
     
     pool.pull.forEach(ex => {
-      strengthWork.push(makeEx(ex, false, goal, "Strength: Pull", focus, weekNumber));
+      strengthWork.push(makeEx(ex, false, goal, "Strength: Pull", focus, weekNumber, userSkillLvl));
     });
 
     // Use core and leg finishers
     pool.core.forEach(ex => {
-      coreLegsWork.push(makeEx(ex, false, goal, "Core Finisher", focus, weekNumber));
+      coreLegsWork.push(makeEx(ex, false, goal, "Core Finisher", focus, weekNumber, userSkillLvl));
     });
     
     pool.legs.forEach(ex => {
-      coreLegsWork.push(makeEx(ex, false, goal, "Leg Finisher", focus, weekNumber));
+      coreLegsWork.push(makeEx(ex, false, goal, "Leg Finisher", focus, weekNumber, userSkillLvl));
     });
 
     // Strict OG Order: Skills -> Strength -> Core/Legs
@@ -460,7 +472,8 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
         currentPool,
         skillExercises,
         dailyFocus,
-        weekNumber
+        weekNumber,
+        userSkillLevel
       );
       
       const workoutLabel = isWorkoutA ? "Workout A" : "Workout B";

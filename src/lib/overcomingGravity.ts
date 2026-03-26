@@ -51,7 +51,29 @@ export const OG_GOAL_CONFIG: Record<
 };
 
 /**
- * Exercise difficulty to rep/hold modifier
+ * Exercise difficulty to rep/hold modifier for USER SKILL LEVEL
+ * Beginners get HIGHER reps (focus on movement quality) but FEWER sets
+ * Advanced get LOWER reps (focus on strength) with MORE sets
+ * This applies to exercise sets/reps prescription, not individual exercise difficulty
+ */
+export const SKILL_LEVEL_SET_MODIFIERS = {
+  beginner: 0.6,    // 60% of base sets (fewer sets for learning)
+  intermediate: 0.85,
+  advanced: 1.2,    // 120% of base sets (more sets for specialization)
+};
+
+/**
+ * Skill level rep range adjustments
+ * Beginners use HIGHER rep ranges within each goal to learn movement
+ */
+export const SKILL_LEVEL_REP_ADJUSTMENTS = {
+  beginner: 1.25,    // 25% higher reps (more volume for learning movement quality)
+  intermediate: 1.0,
+  advanced: 0.8,     // Lower reps, focus on low-rep strength
+};
+
+/**
+ * Exercise difficulty to rep/hold modifier (legacy, kept for progression levels)
  * Advanced and elite exercises use fewer reps/shorter holds due to difficulty
  */
 export const DIFFICULTY_MODIFIERS = {
