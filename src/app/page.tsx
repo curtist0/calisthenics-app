@@ -8,12 +8,27 @@ import { useEffect, useState } from "react";
 import PageBackground from "@/components/PageBackground";
 import { getRandomQuote } from "@/data/quotes";
 import ExerciseGifIcon from "@/components/ExerciseGifIcon";
+import { Equipment } from "@/lib/types";
+
+const equipmentOptions: { id: Equipment; label: string; icon: string; description: string }[] = [
+  { id: "calisthenics", label: "Bodyweight Only", icon: "🏃", description: "Push-ups, squats, pull-ups on a bar" },
+  { id: "pull-up-bar", label: "Pull-Up Bar", icon: "🍌", description: "Includes standard bar exercises" },
+  { id: "parallettes", label: "Parallettes", icon: "║", description: "Parallel bars for L-sits and dips" },
+  { id: "rings", label: "Gymnastic Rings", icon: "🔴", description: "Ring push-ups, muscle-ups, levers" },
+  { id: "wall", label: "Wall Space", icon: "🧱", description: "Handstands, wall-assisted exercises" },
+  { id: "weights", label: "Dumbbells/Weights", icon: "⚖️", description: "Weighted variations" },
+];
 
 export default function Home() {
   const router = useRouter();
-  const { stats, recentPRs, savedPlans, profile } = useWorkout();
+  const { stats, recentPRs, savedPlans, profile, setProfile } = useWorkout();
   const activePlan = savedPlans.length > 0 ? savedPlans[0] : null;
   const [quote, setQuote] = useState("");
+  const [showEquipmentEditor, setShowEquipmentEditor] = useState(false);
+  const [selectedEquipment, setSelectedEquipment] = useState<Set<Equipment>>(
+    new Set(profile?.userEquipment || ["calisthenics"])
+  );
+
   useEffect(() => { setQuote(getRandomQuote()); }, []);
 
   useEffect(() => {
@@ -22,6 +37,24 @@ export default function Home() {
       if (!stored) router.push("/onboarding");
     }
   }, [profile, router]);
+
+  const toggleEquipment = (eq: Equipment) => {
+    setSelectedEquipment((prev) => {
+      const next = new Set(prev);
+      if (next.has(eq)) next.delete(eq);
+      else next.add(eq);
+      // Always include calisthenics
+      next.add("calisthenics");
+      return next;
+    });
+  };
+
+  const saveEquipment = () => {
+    if (profile) {
+      setProfile({ ...profile, userEquipment: Array.from(selectedEquipment) });
+      setShowEquipmentEditor(false);
+    }
+  };
   // quote is set via useEffect above
 
   return (
@@ -58,6 +91,96 @@ export default function Home() {
           <p className="text-3xl font-black text-purple-400">{recentPRs.length}</p>
           <p className="text-[10px] text-white/60 font-semibold uppercase tracking-wider mt-1">Records</p>
         </div>
+      </div>
+
+      {/* My Equipment Section */}
+      <div className="mb-6 glass-card p-4 border-cyan-400/30">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">⚙️</span>
+            <h3 className="font-bold text-white text-sm">My Equipment</h3>
+          </div>
+          <button
+            onClick={() => setShowEquipmentEditor(!showEquipmentEditor)}
+            className="text-xs bg-cyan-500/20 text-cyan-300 px-3 py-1 rounded-full hover:bg-cyan-500/30 transition-colors"
+          >
+            {showEquipmentEditor ? "Close" : "Edit"}
+          </button>
+        </div>
+
+        {!showEquipmentEditor && (
+          <div className="flex flex-wrap gap-2">
+            {selectedEquipment.size === 0 ? (
+              <p className="text-xs text-white/60">No equipment selected</p>
+            ) : (
+              Array.from(selectedEquipment)
+                .filter((eq) => eq !== "calisthenics" || selectedEquipment.size === 1)
+                .map((eq) => {
+                  const opt = equipmentOptions.find((o) => o.id === eq);
+                  return (
+                    <span
+                      key={eq}
+                      className="bg-emerald-500/20 text-emerald-300 text-xs px-2.5 py-1 rounded-full font-medium"
+                    >
+                      {opt?.icon} {opt?.label}
+                    </span>
+                  );
+                })
+            )}
+          </div>
+        )}
+
+        {showEquipmentEditor && (
+          <div className="mt-4 space-y-2">
+            {equipmentOptions.map((eq) => {
+              const isSelected = selectedEquipment.has(eq.id);
+              const isRequired = eq.id === "calisthenics";
+              return (
+                <button
+                  key={eq.id}
+                  onClick={() => toggleEquipment(eq.id)}
+                  disabled={isRequired}
+                  className={`w-full p-3 rounded-lg border transition-all text-left ${
+                    isSelected
+                      ? "border-emerald-400 bg-emerald-400/10 glass-card"
+                      : "border-white/10 bg-white/5 glass hover:bg-white/8"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">{eq.icon}</span>
+                    <div className="flex-1">
+                      <p className="font-bold text-white text-sm">{eq.label}</p>
+                      <p className="text-xs text-white/60">{eq.description}</p>
+                    </div>
+                    <div
+                      className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                        isSelected ? "border-emerald-400 bg-emerald-400" : "border-white/30"
+                      }`}
+                    >
+                      {isSelected && (
+                        <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
+                          <path
+                            d="M3 7L6 10L11 4"
+                            stroke="white"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+            <button
+              onClick={saveEquipment}
+              className="w-full py-2 mt-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-bold text-sm"
+            >
+              ✓ Save Equipment
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Quick Action Card */}

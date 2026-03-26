@@ -10,6 +10,7 @@ import ExerciseModal from "@/components/ExerciseModal";
 import ExerciseAnimation from "@/components/ExerciseAnimation";
 import SetLogCard from "@/components/SetLogCard";
 import YogaActiveScreen from "@/components/YogaActiveScreen";
+import FollowAlongCarousel from "@/components/FollowAlongCarousel";
 import MesocycleCalendarView from "@/components/MesocycleCalendarView";
 import YogaPlanCalendarView from "@/components/YogaPlanCalendarView";
 import Timer from "@/components/Timer";
@@ -42,6 +43,7 @@ function PlanContent() {
   const [pendingDayIndex, setPendingDayIndex] = useState<number | null>(null);
   const [showOverrideModal, setShowOverrideModal] = useState(false);
   const [scheduleOverride, setScheduleOverride] = useState(false);
+  const [useCarouselMode, setUseCarouselMode] = useState(false);
   const [pendingOverrideDayIndex, setPendingOverrideDayIndex] = useState<number | null>(null);
   const sessionRestoreKey = useRef<string | null>(null);
 
@@ -196,7 +198,8 @@ function PlanContent() {
       showRest,
       isPaused: true,
     });
-    router.push("/");
+    // Stay on the plan page showing the workout overview with the resume bar
+    setIsActive(false);
   };
 
   // Helper to render an exercise row (handles both real exercises and conditioning)
@@ -294,10 +297,44 @@ function PlanContent() {
     const doneSets = activeWorkout.exercises.reduce((s, e) => s + e.sets.filter((x) => x.completed).length, 0);
     const allExercisesLogged = activeWorkout.exercises.every(ex => ex.sets.every(s => s.completed));
 
+    // Show carousel mode if enabled and not yoga
+    if (useCarouselMode && !isYogaWorkout()) {
+      const handleCarouselComplete = (exerciseIndex: number, setIndex: number) => {
+        const curWECarousel = activeDay.exercises[exerciseIndex];
+        if (curWECarousel) {
+          completeSet(exerciseIndex, setIndex, curWECarousel.reps, curWECarousel.holdSeconds, null);
+        }
+      };
+
+      return (
+        <FollowAlongCarousel
+          exercises={activeDay.exercises}
+          onExerciseComplete={handleCarouselComplete}
+          onPause={handlePauseExplore}
+          currentExerciseIndex={curEx}
+          currentSetIndex={curSet}
+        />
+      );
+    }
+
     return (
       <div className="max-w-lg mx-auto px-4 pt-8 pb-20">
+        {/* Follow Along Toggle */}
+        <div className="mb-6 sticky top-0 bg-gray-900/95 py-4 -mx-4 px-4 z-10 flex gap-2">
+          <button
+            onClick={() => setUseCarouselMode(!useCarouselMode)}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              useCarouselMode
+                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                : "glass text-white hover:bg-white/10"
+            }`}
+          >
+            👀 Follow Along
+          </button>
+        </div>
+
         {/* Progress Bar */}
-        <div className="mb-6 sticky top-0 bg-gray-900/95 py-4 -mx-4 px-4 z-10">
+        <div className="mb-6 sticky top-16 bg-gray-900/95 py-4 -mx-4 px-4 z-10">
           <div className="flex justify-between text-sm text-gray-400 mb-2">
             <span>Workout Progress</span>
             <span>{doneSets}/{totalSets} sets logged</span>
@@ -508,7 +545,12 @@ function PlanContent() {
                 <div className="mb-4">
                   {day.exercises.map((we, ei) => renderExerciseRow(we, ei))}
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); handleStart(i); }} className="w-full py-3 bg-brand-500 text-white rounded-xl font-bold hover:bg-brand-600">Start {day.name} 🚀</button>
+                {/* Only show start button if it's today's workout */}
+                {selectedDay === todayIndex ? (
+                  <button onClick={(e) => { e.stopPropagation(); handleStart(i); }} className="w-full py-3 bg-brand-500 text-white rounded-xl font-bold hover:bg-brand-600">Start {day.name} 🚀</button>
+                ) : (
+                  <button disabled className="w-full py-3 bg-gray-600/50 text-gray-400 rounded-xl font-bold cursor-not-allowed opacity-50">Locked &mdash; Not Today&apos;s Workout</button>
+                )}
               </div>
             )}
           </div>

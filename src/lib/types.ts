@@ -154,7 +154,7 @@ export interface UserProfile {
   yogaSetUp: boolean;
   yogaLevel: Difficulty;
   createdAt: string;
-  ranks?: { push: Rank; pull: Rank; core: Rank; legs: Rank };
+  ranks?: any; // EnhancedRanks from rankingSystem.ts
 }
 
 export interface ProgressPhoto {

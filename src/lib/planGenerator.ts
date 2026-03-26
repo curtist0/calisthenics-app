@@ -250,29 +250,57 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
   // Combine in STRICT Overcoming Gravity order: Skill -> Strength -> Core/Legs
   const fullBodyRoutine = [...skillWork, ...strengthWork, ...coreLegsWork];
 
-  // 4. Build the 7-Day Schedule (3x Full Body, 4x Rest/Mobility)
+  // 4. Build a 42-Day (6-Week) Schedule with Intensity/Volume Scaling
   const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   const days: DayWorkout[] = [];
+  const profile = getUserProfile();
+  const userSkillLevel = profile?.overallLevel || "beginner";
   
-  for (let i = 0; i < 7; i++) {
-    // Training days: Mon (0), Wed (2), Fri (4)
-    if (i === 0 || i === 2 || i === 4) {
+  // Adjust training frequency based on skill level
+  const trainingDaysPerWeek = userSkillLevel === "beginner" ? 3 : userSkillLevel === "intermediate" ? 3 : 4;
+  const trainingSchedule = userSkillLevel === "beginner" 
+    ? [0, 2, 4] // Mon, Wed, Fri
+    : userSkillLevel === "intermediate"
+    ? [0, 2, 4] // Mon, Wed, Fri (same for intermediate)
+    : [0, 1, 3, 4]; // Mon, Tue, Thu, Fri (4x per week for advanced)
+
+  // Week-by-week intensity progression (adjust volume/intensity over 6 weeks)
+  const weekIntensityModifiers = [0.85, 0.90, 0.95, 1.0, 1.05, 1.10]; // Progressive overload
+  
+  for (let dayNum = 0; dayNum < 42; dayNum++) {
+    const weekNumber = Math.floor(dayNum / 7) + 1;
+    const dayOfWeek = dayNum % 7;
+    const dayOfWeekName = dayNames[dayOfWeek];
+    const weekIntensity = weekIntensityModifiers[weekNumber - 1] || 1.0;
+    
+    // Check if this day is a training day
+    const isTrainingDay = trainingSchedule.includes(dayOfWeek);
+    
+    if (isTrainingDay) {
+      // Scale exercise volume/intensity based on skill level and week progression
+      const scaledRoutine = fullBodyRoutine.map((ex) => {
+        const setsMultiplier = userSkillLevel === "beginner" ? 1.0 : userSkillLevel === "intermediate" ? 1.1 : 1.2;
+        const scaled = { ...ex };
+        scaled.sets = Math.ceil(ex.sets * setsMultiplier * weekIntensity);
+        return scaled;
+      });
+
       days.push({
-        day: dayNames[i],
+        day: `${dayOfWeekName} (Week ${weekNumber})`,
         name: `Full Body Routine`,
         isRest: false,
-        focus: `Skill acquisition & structural balance`,
-        exercises: fullBodyRoutine, // Same routine to force neurological adaptation
-        warmUp: calisthenicsWarmUpVariants[i % calisthenicsWarmUpVariants.length],
+        focus: `Skill acquisition & structural balance - Week ${weekNumber}`,
+        exercises: scaledRoutine,
+        warmUp: calisthenicsWarmUpVariants[dayOfWeek % calisthenicsWarmUpVariants.length],
       });
     } else {
-      // Rest / Prehab days
+      // Rest / Active recovery days
       days.push({
-        day: dayNames[i],
+        day: `${dayOfWeekName} (Week ${weekNumber})`,
         name: "Active Recovery",
         isRest: true,
         exercises: [],
-        restDayActivities: getRestDayActivities(i)
+        restDayActivities: getRestDayActivities(dayOfWeek)
       });
     }
   }
