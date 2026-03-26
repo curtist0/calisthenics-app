@@ -1,4 +1,4 @@
-import { Rank, UserProfile, WorkoutLog } from "./types";
+import { Rank, UserProfile, WorkoutLog, TrainingMode, RankingDecision } from "./types";
 import { exercises, getExerciseById } from "@/data/exercises";
 import { getYogaPoseById } from "@/data/yoga";
 
@@ -175,29 +175,125 @@ function calculateFlexibilityRank(logs: WorkoutLog[]): Rank {
 }
 
 /**
- * Calculate yoga balance rank (based on practice frequency and variety)
+ * Calculate strength rank based on highest elite skills achievable
+ * Maps progression level to rank
  */
-function calculateBalanceRank(logs: WorkoutLog[], yogaSetUp: boolean): Rank {
-  if (!yogaSetUp) return "F";
+function calculateStrengthRank(logs: WorkoutLog[]): Rank {
+  let highestProgression = 0;
+  
+  for (const log of logs) {
+    if (!log.completed) continue;
+    for (const ex of log.exercises) {
+      const progression = getProgressionDifficulty(ex.exerciseId);
+      if (progression > highestProgression) {
+        highestProgression = progression;
+      }
+    }
+  }
+  
+  return progressionToRank(highestProgression);
+}
 
+/**
+ * Calculate endurance rank based on total reps completed across basic skills
+ * Aggregates all bodyweight/calisthenics exercises
+ */
+function calculateEnduranceRank(logs: WorkoutLog[]): Rank {
+  let totalReps = 0;
+  
+  for (const log of logs) {
+    if (!log.completed) continue;
+    for (const ex of log.exercises) {
+      const exercise = getExerciseById(ex.exerciseId);
+      if (!exercise) continue;
+      
+      // Count bodyweight exercises (empty equipment or calisthenics)
+      const isBodyweight = !exercise.equipment || exercise.equipment.length === 0;
+      if (!isBodyweight) continue;
+      
+      for (const set of ex.sets) {
+        if (set.completed) {
+          if (set.reps !== null) {
+            totalReps += set.reps;
+          } else if (set.holdSeconds !== null) {
+            // Convert holds to rep equivalents (each 2s = 1 rep)
+            totalReps += Math.ceil(set.holdSeconds / 2);
+          }
+        }
+      }
+    }
+  }
+  
+  // Scale: F<50, E<100, D<200, C<500, B<1000, A<2000, S>=2000
+  if (totalReps >= 2000) return "S";
+  if (totalReps >= 1000) return "A";
+  if (totalReps >= 500) return "B";
+  if (totalReps >= 200) return "C";
+  if (totalReps >= 100) return "D";
+  if (totalReps >= 50) return "E";
+  return "F";
+}
+
+/**
+ * Calculate balance rank based on yoga session frequency
+ * Only available if user has set up yoga
+ */
+function calculateBalanceRank(logs: WorkoutLog[]): Rank {
   const completedYogaLogs = logs.filter((l) => l.completed && l.exercises.some((ex) => getYogaPoseById(ex.exerciseId)));
   
-  if (completedYogaLogs.length === 0) return "F";
-  
-  // Base rank on number of yoga sessions
   const sessionCount = completedYogaLogs.length;
   
+  // Scale: F=0, E=1-2, D=3-5, C=6-10, B=10-15, A=15-20, S>=20
   if (sessionCount >= 20) return "S";
   if (sessionCount >= 15) return "A";
   if (sessionCount >= 10) return "B";
   if (sessionCount >= 6) return "C";
   if (sessionCount >= 3) return "D";
-  return "E";
+  if (sessionCount >= 1) return "E";
+  return "F";
 }
 
 /**
- * Calculate ranks for all movement planes from workout logs with progression-based gating
+ * Check if training mode decision is locked (within 24 hours)
  */
+export function isTrainingModeLocked(rankingDecision: RankingDecision | undefined): boolean {
+  if (!rankingDecision) return false;
+  const canChangeAt = new Date(rankingDecision.canChangeAt);
+  return new Date() < canChangeAt;
+}
+
+/**
+ * Get remaining time until training mode can be changed
+ * Returns { hours, minutes, seconds } or null if not locked
+ */
+export function getTimeUntilUnlock(rankingDecision: RankingDecision | undefined): { hours: number; minutes: number; seconds: number } | null {
+  if (!rankingDecision) return null;
+  const canChangeAt = new Date(rankingDecision.canChangeAt);
+  const now = new Date();
+  
+  if (now >= canChangeAt) return null;
+  
+  const diff = canChangeAt.getTime() - now.getTime();
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+  
+  return { hours, minutes, seconds };
+}
+
+/**
+ * Create a new ranking decision with 24-hour lock
+ */
+export function createRankingDecision(trainingMode: TrainingMode): RankingDecision {
+  const now = new Date();
+  const canChangeAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  
+  return {
+    trainingMode,
+    decidedAt: now.toISOString(),
+    canChangeAt: canChangeAt.toISOString(),
+  };
+}
 export function calculateRanks(
   profile: UserProfile,
   logs: WorkoutLog[]
@@ -205,47 +301,64 @@ export function calculateRanks(
   const completedLogs = logs.filter((l) => l.completed);
   const rankEstablished = isRankEstablished(completedLogs);
   const rankStatus: RankStatus = rankEstablished ? "established" : "estimated";
+  const trainingMode = profile.rankingDecision?.trainingMode || "strength";
 
+  // Calculate plane stats for push/pull/core/legs
   const pushStats = calculatePlaneStats(completedLogs, "push");
   const pullStats = calculatePlaneStats(completedLogs, "pull");
   const coreStats = calculatePlaneStats(completedLogs, "core");
   const legsStats = calculatePlaneStats(completedLogs, "legs");
 
-  // Gate ranks by progression level, with rep average as tiebreaker
-  const pushRank = pushStats.highestProgressionLevel > 0
-    ? progressionToRank(pushStats.highestProgressionLevel)
-    : repsToRank(pushStats.averageReps);
+  // Calculate ranks based on training mode
+  let pushRank: Rank;
+  let pullRank: Rank;
+  let coreRank: Rank;
+  let legsRank: Rank;
 
-  const pullRank = pullStats.highestProgressionLevel > 0
-    ? progressionToRank(pullStats.highestProgressionLevel)
-    : repsToRank(pullStats.averageReps);
-
-  const coreRank = coreStats.highestProgressionLevel > 0
-    ? progressionToRank(coreStats.highestProgressionLevel)
-    : repsToRank(coreStats.averageReps);
-
-  const legsRank = legsStats.highestProgressionLevel > 0
-    ? progressionToRank(legsStats.highestProgressionLevel)
-    : repsToRank(legsStats.averageReps);
+  if (trainingMode === "strength") {
+    // Strength mode: Map to elite skills achievable
+    pushRank = pushStats.highestProgressionLevel > 0
+      ? progressionToRank(pushStats.highestProgressionLevel)
+      : repsToRank(pushStats.averageReps);
+    
+    pullRank = pullStats.highestProgressionLevel > 0
+      ? progressionToRank(pullStats.highestProgressionLevel)
+      : repsToRank(pullStats.averageReps);
+    
+    coreRank = coreStats.highestProgressionLevel > 0
+      ? progressionToRank(coreStats.highestProgressionLevel)
+      : repsToRank(coreStats.averageReps);
+    
+    legsRank = legsStats.highestProgressionLevel > 0
+      ? progressionToRank(legsStats.highestProgressionLevel)
+      : repsToRank(legsStats.averageReps);
+  } else {
+    // Endurance mode: Map to total reps
+    // For endurance, we still track movement planes but weight is on volume
+    pushRank = pushStats.totalReps > 0 ? repsToRank(pushStats.averageReps) : "F";
+    pullRank = pullStats.totalReps > 0 ? repsToRank(pullStats.averageReps) : "F";
+    coreRank = coreStats.totalReps > 0 ? repsToRank(coreStats.averageReps) : "F";
+    legsRank = legsStats.totalReps > 0 ? repsToRank(legsStats.averageReps) : "F";
+  }
 
   const result: EnhancedRanks = {
     push: { rank: pushRank, status: rankStatus, workoutCount: completedLogs.length },
     pull: { rank: pullRank, status: rankStatus, workoutCount: completedLogs.length },
     core: { rank: coreRank, status: rankStatus, workoutCount: completedLogs.length },
     legs: { rank: legsRank, status: rankStatus, workoutCount: completedLogs.length },
+    balance: {
+      rank: profile.yogaSetUp ? calculateBalanceRank(completedLogs) : "F",
+      status: rankStatus,
+      workoutCount: completedLogs.filter((l) => l.exercises.some((ex) => getYogaPoseById(ex.exerciseId))).length,
+    },
   };
 
-  // Add flexibility and balance ranks if yoga is set up
+  // Add flexibility rank if yoga is set up
   if (profile.yogaSetUp) {
     result.flexibility = {
       rank: calculateFlexibilityRank(completedLogs),
       status: rankStatus,
-      workoutCount: logs.filter((l) => l.completed && l.exercises.some((ex) => getYogaPoseById(ex.exerciseId))).length,
-    };
-    result.balance = {
-      rank: calculateBalanceRank(logs, profile.yogaSetUp),
-      status: rankStatus,
-      workoutCount: logs.filter((l) => l.completed && l.exercises.some((ex) => getYogaPoseById(ex.exerciseId))).length,
+      workoutCount: completedLogs.filter((l) => l.exercises.some((ex) => getYogaPoseById(ex.exerciseId))).length,
     };
   }
 

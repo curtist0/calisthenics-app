@@ -4,6 +4,14 @@ export type ExerciseCategory = "push" | "pull" | "legs" | "core" | "skill";
 export type Rank = "F" | "E" | "D" | "C" | "B" | "A" | "S";
 export type TrainingGoal = "strength-skill" | "hypertrophy" | "endurance" | "muscle" | "skills" | "weight-loss" | "balanced"; // Legacy goals kept for backward compat
 export type Equipment = "rings" | "parallettes" | "pull-up-bar" | "weights" | "wall" | "calisthenics";
+export type TrainingMode = "strength" | "endurance";
+
+// Ranking decision tracking
+export interface RankingDecision {
+  trainingMode: TrainingMode;
+  decidedAt: string;  // ISO timestamp when decision was made
+  canChangeAt: string; // ISO timestamp when user can change decision (decidedAt + 24hrs)
+}
 
 export interface Exercise {
   id: string;
@@ -155,6 +163,8 @@ export interface UserProfile {
   yogaLevel: Difficulty;
   createdAt: string;
   ranks?: any; // EnhancedRanks from rankingSystem.ts
+  rankingDecision?: RankingDecision; // NEW: Training mode choice + 24-hour lock
+  estimatedRankAtOnboarding?: Rank; // NEW: Initial rank estimate from onboarding
 }
 
 export interface ProgressPhoto {

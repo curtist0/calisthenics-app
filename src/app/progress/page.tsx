@@ -7,8 +7,12 @@ import Sparkline from "@/components/Sparkline";
 import Badge from "@/components/Badge";
 import RankDisplay from "@/components/RankDisplay";
 import ExerciseGifIcon from "@/components/ExerciseGifIcon";
+import TrainingModeModal from "@/components/TrainingModeModal";
+import TrainingModeLockDisplay from "@/components/TrainingModeLockDisplay";
 import { ArrowUpIcon, PhotoIcon, TrophyIcon, ClockIcon } from "@heroicons/react/24/outline";
 import { useWorkout } from "@/context/WorkoutContext";
+import { createRankingDecision } from "@/lib/rankingSystem";
+import { TrainingMode } from "@/lib/types";
 import {
   mockProgressData,
   achievements,
@@ -19,11 +23,15 @@ import {
 
 export default function ProgressPage() {
   const fileRef = useRef<HTMLInputElement>(null);
-  const { profile } = useWorkout();
+  const { profile, updateProfile } = useWorkout();
   const [photos, setPhotos] = useState<Array<{ id: string; date: string; dataUrl: string; note: string }>>([]);
   const [photoNote, setPhotoNote] = useState("");
   const [showPhotoForm, setShowPhotoForm] = useState(false);
   const [tab, setTab] = useState<"prs" | "ranks" | "photos" | "achievements">("prs");
+  const [showTrainingModeModal, setShowTrainingModeModal] = useState(false);
+
+  // Show training mode modal if user hasn't decided yet
+  const needsTrainingModeDecision = !profile?.rankingDecision;
 
   // Use stable mock data instead of random data
   const repPRs = mockProgressData.filter((p) => p.type === "reps");
@@ -31,6 +39,22 @@ export default function ProgressPage() {
 
   // Default ranks for new users
   const userRanks = profile?.ranks || { push: "F", pull: "F", core: "F", legs: "F" };
+
+  const handleTrainingModeSelect = (mode: TrainingMode) => {
+    if (!profile) return;
+    
+    const decision = createRankingDecision(mode);
+    updateProfile({
+      ...profile,
+      rankingDecision: decision,
+    });
+    
+    setShowTrainingModeModal(false);
+  };
+
+  const handleChangeTrainingMode = () => {
+    setShowTrainingModeModal(true);
+  };
 
   const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -177,10 +201,25 @@ export default function ProgressPage() {
       {/* Ranks Tab */}
       {tab === "ranks" && (
         <section className="space-y-6">
+          {/* Training Mode Selection Modal */}
+          <TrainingModeModal isOpen={showTrainingModeModal || needsTrainingModeDecision} onSelectMode={handleTrainingModeSelect} />
+
+          {/* Training Mode Lock Display */}
+          {profile?.rankingDecision && (
+            <TrainingModeLockDisplay rankingDecision={profile.rankingDecision} onChangeMode={handleChangeTrainingMode} />
+          )}
+
           <div className="glass-card p-6">
             <h2 className="text-xl font-bold text-white mb-6">RPG Rank System</h2>
+            {profile?.rankingDecision && (
+              <p className="text-white/60 text-sm mb-4">
+                {profile.rankingDecision.trainingMode === "strength" 
+                  ? "💪 Strength Mode: Ranked by elite skills you can achieve"
+                  : "🏃 Endurance Mode: Ranked by total volume and reps completed"}
+              </p>
+            )}
             <p className="text-white/60 text-sm mb-6">
-              Track your progress across 4 movement planes. Complete more workouts in each category to level up!
+              Track your progress across 5 movement planes + flexibility. Complete more workouts to level up!
             </p>
             <RankDisplay ranks={userRanks} size="lg" />
           </div>
@@ -188,31 +227,31 @@ export default function ProgressPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div className="glass-card p-4 border-white/20">
               <span className="font-bold text-white">F</span>
-              <p className="text-white/60 text-xs mt-1">0-2 avg reps</p>
+              <p className="text-white/60 text-xs mt-1">No progress yet</p>
             </div>
             <div className="glass-card p-4 border-white/20 bg-gradient-to-br from-blue-500/10 to-blue-600/5">
               <span className="font-bold text-white">E</span>
-              <p className="text-white/60 text-xs mt-1">2-4 avg reps</p>
+              <p className="text-white/60 text-xs mt-1">Getting started</p>
             </div>
             <div className="glass-card p-4 border-white/20 bg-gradient-to-br from-cyan-500/10 to-cyan-600/5">
               <span className="font-bold text-white">D</span>
-              <p className="text-white/60 text-xs mt-1">4-6 avg reps</p>
+              <p className="text-white/60 text-xs mt-1">Building foundation</p>
             </div>
             <div className="glass-card p-4 border-white/20 bg-gradient-to-br from-emerald-500/10 to-emerald-600/5">
               <span className="font-bold text-white">C</span>
-              <p className="text-white/60 text-xs mt-1">6-8 avg reps</p>
+              <p className="text-white/60 text-xs mt-1">Intermediate level</p>
             </div>
             <div className="glass-card p-4 border-white/20 bg-gradient-to-br from-yellow-500/10 to-yellow-600/5">
               <span className="font-bold text-white">B</span>
-              <p className="text-white/60 text-xs mt-1">8-10 avg reps</p>
+              <p className="text-white/60 text-xs mt-1">Advanced</p>
             </div>
             <div className="glass-card p-4 border-white/20 bg-gradient-to-br from-orange-500/10 to-orange-600/5 shadow-lg shadow-orange-500/20">
               <span className="font-bold text-white">A</span>
-              <p className="text-white/60 text-xs mt-1">10-12 avg reps</p>
+              <p className="text-white/60 text-xs mt-1">High level</p>
             </div>
             <div className="glass-card p-4 border-white/20 bg-gradient-to-br from-rose-500/10 to-rose-600/5 shadow-lg shadow-rose-500/20 sm:col-span-2">
               <span className="font-bold text-white">S</span>
-              <p className="text-white/60 text-xs mt-1">12+ avg reps (Elite)</p>
+              <p className="text-white/60 text-xs mt-1">🌟 Elite / Mastery</p>
             </div>
           </div>
         </section>
