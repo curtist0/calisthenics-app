@@ -11,7 +11,7 @@ import TrainingModeModal from "@/components/TrainingModeModal";
 import TrainingModeLockDisplay from "@/components/TrainingModeLockDisplay";
 import { ArrowUpIcon, PhotoIcon, TrophyIcon, ClockIcon } from "@heroicons/react/24/outline";
 import { useWorkout } from "@/context/WorkoutContext";
-import { createRankingDecision } from "@/lib/rankingSystem";
+import { createRankingDecision, getRankingEstablishmentStatus } from "@/lib/rankingSystem";
 import { TrainingMode } from "@/lib/types";
 import {
   mockProgressData,
@@ -23,7 +23,7 @@ import {
 
 export default function ProgressPage() {
   const fileRef = useRef<HTMLInputElement>(null);
-  const { profile, updateProfile } = useWorkout();
+  const { profile, setProfile, logs } = useWorkout();
   const [photos, setPhotos] = useState<Array<{ id: string; date: string; dataUrl: string; note: string }>>([]);
   const [photoNote, setPhotoNote] = useState("");
   const [showPhotoForm, setShowPhotoForm] = useState(false);
@@ -32,6 +32,9 @@ export default function ProgressPage() {
 
   // Show training mode modal if user hasn't decided yet
   const needsTrainingModeDecision = !profile?.rankingDecision;
+
+  // Get ranking establishment status
+  const rankingStatus = getRankingEstablishmentStatus(logs);
 
   // Use stable mock data instead of random data
   const repPRs = mockProgressData.filter((p) => p.type === "reps");
@@ -44,7 +47,7 @@ export default function ProgressPage() {
     if (!profile) return;
     
     const decision = createRankingDecision(mode);
-    updateProfile({
+    setProfile({
       ...profile,
       rankingDecision: decision,
     });
@@ -208,6 +211,28 @@ export default function ProgressPage() {
           {profile?.rankingDecision && (
             <TrainingModeLockDisplay rankingDecision={profile.rankingDecision} onChangeMode={handleChangeTrainingMode} />
           )}
+
+          {/* Ranking Accuracy Notice */}
+          <div className={`p-4 rounded-lg border ${
+            rankingStatus.isEstablished 
+              ? "bg-green-500/10 border-green-500/30" 
+              : "bg-yellow-500/10 border-yellow-500/30"
+          }`}>
+            {rankingStatus.isEstablished ? (
+              <p className="text-green-300 text-sm font-medium">
+                ✅ Rankings Established ({rankingStatus.completedCount}+ workouts)
+              </p>
+            ) : (
+              <>
+                <p className="text-yellow-300 text-sm font-medium">
+                  ⚠️ Estimated Rank ({rankingStatus.completedCount} of 3 workouts)
+                </p>
+                <p className="text-yellow-200/60 text-xs mt-1">
+                  Complete {rankingStatus.remainingWorkouts} more workout{rankingStatus.remainingWorkouts !== 1 ? "s" : ""} for accurate rankings
+                </p>
+              </>
+            )}
+          </div>
 
           <div className="glass-card p-6">
             <h2 className="text-xl font-bold text-white mb-6">RPG Rank System</h2>

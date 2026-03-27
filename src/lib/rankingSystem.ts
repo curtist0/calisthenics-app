@@ -294,6 +294,19 @@ export function createRankingDecision(trainingMode: TrainingMode): RankingDecisi
     canChangeAt: canChangeAt.toISOString(),
   };
 }
+
+/**
+ * Get ranking establishment status
+ * Returns object with completion count and whether ranks are established (3+ workouts)
+ */
+export function getRankingEstablishmentStatus(logs: WorkoutLog[]): { completedCount: number; isEstablished: boolean; remainingWorkouts: number } {
+  const completedCount = logs.filter((l) => l.completed).length;
+  const isEstablished = completedCount >= 3;
+  const remainingWorkouts = Math.max(0, 3 - completedCount);
+  
+  return { completedCount, isEstablished, remainingWorkouts };
+}
+
 export function calculateRanks(
   profile: UserProfile,
   logs: WorkoutLog[]

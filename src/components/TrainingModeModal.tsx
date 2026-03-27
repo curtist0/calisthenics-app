@@ -21,7 +21,7 @@ export default function TrainingModeModal({ isOpen, onSelectMode }: TrainingMode
         {/* Warning Section */}
         <div className="bg-amber-500/15 border border-amber-500/30 rounded-xl p-4 mb-6">
           <p className="text-amber-300 text-sm">
-            <span className="font-bold">⚠️ Important:</span> Strength and Endurance training are at opposite ends of the spectrum. Choose the one that matches your current goals — you'll be locked into this for 24 hours.
+            <span className="font-bold">⚠️ Important:</span> Strength and Endurance training are at opposite ends of the spectrum. Choose the one that matches your current goals &mdash; you&apos;ll be locked into this for 24 hours.
           </p>
         </div>
 
@@ -72,7 +72,7 @@ export default function TrainingModeModal({ isOpen, onSelectMode }: TrainingMode
 
         {/* Confirmation Note */}
         <p className="text-white/50 text-xs text-center">
-          After selecting, you'll be locked in for 24 hours. Choose wisely!
+          After selecting, you&apos;ll be locked in for 24 hours. Choose wisely!
         </p>
       </div>
     </div>
