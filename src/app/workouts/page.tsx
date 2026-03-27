@@ -53,14 +53,14 @@ const skillExercises = exercises.filter(
 );
 
 const yogaGoalPresets = [
-  { label: "Improve overall flexibility", icon: "🧘" },
-  { label: "Achieve the splits", icon: "🤸" },
-  { label: "Reduce stress & anxiety", icon: "😌" },
-  { label: "Better sleep", icon: "😴" },
-  { label: "Improve balance & coordination", icon: "⚖️" },
-  { label: "Fix posture", icon: "🧍" },
-  { label: "Morning energy boost", icon: "☀️" },
-  { label: "Deep backbend flexibility", icon: "🔄" },
+  { label: "Improve overall flexibility", icon: "🧘", goal: "flexibility" },
+  { label: "Achieve the splits", icon: "🤸", goal: "flexibility" },
+  { label: "Reduce stress & anxiety", icon: "😌", goal: "relaxation" },
+  { label: "Better sleep", icon: "😴", goal: "relaxation" },
+  { label: "Improve balance & coordination", icon: "⚖️", goal: "balance" },
+  { label: "Fix posture", icon: "🧍", goal: "core" },
+  { label: "Morning energy boost", icon: "☀️", goal: "core" },
+  { label: "Deep backbend flexibility", icon: "🔄", goal: "flexibility" },
 ];
 
 export default function WorkoutsPage() {
@@ -71,7 +71,7 @@ export default function WorkoutsPage() {
   const [selectedGoal, setSelectedGoal] = useState<TrainingGoal>("strength-skill");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [showMore, setShowMore] = useState(false);
-  const [yogaGoalText, setYogaGoalText] = useState("");
+  const [selectedYogaGoal, setSelectedYogaGoal] = useState<{ label: string; goal: string } | null>(null);
   const [yogaDuration, setYogaDuration] = useState(60);
 
   useEffect(() => { if (savedPlans.length === 0) setView("type"); }, [savedPlans.length]);
@@ -102,9 +102,9 @@ export default function WorkoutsPage() {
   };
 
   const handleGenerateYoga = () => {
-    if (!yogaGoalText.trim()) return;
-    addPlan(generateYogaPlanFromGoal(yogaGoalText, yogaDuration));
-    setYogaGoalText(""); setView("library"); setWorkoutType(null);
+    if (!selectedYogaGoal) return;
+    addPlan(generateYogaPlanFromGoal(selectedYogaGoal.goal, yogaDuration));
+    setSelectedYogaGoal(null); setView("library"); setWorkoutType(null);
   };
 
   const renderSkillButton = (ex: Exercise) => {
@@ -196,14 +196,13 @@ export default function WorkoutsPage() {
             <p className="text-white font-bold mb-3">What do you want from yoga?</p>
             <div className="grid grid-cols-2 gap-2 mb-4">
               {yogaGoalPresets.map((p) => (
-                <button key={p.label} onClick={() => setYogaGoalText(p.label)}
-                  className={`p-3 rounded-xl text-left text-sm transition-all ${yogaGoalText === p.label ? "glass-card border-2 border-emerald-400" : "glass border-2 border-transparent hover:border-white/20"}`}>
+                <button key={p.label} onClick={() => setSelectedYogaGoal(p)}
+                  className={`p-3 rounded-xl text-left text-sm transition-all ${selectedYogaGoal?.label === p.label ? "glass-card border-2 border-emerald-400" : "glass border-2 border-transparent hover:border-white/20"}`}>
                   <span className="text-lg">{p.icon}</span>
                   <p className="text-white font-medium mt-1 text-xs">{p.label}</p>
                 </button>
               ))}
             </div>
-            <input type="text" value={yogaGoalText} onChange={(e) => setYogaGoalText(e.target.value)} placeholder="Or type your own goal..." className="glass-input" />
           </div>
 
           <div>
@@ -219,8 +218,8 @@ export default function WorkoutsPage() {
             </div>
           </div>
 
-          <button onClick={handleGenerateYoga} disabled={!yogaGoalText.trim()}
-            className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${yogaGoalText.trim() ? "glass-button" : "glass opacity-50 cursor-not-allowed"}`}>
+          <button onClick={handleGenerateYoga} disabled={!selectedYogaGoal}
+            className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${selectedYogaGoal ? "glass-button" : "glass opacity-50 cursor-not-allowed"}`}>
             Generate Yoga Routine 🧘
           </button>
         </div>

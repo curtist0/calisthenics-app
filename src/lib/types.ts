@@ -52,6 +52,7 @@ export interface WorkoutExercise {
   holdSeconds: number | null;
   restSeconds: number;
   progressionLevel?: string;
+  levelAdjustment?: number; // Allows +1 (harder), -1 (easier) from the generated plan
 }
 
 export interface WarmUp {

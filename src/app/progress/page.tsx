@@ -244,9 +244,9 @@ export default function ProgressPage() {
               </p>
             )}
             <p className="text-white/60 text-sm mb-6">
-              Track your progress across 5 movement planes + flexibility. Complete more workouts to level up!
+              Track your progress across 5 movement planes + balance {profile?.yogaSetUp ? "+ flexibility" : ""}. Complete more workouts to level up!
             </p>
-            <RankDisplay ranks={userRanks} size="lg" />
+            <RankDisplay ranks={userRanks} size="lg" hideFlexibilityIfNoYoga yogaSetUp={profile?.yogaSetUp} />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">

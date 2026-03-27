@@ -1,10 +1,13 @@
 "use client";
 
 import { Rank } from "@/lib/types";
+import type { EnhancedRanks } from "@/lib/rankingSystem";
 
 interface RankDisplayProps {
-  ranks: { push: Rank; pull: Rank; core: Rank; legs: Rank };
+  ranks: any; // EnhancedRanks or basic { push, pull, core, legs }
   size?: "sm" | "md" | "lg";
+  hideFlexibilityIfNoYoga?: boolean;
+  yogaSetUp?: boolean;
 }
 
 const rankEmojis: Record<string, string> = {
@@ -12,6 +15,8 @@ const rankEmojis: Record<string, string> = {
   pull: "🤝",
   core: "🔥",
   legs: "🦵",
+  balance: "⚖️",
+  flexibility: "🤸",
 };
 
 const rankLabels: Record<string, string> = {
@@ -19,6 +24,8 @@ const rankLabels: Record<string, string> = {
   pull: "Pull",
   core: "Core",
   legs: "Legs",
+  balance: "Balance",
+  flexibility: "Flexibility",
 };
 
 const rankColors: Record<Rank, string> = {
@@ -50,19 +57,33 @@ const sizeMaps = {
 export default function RankDisplay({
   ranks,
   size = "md",
+  hideFlexibilityIfNoYoga = false,
+  yogaSetUp = true,
 }: RankDisplayProps) {
   const sizeConfig = sizeMaps[size];
-  const planes: Array<"push" | "pull" | "core" | "legs"> = [
+  
+  // Determine which planes to display
+  let planes: Array<"push" | "pull" | "core" | "legs" | "balance" | "flexibility"> = [
     "push",
     "pull",
     "core",
     "legs",
+    "balance",
   ];
+  
+  // Only show flexibility if yoga is set up or if hideFlexibilityIfNoYoga is false
+  if (yogaSetUp || !hideFlexibilityIfNoYoga) {
+    if (ranks.flexibility) {
+      planes.push("flexibility");
+    }
+  }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
       {planes.map((plane) => {
-        const rank = ranks[plane];
+        const rankData = ranks[plane];
+        // Handle both EnhancedRank objects and simple Rank strings
+        const rank = (rankData?.rank || rankData || "F") as Rank;
         const bgGradient = rankColors[rank];
         const glow = rankGlow[rank];
 

@@ -761,9 +761,10 @@ function detectYogaGoal(goalText: string): YogaGoalType {
   return "flexibility"; // default
 }
 
-export function generateYogaPlanFromGoal(goalText: string, durationMinutes: number): WeeklyPlan {
+export function generateYogaPlanFromGoal(goalInput: string, durationMinutes: number): WeeklyPlan {
   const dur = Math.max(20, durationMinutes || 60);
-  const goal = detectYogaGoal(goalText);
+  // If the input is already a valid goal type, use it directly; otherwise detect from text
+  const goal: YogaGoalType = (["flexibility", "core", "relaxation"].includes(goalInput) ? goalInput : detectYogaGoal(goalInput)) as YogaGoalType;
   return generateYogaPlanWithGoal(dur, goal, 28); // 28 days = 4 weeks
 }
 

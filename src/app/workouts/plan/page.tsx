@@ -97,6 +97,15 @@ function PlanContent() {
   const curName = curExData?.name || curYogaPose?.name || curWE?.progressionLevel || "Exercise";
   const curImage = curExData?.image || curYogaPose?.image || "💪";
 
+  // Calculate current week (0-indexed) - when plan started
+  const planStartDate = new Date(plan.createdAt || Date.now());
+  const now = new Date();
+  const daysElapsed = Math.floor((now.getTime() - planStartDate.getTime()) / (1000 * 60 * 60 * 24));
+  const currentWeek = Math.floor(daysElapsed / 7);
+  const currentWeekStartIndex = currentWeek * 7;
+  const currentWeekEndIndex = Math.min(currentWeekStartIndex + 7, plan.days.length);
+  const currentWeekDays = plan.days.slice(currentWeekStartIndex, currentWeekEndIndex);
+
   const handleStart = (dayIndex: number) => {
     const day = plan.days[dayIndex];
     const dayOfWeek = dayIndex;
@@ -203,12 +212,37 @@ function PlanContent() {
   };
 
   // Helper to render an exercise row (handles both real exercises and conditioning)
-  const renderExerciseRow = (we: typeof plan.days[0]["exercises"][0], idx: number, showManualEntry?: boolean) => {
+  const renderExerciseRow = (we: typeof plan.days[0]["exercises"][0], dayIdx: number, idx: number, showManualEntry?: boolean) => {
     const ex = getExerciseById(we.exerciseId);
     const yoga = getYogaPoseById(we.exerciseId);
     const isCond = we.exerciseId.startsWith("cond-");
     const name = ex?.name || yoga?.name || we.progressionLevel?.replace("🔧 ", "") || "Exercise";
     const image = ex?.image || yoga?.image || "🔧";
+
+    const handleLevelAdjust = (direction: 1 | -1) => {
+      if (!plan) return;
+      const updatedPlan = { ...plan };
+      updatedPlan.days = updatedPlan.days.map((d, i) => 
+        i === dayIdx
+          ? { ...d, exercises: d.exercises.map((e, j) => 
+              j === idx 
+                ? { ...e, levelAdjustment: (e.levelAdjustment || 0) + direction }
+                : e
+            )}
+          : d
+      );
+      // Update the saved plan
+      window.localStorage.setItem(`plan_${plan.id}`, JSON.stringify(updatedPlan));
+      // Trigger re-render by updating savedPlans
+      const allPlans = JSON.parse(window.localStorage.getItem("saved_plans") || "[]");
+      const idx_plan = allPlans.findIndex((p: any) => p.id === plan.id);
+      if (idx_plan >= 0) {
+        allPlans[idx_plan] = updatedPlan;
+        window.localStorage.setItem("saved_plans", JSON.stringify(allPlans));
+      }
+      // This will cause the plan to be refreshed from storage
+      router.refresh();
+    };
 
     return (
       <div key={`${we.exerciseId}-${idx}`} className="glass rounded-xl p-3 mb-2">
@@ -227,9 +261,27 @@ function PlanContent() {
               </div>
             </div>
           )}
-          <div className="text-right text-xs text-gray-400 flex-shrink-0 ml-auto">
-            <p className="text-white font-semibold">{we.sets} × {we.holdSeconds ? `${we.holdSeconds}s` : we.reps}</p>
-            {we.progressionLevel && <p className="text-brand-400 text-[10px]">{we.progressionLevel}</p>}
+          <div className="text-right text-xs text-gray-400 flex-shrink-0 ml-auto flex items-center gap-2">
+            <div>
+              <p className="text-white font-semibold">{we.sets} × {we.holdSeconds ? `${we.holdSeconds}s` : we.reps}</p>
+              {we.progressionLevel && <p className="text-brand-400 text-[10px]">{we.progressionLevel}</p>}
+            </div>
+            <div className="flex gap-1 flex-shrink-0">
+              <button 
+                onClick={() => handleLevelAdjust(-1)}
+                className="px-2 py-1 bg-red-500/20 hover:bg-red-500/40 rounded text-red-400 text-xs font-bold"
+                title="Make easier"
+              >
+                ↓
+              </button>
+              <button 
+                onClick={() => handleLevelAdjust(1)}
+                className="px-2 py-1 bg-green-500/20 hover:bg-green-500/40 rounded text-green-400 text-xs font-bold"
+                title="Make harder"
+              >
+                ↑
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -509,58 +561,61 @@ function PlanContent() {
         </>
       ) : (
         <>
-          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Full Week</h3>
+          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">This Week</h3>
           <div className="space-y-3 mb-8">
-        {plan.days.map((day, i) => (
-          <div key={i} className={`rounded-xl border transition-all ${day.isRest ? "bg-gray-800/30 border-gray-700/30 p-4" : selectedDay === i ? "bg-gray-800 border-brand-500/50 p-4" : "bg-gray-800/50 border-gray-700/50 p-4 hover:bg-gray-800/70 cursor-pointer"}`} onClick={() => !day.isRest && setSelectedDay(selectedDay === i ? null : i)}>
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500 font-mono w-8">{day.day.slice(0, 3)}</span>
-                <span className={`font-semibold ${day.isRest ? "text-gray-500" : "text-white"}`}>{day.name}</span>
-              </div>
-              {day.isRest ? <span className="text-xs text-gray-500">😴</span> : <span className="text-xs text-gray-400">{day.exercises.length} ex {selectedDay === i ? "▲" : "▼"}</span>}
-            </div>
-            {day.isRest && day.restDayActivities && (
-              <div className="mt-3 space-y-2">
-                {day.restDayActivities.map((act, ai) => (
-                  <div key={ai} className="bg-gray-800/50 rounded-lg p-3">
-                    <p className="text-white text-xs font-semibold">{act.name}</p>
-                    <p className="text-gray-500 text-xs">{act.description} · {act.duration}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {selectedDay === i && !day.isRest && (
-              <div className="mt-4 pt-4 border-t border-gray-700/50">
-                {day.focus && (
-                  <div className="mb-4 bg-blue-500/10 border border-blue-500/30 rounded-xl p-3">
-                    <p className="text-blue-300 text-xs font-bold mb-1">📊 Today&apos;s Focus</p>
-                    <p className="text-blue-200 text-sm font-semibold">{day.focus}</p>
-                  </div>
-                )}
-                {day.warmUp && (
-                  <div className="mb-4 bg-orange-500/10 border border-orange-500/20 rounded-xl p-3">
-                    <p className="text-orange-400 text-xs font-bold mb-1">🔥 {day.warmUp.name} ({day.warmUp.duration})</p>
-                    <ul className="space-y-1">
-                      {day.warmUp.exercises.map((w, wi) => <li key={wi} className="text-gray-400 text-xs">• {w}</li>)}
-                    </ul>
-                  </div>
-                )}
-                {/* Exercise list — no numbering */}
-                <div className="mb-4">
-                  {day.exercises.map((we, ei) => renderExerciseRow(we, ei))}
+        {currentWeekDays.map((day, i) => {
+          const actualIndex = currentWeekStartIndex + i;
+          return (
+            <div key={i} className={`rounded-xl border transition-all ${day.isRest ? "bg-gray-800/30 border-gray-700/30 p-4" : selectedDay === actualIndex ? "bg-gray-800 border-brand-500/50 p-4" : "bg-gray-800/50 border-gray-700/50 p-4 hover:bg-gray-800/70 cursor-pointer"}`} onClick={() => !day.isRest && setSelectedDay(selectedDay === actualIndex ? null : actualIndex)}>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500 font-mono w-8">{day.day.slice(0, 3)}</span>
+                  <span className={`font-semibold ${day.isRest ? "text-gray-500" : "text-white"}`}>{day.name}</span>
                 </div>
-                {/* Only show start button if it's today's workout */}
-                {selectedDay === todayIndex ? (
-                  <button onClick={(e) => { e.stopPropagation(); handleStart(i); }} className="w-full py-3 bg-brand-500 text-white rounded-xl font-bold hover:bg-brand-600">Start {day.name} 🚀</button>
-                ) : (
-                  <button disabled className="w-full py-3 bg-gray-600/50 text-gray-400 rounded-xl font-bold cursor-not-allowed opacity-50">Locked &mdash; Not Today&apos;s Workout</button>
-                )}
+                {day.isRest ? <span className="text-xs text-gray-500">😴</span> : <span className="text-xs text-gray-400">{day.exercises.length} ex {selectedDay === actualIndex ? "▲" : "▼"}</span>}
               </div>
-            )}
-          </div>
-        ))}
+              {day.isRest && day.restDayActivities && (
+                <div className="mt-3 space-y-2">
+                  {day.restDayActivities.map((act, ai) => (
+                    <div key={ai} className="bg-gray-800/50 rounded-lg p-3">
+                      <p className="text-white text-xs font-semibold">{act.name}</p>
+                      <p className="text-gray-500 text-xs">{act.description} · {act.duration}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {selectedDay === actualIndex && !day.isRest && (
+                <div className="mt-4 pt-4 border-t border-gray-700/50">
+                  {day.focus && (
+                    <div className="mb-4 bg-blue-500/10 border border-blue-500/30 rounded-xl p-3">
+                      <p className="text-blue-300 text-xs font-bold mb-1">📊 Today&apos;s Focus</p>
+                      <p className="text-blue-200 text-sm font-semibold">{day.focus}</p>
+                    </div>
+                  )}
+                  {day.warmUp && (
+                    <div className="mb-4 bg-orange-500/10 border border-orange-500/20 rounded-xl p-3">
+                      <p className="text-orange-400 text-xs font-bold mb-1">🔥 {day.warmUp.name} ({day.warmUp.duration})</p>
+                      <ul className="space-y-1">
+                        {day.warmUp.exercises.map((w, wi) => <li key={wi} className="text-gray-400 text-xs">• {w}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {/* Exercise list — no numbering */}
+                  <div className="mb-4">
+                    {day.exercises.map((we, ei) => renderExerciseRow(we, actualIndex, ei))}
+                  </div>
+                  {/* Only show start button if it's today's workout */}
+                  {selectedDay === todayIndex ? (
+                    <button onClick={(e) => { e.stopPropagation(); handleStart(actualIndex); }} className="w-full py-3 bg-brand-500 text-white rounded-xl font-bold hover:bg-brand-600">Start {day.name} 🚀</button>
+                  ) : (
+                    <button disabled className="w-full py-3 bg-gray-600/50 text-gray-400 rounded-xl font-bold cursor-not-allowed opacity-50">Locked &mdash; Not Today&apos;s Workout</button>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
         </>
       )}
