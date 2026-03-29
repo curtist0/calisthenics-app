@@ -11,7 +11,7 @@ import ExerciseGifIcon from "@/components/ExerciseGifIcon";
 import { Equipment } from "@/lib/types";
 
 const equipmentOptions: { id: Equipment; label: string; icon: string; description: string }[] = [
-  { id: "calisthenics", label: "Bodyweight Only", icon: "🏃", description: "Push-ups, squats, pull-ups on a bar" },
+  { id: "calisthenics", label: "Bodyweight Only", icon: "🏃", description: "Push-ups, squats, planks, handstands" },
   { id: "pull-up-bar", label: "Pull-Up Bar", icon: "🍌", description: "Includes standard bar exercises" },
   { id: "parallettes", label: "Parallettes", icon: "║", description: "Parallel bars for L-sits and dips" },
   { id: "rings", label: "Gymnastic Rings", icon: "🔴", description: "Ring push-ups, muscle-ups, levers" },

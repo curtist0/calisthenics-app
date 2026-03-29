@@ -28,7 +28,7 @@ const assessmentQuestions = [
 ];
 
 const equipmentOptions: { id: Equipment; label: string; icon: string; description: string }[] = [
-  { id: "calisthenics", label: "Bodyweight Only", icon: "🏃", description: "Push-ups, squats, pull-ups on a bar" },
+  { id: "calisthenics", label: "Bodyweight Only", icon: "🏃", description: "Push-ups, squats, planks, handstands" },
   { id: "pull-up-bar", label: "Pull-Up Bar", icon: "🍌", description: "Includes standard bar exercises" },
   { id: "parallettes", label: "Parallettes", icon: "║", description: "Parallel bars for L-sits and dips" },
   { id: "rings", label: "Gymnastic Rings", icon: "🔴", description: "Ring push-ups, muscle-ups, levers" },
@@ -52,13 +52,26 @@ export default function OnboardingPage() {
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [selectedEquipment, setSelectedEquipment] = useState<Set<Equipment>>(new Set(["calisthenics"]));
 
-  const totalSteps = assessmentQuestions.length + 3; // +3 for intro, equipment, and yoga
-  const currentStep = phase === "intro" ? 1 : phase === "assess" ? step + 2 : phase === "equipment" ? assessmentQuestions.length + 2 : totalSteps;
+  // Filter questions based on equipment
+  const getAvailableQuestions = () => {
+    return assessmentQuestions.filter((q) => {
+      // Pull questions require pull-up-bar or weights
+      if (q.category === "pull") {
+        return selectedEquipment.has("pull-up-bar") || selectedEquipment.has("weights");
+      }
+      // All other questions are always available
+      return true;
+    });
+  };
+
+  const availableQuestions = getAvailableQuestions();
+  const totalSteps = availableQuestions.length + 3; // +3 for intro, equipment, and yoga
+  const currentStep = phase === "intro" ? 1 : phase === "assess" ? step + 2 : phase === "equipment" ? availableQuestions.length + 2 : totalSteps;
   const progress = (currentStep / totalSteps) * 100;
 
   const handleAnswer = (id: string, value: number) => {
     setAnswers((p) => ({ ...p, [id]: value }));
-    if (step < assessmentQuestions.length - 1) setStep((s) => s + 1);
+    if (step < availableQuestions.length - 1) setStep((s) => s + 1);
     else setPhase("equipment");
   };
 
@@ -83,8 +96,14 @@ export default function OnboardingPage() {
 
   const finish = (wantsYoga: boolean) => {
     const catScores: Record<string, number> = {};
-    for (const q of assessmentQuestions) {
+    // Only score questions that are available
+    for (const q of availableQuestions) {
       catScores[q.category] = answers[q.id] ?? 0;
+    }
+
+    // If pull was not available, set pull score to 0
+    if (!selectedEquipment.has("pull-up-bar") && !selectedEquipment.has("weights")) {
+      catScores["pull"] = 0;
     }
 
     const skillLevels: SkillLevels = {
@@ -100,13 +119,15 @@ export default function OnboardingPage() {
     const avgScore = allScores.reduce((s, v) => s + v, 0) / allScores.length;
     const overallLevel: Difficulty = avgScore >= 2.5 ? "advanced" : avgScore >= 1.5 ? "intermediate" : "beginner";
 
-    const exerciseLevels = assessmentQuestions.filter((q) => q.category !== "balance" && q.category !== "flexibility").map((q) => ({
-      exerciseId: q.id,
-      level: scoreToLevel(answers[q.id] ?? 0),
-      bestReps: q.id === "plank" ? 0 : ([3, 10, 25, 35][answers[q.id] ?? 0]),
-      bestHold: q.id === "plank" ? ([10, 22, 45, 75][answers[q.id] ?? 0]) : 0,
-      lastUpdated: new Date().toISOString(),
-    }));
+    const exerciseLevels = availableQuestions
+      .filter((q) => q.category !== "balance" && q.category !== "flexibility")
+      .map((q) => ({
+        exerciseId: q.id,
+        level: scoreToLevel(answers[q.id] ?? 0),
+        bestReps: q.id === "plank" ? 0 : ([3, 10, 25, 35][answers[q.id] ?? 0]),
+        bestHold: q.id === "plank" ? ([10, 22, 45, 75][answers[q.id] ?? 0]) : 0,
+        lastUpdated: new Date().toISOString(),
+      }));
 
     const profile: UserProfile = {
       onboarded: true, overallLevel, skillLevels, exerciseLevels,
@@ -120,7 +141,7 @@ export default function OnboardingPage() {
     else router.push("/");
   };
 
-  const current = phase === "assess" && step < assessmentQuestions.length ? assessmentQuestions[step] : null;
+  const current = phase === "assess" && step < availableQuestions.length ? availableQuestions[step] : null;
 
   return (
     <div className="min-h-screen flex flex-col">

@@ -228,7 +228,7 @@ function makeEx(
       exerciseId: ex.id,
       sets,
       reps: null,
-      holdSeconds: Math.max(5, holdSeconds),
+      holdSeconds: Math.max(10, holdSeconds),
       restSeconds,
       progressionLevel: label || getProgressionLabel(isTargetSkill, ex.category),
     };
@@ -370,7 +370,7 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
     skillUsed: Set<string>
   ) => {
     // Select 2 push, 2 pull, 1 core, 1 leg for this pool
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 3; i++) {
       const push = availableExercises.find(e => e.category === "push" && !usedSet.has(e.id) && !skillUsed.has(e.id) && e.difficulty !== "elite");
       if (push) {
         pool.push.push(push);

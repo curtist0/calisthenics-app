@@ -48,6 +48,12 @@ function getProgressionEndpoint(exerciseId: string): string | null {
   return last.id !== exerciseId ? last.name : null;
 }
 
+function userCanDoExercise(exercise: Exercise, userEquipment?: string[]): boolean {
+  if (!userEquipment || userEquipment.length === 0) return true;
+  if (!exercise.equipment || exercise.equipment.length === 0) return true;
+  return exercise.equipment.some((eq) => userEquipment.includes(eq));
+}
+
 const skillExercises = exercises.filter(
   (e) => e.category === "skill" || e.id === "handstand-push-up" || e.id === "pistol-squat" || e.id === "dragon-flag"
 );
@@ -77,17 +83,21 @@ export default function WorkoutsPage() {
   useEffect(() => { if (savedPlans.length === 0) setView("type"); }, [savedPlans.length]);
 
   const yogaUnlocked = profile?.yogaSetUp ?? false;
+  const userEquipment = profile?.userEquipment || [];
 
   const userGauged = diffOrder[profile?.overallLevel ?? "beginner"] ?? 0;
 
+  // Filter skills by equipment, then by level
+  const availableSkills = skillExercises.filter((ex) => userCanDoExercise(ex, userEquipment));
+
   // Plan generator: show only skills at your gauged level; expandable box shows recommended next skills (higher difficulties) first, then less likely (lower difficulties).
-  const currentLevel = skillExercises
+  const currentLevel = availableSkills
     .filter((ex) => diffOrder[ex.difficulty] === userGauged)
     .sort((a, b) => diffOrder[a.difficulty] - diffOrder[b.difficulty]);
-  const higherLevel = skillExercises
+  const higherLevel = availableSkills
     .filter((ex) => diffOrder[ex.difficulty] > userGauged)
     .sort((a, b) => diffOrder[a.difficulty] - diffOrder[b.difficulty]);
-  const lowerLevel = skillExercises
+  const lowerLevel = availableSkills
     .filter((ex) => diffOrder[ex.difficulty] < userGauged)
     .sort((a, b) => diffOrder[b.difficulty] - diffOrder[a.difficulty]);
   const archived = [...higherLevel, ...lowerLevel];
@@ -108,15 +118,37 @@ export default function WorkoutsPage() {
   };
 
   const renderSkillButton = (ex: Exercise) => {
+    const canDo = userCanDoExercise(ex, userEquipment);
     const isSel = selected.has(ex.id);
     const endpoint = getProgressionEndpoint(ex.id);
+    const equipmentLabel = ex.equipment?.length
+      ? ex.equipment.map((eq) => 
+          eq === "pull-up-bar" ? "🏋️ Bar" : 
+          eq === "rings" ? "🔗 Rings" : 
+          eq === "wall" ? "🧗 Wall" : 
+          eq === "parallettes" ? "📐 Bars" : 
+          "⚙️ " + eq
+        ).join(", ")
+      : null;
+
     return (
-      <button key={ex.id} onClick={() => toggle(ex.id)} className={`w-full flex items-center gap-3 p-3 rounded-2xl border-2 transition-all text-left ${isSel ? "border-emerald-400 bg-emerald-400/10 glass-card" : "border-white/10 bg-white/5 glass hover:bg-white/8"}`}>
+      <button 
+        key={ex.id} 
+        onClick={() => canDo && toggle(ex.id)} 
+        disabled={!canDo}
+        className={`w-full flex items-center gap-3 p-3 rounded-2xl border-2 transition-all text-left ${
+          !canDo 
+            ? "border-white/10 bg-white/5 opacity-50 cursor-not-allowed" 
+            : isSel 
+            ? "border-emerald-400 bg-emerald-400/10 glass-card" 
+            : "border-white/10 bg-white/5 glass hover:bg-white/8"
+        }`}>
         <ExerciseIllustration exerciseId={ex.id} size={50} className="flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-white text-sm">{ex.name}</h3>
           <span className={`text-xs font-medium capitalize ${diffText[ex.difficulty]}`}>{ex.difficulty}</span>
-          {endpoint && <p className="text-xs text-white/50 mt-0.5">→ <span className="text-emerald-400">{endpoint}</span></p>}
+          {!canDo && equipmentLabel && <p className="text-xs text-red-400 mt-0.5">Requires: {equipmentLabel}</p>}
+          {canDo && endpoint && <p className="text-xs text-white/50 mt-0.5">→ <span className="text-emerald-400">{endpoint}</span></p>}
         </div>
         <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSel ? "border-emerald-400 bg-emerald-400" : "border-white/30"}`}>
           {isSel && <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7L6 10L11 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
