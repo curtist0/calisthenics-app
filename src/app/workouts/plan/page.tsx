@@ -13,11 +13,12 @@ import YogaActiveScreen from "@/components/YogaActiveScreen";
 import FollowAlongCarousel from "@/components/FollowAlongCarousel";
 import MesocycleCalendarView from "@/components/MesocycleCalendarView";
 import YogaPlanCalendarView from "@/components/YogaPlanCalendarView";
+import WeekExerciseModal from "@/components/WeekExerciseModal";
 import Timer from "@/components/Timer";
 import RestTimer from "@/components/RestTimer";
 import { useCoachToast } from "@/components/CoachToast";
 import ScheduleOverrideModal from "@/components/ScheduleOverrideModal";
-import { Exercise } from "@/lib/types";
+import { Exercise, DayWorkout } from "@/lib/types";
 import { isScheduledForToday, getDayOfWeekName } from "@/lib/storage";
 import Link from "next/link";
 
@@ -45,6 +46,8 @@ function PlanContent() {
   const [scheduleOverride, setScheduleOverride] = useState(false);
   const [useCarouselMode, setUseCarouselMode] = useState(false);
   const [pendingOverrideDayIndex, setPendingOverrideDayIndex] = useState<number | null>(null);
+  const [rerender, setRerender] = useState(0); // Force re-renders on level adjustments
+  const [weekViewModal, setWeekViewModal] = useState<{ visible: boolean; day: DayWorkout | null }>({ visible: false, day: null });
   const sessionRestoreKey = useRef<string | null>(null);
 
   useEffect(() => {
@@ -240,8 +243,8 @@ function PlanContent() {
         allPlans[idx_plan] = updatedPlan;
         window.localStorage.setItem("saved_plans", JSON.stringify(allPlans));
       }
-      // This will cause the plan to be refreshed from storage
-      router.refresh();
+      // Trigger local re-render immediately
+      setRerender(r => r + 1);
     };
 
     return (
@@ -556,7 +559,7 @@ function PlanContent() {
           {plan.days.some((d) => getYogaPoseById(d.exercises?.[0]?.exerciseId)) ? (
             <YogaPlanCalendarView plan={plan} onSelectDay={(idx) => { setSelectedDay(idx); setShowCalendarView(false); }} />
           ) : (
-            <MesocycleCalendarView plan={plan} onSelectDay={(idx, day) => { setSelectedDay(idx); setShowCalendarView(false); }} />
+            <MesocycleCalendarView plan={plan} onSelectDay={(idx, day) => { setWeekViewModal({ visible: true, day }); }} />
           )}
         </>
       ) : (
@@ -620,6 +623,11 @@ function PlanContent() {
         </>
       )}
       {selectedExercise && <ExerciseModal exercise={selectedExercise} onClose={() => setSelectedExercise(null)} />}
+      <WeekExerciseModal 
+        day={weekViewModal.day} 
+        visible={weekViewModal.visible} 
+        onClose={() => setWeekViewModal({ visible: false, day: null })} 
+      />
       {CoachToastComponent}
     </div>
   );
