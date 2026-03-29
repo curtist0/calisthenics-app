@@ -174,12 +174,17 @@ function makeEx(
   const diffModifier = DIFFICULTY_MODIFIERS[exerciseDifficulty] || 1.0;
 
   // USER SKILL LEVEL MODIFIERS (beginner gets fewer sets but higher reps for learning)
+  // ADVANCED: NO MORE 1.2x multiplier to sets - use 1.0 instead. Advanced needs intensity, not volume.
   const skillLevel = (userSkillLevel || "beginner") as keyof typeof SKILL_LEVEL_SET_MODIFIERS;
-  const setModifier = SKILL_LEVEL_SET_MODIFIERS[skillLevel] || 1.0;
+  let baseSetModifier = SKILL_LEVEL_SET_MODIFIERS[skillLevel] || 1.0;
+  // Override: Advanced users use 1.0 (same as intermediate) to prevent CNS burnout
+  if (userSkillLevel === "advanced") {
+    baseSetModifier = 1.0;
+  }
   const repAdjustment = SKILL_LEVEL_REP_ADJUSTMENTS[skillLevel] || 1.0;
 
   // Base calculation: apply user skill level to sets and reps separately
-  let sets = Math.round(config.setsPerExercise * setModifier);
+  let sets = Math.round(config.setsPerExercise * baseSetModifier);
   
   // Reps use BOTH exercise difficulty modifier AND user skill level rep adjustment
   let baseReps = (config.targetReps.max + config.targetReps.min) / 2;
@@ -208,6 +213,9 @@ function makeEx(
     holdSeconds = Math.round(holdSeconds * focusConfig.holdSecondMultiplier);
     restSeconds = Math.round(restSeconds * focusConfig.restMultiplier);
   }
+  
+  // STRICT VOLUME CAP: Never exceed 5 sets (advanced principle: intensity over volume)
+  sets = Math.min(5, sets);
 
   // Apply week-based progressive overload (affects sets only)
   if (weekNumber && weekNumber >= 1 && weekNumber <= 6) {
@@ -432,14 +440,77 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
     return [...skillWork, ...strengthWork, ...coreLegsWork];
   };
 
+  // ADVANCED PUSH/PULL SPLIT BUILDER
+  // For advanced users: 4x/week split with specific structure per day
+  const buildAdvancedPushDay = (
+    pool: Record<string, Exercise[]>,
+    skillExercises: Exercise[],
+    focus: DailyFocus,
+    weekNumber: number,
+    userSkillLvl: string
+  ) => {
+    const exercises: WorkoutExercise[] = [];
+    
+    // 1. Target skill (push-based)
+    const pushSkills = skillExercises.filter(ex => ex.category === "push" || ex.category === "skill");
+    if (pushSkills.length > 0) {
+      exercises.push(makeEx(pushSkills[0], true, goal, `🎯 Target Skill: Push`, focus, weekNumber, userSkillLvl));
+    }
+    
+    // 2. Exactly 3 push exercises (pick first 3 from pool, ordered by difficulty)
+    const topPushEx = pool.push
+      .slice(0, 3)
+      .map(ex => makeEx(ex, false, goal, "Push Strength", focus, weekNumber, userSkillLvl));
+    exercises.push(...topPushEx);
+    
+    // 3. 1 core finisher
+    if (pool.core.length > 0) {
+      exercises.push(makeEx(pool.core[0], false, goal, "Core Finisher", focus, weekNumber, userSkillLvl));
+    }
+    
+    return exercises;
+  };
+
+  const buildAdvancedPullDay = (
+    pool: Record<string, Exercise[]>,
+    skillExercises: Exercise[],
+    focus: DailyFocus,
+    weekNumber: number,
+    userSkillLvl: string
+  ) => {
+    const exercises: WorkoutExercise[] = [];
+    
+    // 1. Target skill (pull-based)
+    const pullSkills = skillExercises.filter(ex => ex.category === "pull" || ex.category === "skill");
+    if (pullSkills.length > 0) {
+      exercises.push(makeEx(pullSkills[0], true, goal, `🎯 Target Skill: Pull`, focus, weekNumber, userSkillLvl));
+    }
+    
+    // 2. Exactly 3 pull exercises (pick first 3 from pool, ordered by difficulty)
+    const topPullEx = pool.pull
+      .slice(0, 3)
+      .map(ex => makeEx(ex, false, goal, "Pull Strength", focus, weekNumber, userSkillLvl));
+    exercises.push(...topPullEx);
+    
+    // 3. 1 leg finisher
+    if (pool.legs.length > 0) {
+      exercises.push(makeEx(pool.legs[0], false, goal, "Leg Finisher", focus, weekNumber, userSkillLvl));
+    }
+    
+    return exercises;
+  };
+
   // 4. GENERATE 42-DAY (6-WEEK) SCHEDULE WITH DYNAMIC DUP
   const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   const days: DayWorkout[] = [];
   
-  // Beginners need 3x/week for rapid neurological adaptation. Adv can handle 4x.
-  const trainingSchedule = userSkillLevel === "advanced" ? [0, 1, 3, 4] : [0, 2, 4]; // 0=Mon, 2=Wed, 4=Fri
+  // ADVANCED: 4x/week Push/Pull Split (Mon/Push, Tue/Pull, Thu/Push, Fri/Pull)
+  // BEGINNER/INTERMEDIATE: 3x/week Full Body (Mon/Wed/Fri)
+  const isAdvanced = userSkillLevel === "advanced";
+  const advancedSchedule = [0, 1, 3, 4]; // Mon, Tue, Thu, Fri
+  const trainingSchedule = isAdvanced ? advancedSchedule : [0, 2, 4]; // 0=Mon, 2=Wed, 4=Fri
   const trainingDaysPerWeek = trainingSchedule.length;
-  let trainingDayCounter = 0; // Tracks which training day position we're at within the week
+  let trainingDayCounter = 0;
   let isWorkoutA = true;
 
   for (let dayNum = 0; dayNum < 42; dayNum++) {
@@ -463,21 +534,29 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
         dailyFocus = getFocusForTrainingDay(trainingDayPositionInWeek, trainingDaysPerWeek, goal);
       }
       
-      // Build routine from pre-selected pool with DUP modifiers for this specific day
       const focusConfig = dailyFocusConfig[dailyFocus];
       const currentPool = isWorkoutA ? exercisePoolA : exercisePoolB;
       const skillExercises = isWorkoutA ? skillExercisesA : skillExercisesB;
       
-      const dayRoutine = buildRoutineFromPool(
-        currentPool,
-        skillExercises,
-        dailyFocus,
-        weekNumber,
-        userSkillLevel
-      );
+      let dayRoutine: WorkoutExercise[];
+      let workoutName: string;
       
-      const workoutLabel = isWorkoutA ? "Workout A" : "Workout B";
-      isWorkoutA = !isWorkoutA; // Flip for next training day
+      if (isAdvanced) {
+        // ADVANCED: Push/Pull Split
+        const isPushDay = trainingDayPositionInWeek === 0 || trainingDayPositionInWeek === 2; // Mon, Thu = Push
+        if (isPushDay) {
+          dayRoutine = buildAdvancedPushDay(currentPool, skillExercises, dailyFocus, weekNumber, userSkillLevel);
+          workoutName = "Push + Core";
+        } else {
+          dayRoutine = buildAdvancedPullDay(currentPool, skillExercises, dailyFocus, weekNumber, userSkillLevel);
+          workoutName = "Pull + Legs";
+        }
+      } else {
+        // BEGINNER/INTERMEDIATE: Full Body
+        dayRoutine = buildRoutineFromPool(currentPool, skillExercises, dailyFocus, weekNumber, userSkillLevel);
+        const workoutLabel = isWorkoutA ? "Workout A" : "Workout B";
+        workoutName = `Full Body - ${workoutLabel}`;
+      }
       
       // Build focus label for UI
       const focusLabel = weekNumber === 6
@@ -486,7 +565,7 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
       
       days.push({
         day: `${dayOfWeekName} (Week ${weekNumber})`,
-        name: `Full Body - ${workoutLabel}`,
+        name: workoutName,
         isRest: false,
         focus: focusLabel,
         exercises: dayRoutine,
@@ -494,6 +573,12 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
       });
       
       trainingDayCounter++;
+      if (!isAdvanced) {
+        isWorkoutA = !isWorkoutA; // Only flip for beginner/intermediate
+      } else if (trainingDayCounter % 2 === 0) {
+        // For advanced, flip workout pool every 2 training days (every 2nd week or pattern)
+        isWorkoutA = !isWorkoutA;
+      }
     } else {
       days.push({
         day: `${dayOfWeekName} (Week ${weekNumber})`,
