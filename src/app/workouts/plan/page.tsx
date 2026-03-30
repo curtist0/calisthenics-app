@@ -222,29 +222,60 @@ function PlanContent() {
     const name = ex?.name || yoga?.name || we.progressionLevel?.replace("🔧 ", "") || "Exercise";
     const image = ex?.image || yoga?.image || "🔧";
 
-    const handleLevelAdjust = (direction: 1 | -1) => {
-      if (!plan) return;
+    // Check if exercise can be leveled up/down
+    const canLevelUp = ex && ex.progressionTo;
+    const canLevelDown = ex && ex.progressionFrom;
+
+    const handleProgressionSwap = (e: React.MouseEvent, direction: "up" | "down") => {
+      // CRITICAL: Stop event bubbling to prevent parent accordion from collapsing
+      e.stopPropagation();
+
+      if (!plan || !ex) return;
+
+      // Determine the new exercise ID based on direction
+      let newExerciseId: string | null = null;
+      if (direction === "up" && ex.progressionTo) {
+        newExerciseId = ex.progressionTo;
+      } else if (direction === "down" && ex.progressionFrom) {
+        newExerciseId = ex.progressionFrom;
+      } else {
+        return; // Can't progress in this direction
+      }
+
+      if (!newExerciseId) return;
+
+      // Update plan, swapping exercise ID while maintaining sets/reps/rest
       const updatedPlan = { ...plan };
-      updatedPlan.days = updatedPlan.days.map((d, i) => 
+      updatedPlan.days = updatedPlan.days.map((d, i) =>
         i === dayIdx
-          ? { ...d, exercises: d.exercises.map((e, j) => 
-              j === idx 
-                ? { ...e, levelAdjustment: (e.levelAdjustment || 0) + direction }
-                : e
-            )}
+          ? {
+              ...d,
+              exercises: d.exercises.map((e, j) =>
+                j === idx
+                  ? {
+                      ...e,
+                      exerciseId: newExerciseId,
+                      // Keep sets, reps, holdSeconds, restSeconds unchanged
+                    }
+                  : e
+              ),
+            }
           : d
       );
+
       // Update the saved plan
       window.localStorage.setItem(`plan_${plan.id}`, JSON.stringify(updatedPlan));
+
       // Trigger re-render by updating savedPlans
       const allPlans = JSON.parse(window.localStorage.getItem("saved_plans") || "[]");
-      const idx_plan = allPlans.findIndex((p: any) => p.id === plan.id);
-      if (idx_plan >= 0) {
-        allPlans[idx_plan] = updatedPlan;
+      const planIdx = allPlans.findIndex((p: any) => p.id === plan.id);
+      if (planIdx >= 0) {
+        allPlans[planIdx] = updatedPlan;
         window.localStorage.setItem("saved_plans", JSON.stringify(allPlans));
       }
+
       // Trigger local re-render immediately
-      setRerender(r => r + 1);
+      setRerender((r) => r + 1);
     };
 
     return (
@@ -270,17 +301,27 @@ function PlanContent() {
               {we.progressionLevel && <p className="text-brand-400 text-[10px]">{we.progressionLevel}</p>}
             </div>
             <div className="flex gap-1 flex-shrink-0">
-              <button 
-                onClick={() => handleLevelAdjust(-1)}
-                className="px-2 py-1 bg-red-500/20 hover:bg-red-500/40 rounded text-red-400 text-xs font-bold"
-                title="Make easier"
+              <button
+                onClick={(e) => handleProgressionSwap(e, "down")}
+                disabled={!canLevelDown}
+                className={`px-2 py-1 rounded text-xs font-bold transition-all ${
+                  canLevelDown
+                    ? "bg-red-500/20 hover:bg-red-500/40 text-red-400 cursor-pointer"
+                    : "bg-red-500/10 text-red-600/50 cursor-not-allowed opacity-50"
+                }`}
+                title={canLevelDown ? "Make easier" : "Already at baseline"}
               >
                 ↓
               </button>
-              <button 
-                onClick={() => handleLevelAdjust(1)}
-                className="px-2 py-1 bg-green-500/20 hover:bg-green-500/40 rounded text-green-400 text-xs font-bold"
-                title="Make harder"
+              <button
+                onClick={(e) => handleProgressionSwap(e, "up")}
+                disabled={!canLevelUp}
+                className={`px-2 py-1 rounded text-xs font-bold transition-all ${
+                  canLevelUp
+                    ? "bg-green-500/20 hover:bg-green-500/40 text-green-400 cursor-pointer"
+                    : "bg-green-500/10 text-green-600/50 cursor-not-allowed opacity-50"
+                }`}
+                title={canLevelUp ? "Make harder" : "Already at elite level"}
               >
                 ↑
               </button>

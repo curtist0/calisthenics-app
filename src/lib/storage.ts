@@ -243,16 +243,27 @@ export function saveUserProfile(profile: UserProfile): void {
 
 export function wipeAllUserData(): void {
   if (!isBrowser()) return;
-  // Remove all app-related localStorage keys to ensure clean slate for new user
-  localStorage.removeItem(LOGS_KEY);
-  localStorage.removeItem(STATS_KEY);
-  localStorage.removeItem(PRS_KEY);
-  localStorage.removeItem(PLANS_KEY);
-  localStorage.removeItem(PHOTOS_KEY);
-  localStorage.removeItem(SESSION_UI_KEY);
-  localStorage.removeItem(ACTIVE_CALISTHENICS_SESSION_KEY);
-  localStorage.removeItem(ACTIVE_YOGA_SESSION_KEY);
-  // Also remove plan-specific keys
+  // Remove ALL app-related localStorage keys to ensure a complete, blank slate for a new user
+  // This includes all workout history, stats, records, plans, and session data
+
+  // Core records (must be wiped for clean start)
+  localStorage.removeItem(LOGS_KEY);            // Workout history
+  localStorage.removeItem(STATS_KEY);           // Stats (streaks, totals)
+  localStorage.removeItem(PRS_KEY);             // Personal records
+  localStorage.removeItem(PHOTOS_KEY);          // Progress photos
+
+  // Plans (must be wiped for clean start)
+  localStorage.removeItem(PLANS_KEY);           // Saved workout plans
+  
+  // Sessions (must be wiped for clean start)
+  localStorage.removeItem(SESSION_UI_KEY);      // UI state (pause/resume)
+  localStorage.removeItem(ACTIVE_CALISTHENICS_SESSION_KEY); // Active calisthenics session
+  localStorage.removeItem(ACTIVE_YOGA_SESSION_KEY);         // Active yoga session
+
+  // Profile (wipe old profile to ensure no data carryover)
+  localStorage.removeItem(PROFILE_KEY);
+
+  // Dynamic plan keys (plan_* and saved_plans are handled separately)
   const keysToRemove: string[] = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
