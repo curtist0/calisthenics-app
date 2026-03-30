@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useWorkout } from "@/context/WorkoutContext";
 import { Difficulty, UserProfile, SkillLevels, Equipment } from "@/lib/types";
+import { wipeAllUserData } from "@/lib/storage";
 import PageBackground from "@/components/PageBackground";
 
 const assessmentQuestions = [
@@ -95,6 +96,9 @@ export default function OnboardingPage() {
   };
 
   const finish = (wantsYoga: boolean) => {
+    // CRITICAL: Wipe all old user data before creating new profile
+    wipeAllUserData();
+
     const catScores: Record<string, number> = {};
     // Only score questions that are available
     for (const q of availableQuestions) {

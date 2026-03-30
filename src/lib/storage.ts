@@ -239,6 +239,30 @@ export function saveUserProfile(profile: UserProfile): void {
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
 }
 
+// ── Wipe all user data (for new user/reset) ──
+
+export function wipeAllUserData(): void {
+  if (!isBrowser()) return;
+  // Remove all app-related localStorage keys to ensure clean slate for new user
+  localStorage.removeItem(LOGS_KEY);
+  localStorage.removeItem(STATS_KEY);
+  localStorage.removeItem(PRS_KEY);
+  localStorage.removeItem(PLANS_KEY);
+  localStorage.removeItem(PHOTOS_KEY);
+  localStorage.removeItem(SESSION_UI_KEY);
+  localStorage.removeItem(ACTIVE_CALISTHENICS_SESSION_KEY);
+  localStorage.removeItem(ACTIVE_YOGA_SESSION_KEY);
+  // Also remove plan-specific keys
+  const keysToRemove: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && (key.startsWith("plan_") || key === "saved_plans")) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach((key) => localStorage.removeItem(key));
+}
+
 // ── In-progress workout UI (pause / resume across navigation) ──
 
 export function getWorkoutSessionUI(): WorkoutSessionUIState | null {

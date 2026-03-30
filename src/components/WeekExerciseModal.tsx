@@ -15,13 +15,13 @@ export default function WeekExerciseModal({ day, visible, onClose }: WeekExercis
   if (!visible || !day) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end z-50" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
       <div
-        className="w-full bg-gradient-to-t from-gray-900 to-gray-800 rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto"
+        className="max-w-md w-full bg-slate-900 rounded-2xl p-6 shadow-xl max-h-[80vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-6 sticky top-0 bg-gradient-to-b from-gray-800 to-gray-800/0 pb-3">
+        <div className="flex items-center justify-between mb-6">
           <div>
             <h3 className="text-2xl font-bold text-white">{day.name}</h3>
             <p className="text-xs text-white/60 mt-1">{day.day}</p>

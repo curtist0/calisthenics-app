@@ -62,25 +62,21 @@ export default function RankDisplay({
 }: RankDisplayProps) {
   const sizeConfig = sizeMaps[size];
   
-  // Determine which planes to display
-  let planes: Array<"push" | "pull" | "core" | "legs" | "balance" | "flexibility"> = [
+  // Always include flexibility in display
+  const planes: Array<"push" | "pull" | "core" | "legs" | "balance" | "flexibility"> = [
     "push",
     "pull",
     "core",
     "legs",
     "balance",
+    "flexibility",
   ];
-  
-  // Only show flexibility if yoga is set up or if hideFlexibilityIfNoYoga is false
-  if (yogaSetUp || !hideFlexibilityIfNoYoga) {
-    if (ranks.flexibility) {
-      planes.push("flexibility");
-    }
-  }
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
       {planes.map((plane) => {
+        const isFlexibility = plane === "flexibility";
+        const isUnlocked = !isFlexibility || yogaSetUp;
         const rankData = ranks[plane];
         // Handle both EnhancedRank objects and simple Rank strings
         const rank = (rankData?.rank || rankData || "F") as Rank;
@@ -92,15 +88,31 @@ export default function RankDisplay({
             key={plane}
             className="flex flex-col items-center gap-2"
           >
-            <div className={`relative flex flex-col items-center justify-center ${sizeConfig.badge} rounded-full bg-gradient-to-br ${bgGradient} border-2 border-white/20 ${glow} transition-all`}>
+            <div 
+              className={`relative flex flex-col items-center justify-center ${sizeConfig.badge} rounded-full bg-gradient-to-br ${bgGradient} border-2 border-white/20 ${glow} transition-all ${
+                !isUnlocked ? "opacity-50" : ""
+              }`}
+            >
               <span className={`${sizeConfig.emoji}`}>{rankEmojis[plane]}</span>
               <span className={`absolute bottom-1 font-bold text-white ${sizeConfig.text}`}>
                 {rank}
               </span>
+              {!isUnlocked && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm">
+                  <span className="text-lg">🔒</span>
+                </div>
+              )}
             </div>
-            <p className="text-xs sm:text-sm font-medium text-gray-300 text-center">
+            <p className={`text-xs sm:text-sm font-medium text-center ${
+              isUnlocked ? "text-gray-300" : "text-gray-500"
+            }`}>
               {rankLabels[plane]}
             </p>
+            {!isUnlocked && (
+              <p className="text-[10px] text-gray-500 text-center max-w-[80px]">
+                Set up Yoga to progress
+              </p>
+            )}
           </div>
         );
       })}
