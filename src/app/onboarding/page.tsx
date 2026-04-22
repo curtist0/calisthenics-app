@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useWorkout } from "@/context/WorkoutContext";
 import { Difficulty, UserProfile, SkillLevels, Equipment } from "@/lib/types";
-import { wipeAllUserData } from "@/lib/storage";
+import { resetEntireApp } from "@/lib/storage";
 import PageBackground from "@/components/PageBackground";
 
 const assessmentQuestions = [
@@ -47,7 +47,7 @@ function scoreToLevel(score: number): Difficulty {
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { setProfile } = useWorkout();
+  const { setProfile, resetAppState } = useWorkout();
   const [phase, setPhase] = useState<Phase>("intro");
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
@@ -96,8 +96,11 @@ export default function OnboardingPage() {
   };
 
   const finish = (wantsYoga: boolean) => {
-    // CRITICAL: Wipe all old user data before creating new profile
-    wipeAllUserData();
+    // PHASE 1: Nuke all localStorage data
+    resetEntireApp();
+
+    // PHASE 2: Reset all in-memory React state IMMEDIATELY
+    resetAppState();
 
     const catScores: Record<string, number> = {};
     // Only score questions that are available
@@ -133,14 +136,22 @@ export default function OnboardingPage() {
         lastUpdated: new Date().toISOString(),
       }));
 
+    // PHASE 3: Create brand new profile with fresh, empty data
     const profile: UserProfile = {
-      onboarded: true, overallLevel, skillLevels, exerciseLevels,
+      onboarded: true,
+      overallLevel,
+      skillLevels,
+      exerciseLevels,
       trainingGoal: "balanced",
       userEquipment: Array.from(selectedEquipment),
-      yogaSetUp: wantsYoga, yogaLevel: skillLevels.flexibility,
+      yogaSetUp: wantsYoga,
+      yogaLevel: skillLevels.flexibility,
       createdAt: new Date().toISOString(),
     };
+
+    // PHASE 4: Set new profile to context state
     setProfile(profile);
+
     if (wantsYoga) router.push("/yoga-setup");
     else router.push("/");
   };

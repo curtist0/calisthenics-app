@@ -55,6 +55,7 @@ interface WorkoutContextType {
   setProfile: (profile: UserProfile) => void;
   workoutSessionUI: WorkoutSessionUIState | null;
   setWorkoutSessionUI: (state: WorkoutSessionUIState | null) => void;
+  resetAppState: () => void; // CRITICAL: Reset all in-memory state to blank slates
 }
 
 const WorkoutContext = createContext<WorkoutContextType | null>(null);
@@ -123,6 +124,22 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   }, [calculateUserRanks]);
 
   const setProfile = useCallback((p: UserProfile) => { saveUserProfile(p); setProfileState(p); }, []);
+  
+  const resetAppState = useCallback(() => {
+    // CRITICAL: Reset all in-memory React state to blank slates
+    // This MUST happen at the same time as storage wipe
+    setLogs([]);
+    setStats({ totalWorkouts: 0, totalExercises: 0, currentStreak: 0, longestStreak: 0, lastWorkoutDate: null });
+    setPersonalRecords([]);
+    setRecentPRs([]);
+    setSavedPlans([]);
+    setPhotos([]);
+    setProfileState(null);
+    setActiveCalisthenicsSession(null);
+    setActiveYogaSession(null);
+    setWorkoutSessionUIState(null);
+  }, []);
+
   const addPlan = useCallback((plan: WeeklyPlan) => { savePlan(plan); setSavedPlans(getSavedPlans()); }, []);
   const removePlan = useCallback((id: string) => { deletePlanStorage(id); setSavedPlans(getSavedPlans()); }, []);
 
@@ -284,7 +301,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       // Backward compatibility
       finishWorkout: finishCalisthenicsSession,
       cancelWorkout: cancelCalisthenicsSession,
-      refreshData, addPhoto, removePhoto, setProfile, workoutSessionUI, setWorkoutSessionUI,
+      refreshData, addPhoto, removePhoto, setProfile, workoutSessionUI, setWorkoutSessionUI, resetAppState,
     }}>
       {children}
     </WorkoutContext.Provider>

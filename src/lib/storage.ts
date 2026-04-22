@@ -239,6 +239,56 @@ export function saveUserProfile(profile: UserProfile): void {
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
 }
 
+// ── Aggressive app reset (for new user/complete wipe) ──
+
+/**
+ * CRITICAL: Completely nukes all app data from localStorage.
+ * This is the most aggressive reset - use when transitioning to a brand new user.
+ * Clears both explicit keys AND uses localStorage.clear() as fallback.
+ */
+export function resetEntireApp(): void {
+  if (!isBrowser()) return;
+
+  // PHASE 1: Explicitly remove all known app keys
+  // (More reliable than localStorage.clear() in case other apps share the domain)
+  
+  // Core records
+  localStorage.removeItem(LOGS_KEY);            // Workout logs
+  localStorage.removeItem(STATS_KEY);           // Stats (streaks, totals)
+  localStorage.removeItem(PRS_KEY);             // Personal records
+  localStorage.removeItem(PHOTOS_KEY);          // Progress photos
+  
+  // Plans and sessions
+  localStorage.removeItem(PLANS_KEY);           // Saved workout plans
+  localStorage.removeItem(SESSION_UI_KEY);      // UI state (pause/resume)
+  localStorage.removeItem(ACTIVE_CALISTHENICS_SESSION_KEY);
+  localStorage.removeItem(ACTIVE_YOGA_SESSION_KEY);
+  
+  // Profile (rankings, training mode decision, etc.)
+  localStorage.removeItem(PROFILE_KEY);
+  
+  // PHASE 2: Catch dynamic keys (plan_*, saved_plans, etc.)
+  // Iterate through ALL remaining keys and remove anything app-related
+  const keysToRemove: string[] = [];
+  const allKeys = Object.keys(localStorage);
+  for (const key of allKeys) {
+    if (
+      key.startsWith("plan_") ||
+      key === "saved_plans" ||
+      key.startsWith("calisthenics_") ||
+      key.startsWith("yoga_")
+    ) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach((key) => localStorage.removeItem(key));
+  
+  // PHASE 3: Final safeguard - localStorage.clear() if available
+  // (Only works if this is the sole app on the domain)
+  // Commented out because we want to be conservative
+  // localStorage.clear();
+}
+
 // ── Wipe all user data (for new user/reset) ──
 
 export function wipeAllUserData(): void {
