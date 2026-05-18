@@ -8,6 +8,7 @@ interface RankDisplayProps {
   size?: "sm" | "md" | "lg";
   hideFlexibilityIfNoYoga?: boolean;
   yogaSetUp?: boolean;
+  onRankClick?: (plane: "push" | "pull" | "core" | "legs" | "balance" | "flexibility") => void;
 }
 
 const rankEmojis: Record<string, string> = {
@@ -59,6 +60,7 @@ export default function RankDisplay({
   size = "md",
   hideFlexibilityIfNoYoga = false,
   yogaSetUp = true,
+  onRankClick,
 }: RankDisplayProps) {
   const sizeConfig = sizeMaps[size];
   
@@ -84,14 +86,16 @@ export default function RankDisplay({
         const glow = rankGlow[rank];
 
         return (
-          <div
+          <button
             key={plane}
-            className="flex flex-col items-center gap-2"
+            onClick={() => onRankClick?.(plane)}
+            disabled={!onRankClick}
+            className="flex flex-col items-center gap-2 transition-transform hover:scale-105 disabled:hover:scale-100"
           >
             <div 
               className={`relative flex flex-col items-center justify-center ${sizeConfig.badge} rounded-full bg-gradient-to-br ${bgGradient} border-2 border-white/20 ${glow} transition-all ${
                 !isUnlocked ? "opacity-50" : ""
-              }`}
+              } ${onRankClick ? "cursor-pointer" : ""}`}
             >
               <span className={`${sizeConfig.emoji}`}>{rankEmojis[plane]}</span>
               <span className={`absolute bottom-1 font-bold text-white ${sizeConfig.text}`}>
@@ -113,7 +117,7 @@ export default function RankDisplay({
                 Set up Yoga to progress
               </p>
             )}
-          </div>
+          </button>
         );
       })}
     </div>

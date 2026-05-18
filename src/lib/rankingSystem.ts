@@ -254,6 +254,34 @@ function calculateBalanceRank(logs: WorkoutLog[]): Rank {
 }
 
 /**
+ * Calculate rank from claimed skills
+ * Takes the highest difficulty skill claimed and maps it to a rank
+ */
+function claimedSkillsToRank(claimedSkillIds: string[]): Rank {
+  if (claimedSkillIds.length === 0) return "F";
+  
+  let highestDifficulty: Difficulty = "beginner";
+  const difficultyScale = { beginner: 0, intermediate: 1, advanced: 2, elite: 3 };
+  
+  for (const skillId of claimedSkillIds) {
+    const exercise = getExerciseById(skillId);
+    if (exercise) {
+      const skillDiff = difficultyScale[exercise.difficulty];
+      const currentMax = difficultyScale[highestDifficulty];
+      if (skillDiff > currentMax) {
+        highestDifficulty = exercise.difficulty;
+      }
+    }
+  }
+  
+  // Map highest claimed skill difficulty to rank
+  if (highestDifficulty === "elite") return "S";
+  if (highestDifficulty === "advanced") return "A";
+  if (highestDifficulty === "intermediate") return "B";
+  return "C"; // beginner
+}
+
+/**
  * Check if training mode decision is locked (within 24 hours)
  */
 export function isTrainingModeLocked(rankingDecision: RankingDecision | undefined): boolean {
@@ -322,6 +350,21 @@ export function calculateRanks(
   const coreStats = calculatePlaneStats(completedLogs, "core");
   const legsStats = calculatePlaneStats(completedLogs, "legs");
 
+  // Helper function to get rank with claimed skills priority
+  const getRankWithClaimed = (
+    plane: "push" | "pull" | "core" | "legs",
+    workoutRank: Rank
+  ): Rank => {
+    const claimedSkills = profile.claimedSkills?.[plane] || [];
+    if (claimedSkills.length > 0) {
+      const claimedRank = claimedSkillsToRank(claimedSkills);
+      // Use the higher of claimed vs workout rank
+      const rankScale = { F: 0, E: 1, D: 2, C: 3, B: 4, A: 5, S: 6 };
+      return rankScale[claimedRank] >= rankScale[workoutRank] ? claimedRank : workoutRank;
+    }
+    return workoutRank;
+  };
+
   // Calculate ranks based on training mode
   let pushRank: Rank;
   let pullRank: Rank;
@@ -330,28 +373,40 @@ export function calculateRanks(
 
   if (trainingMode === "strength") {
     // Strength mode: Map to elite skills achievable
-    pushRank = pushStats.highestProgressionLevel > 0
-      ? progressionToRank(pushStats.highestProgressionLevel)
-      : repsToRank(pushStats.averageReps);
+    pushRank = getRankWithClaimed(
+      "push",
+      pushStats.highestProgressionLevel > 0
+        ? progressionToRank(pushStats.highestProgressionLevel)
+        : repsToRank(pushStats.averageReps)
+    );
     
-    pullRank = pullStats.highestProgressionLevel > 0
-      ? progressionToRank(pullStats.highestProgressionLevel)
-      : repsToRank(pullStats.averageReps);
+    pullRank = getRankWithClaimed(
+      "pull",
+      pullStats.highestProgressionLevel > 0
+        ? progressionToRank(pullStats.highestProgressionLevel)
+        : repsToRank(pullStats.averageReps)
+    );
     
-    coreRank = coreStats.highestProgressionLevel > 0
-      ? progressionToRank(coreStats.highestProgressionLevel)
-      : repsToRank(coreStats.averageReps);
+    coreRank = getRankWithClaimed(
+      "core",
+      coreStats.highestProgressionLevel > 0
+        ? progressionToRank(coreStats.highestProgressionLevel)
+        : repsToRank(coreStats.averageReps)
+    );
     
-    legsRank = legsStats.highestProgressionLevel > 0
-      ? progressionToRank(legsStats.highestProgressionLevel)
-      : repsToRank(legsStats.averageReps);
+    legsRank = getRankWithClaimed(
+      "legs",
+      legsStats.highestProgressionLevel > 0
+        ? progressionToRank(legsStats.highestProgressionLevel)
+        : repsToRank(legsStats.averageReps)
+    );
   } else {
     // Endurance mode: Map to total reps
     // For endurance, we still track movement planes but weight is on volume
-    pushRank = pushStats.totalReps > 0 ? repsToRank(pushStats.averageReps) : "F";
-    pullRank = pullStats.totalReps > 0 ? repsToRank(pullStats.averageReps) : "F";
-    coreRank = coreStats.totalReps > 0 ? repsToRank(coreStats.averageReps) : "F";
-    legsRank = legsStats.totalReps > 0 ? repsToRank(legsStats.averageReps) : "F";
+    pushRank = getRankWithClaimed("push", pushStats.totalReps > 0 ? repsToRank(pushStats.averageReps) : "F");
+    pullRank = getRankWithClaimed("pull", pullStats.totalReps > 0 ? repsToRank(pullStats.averageReps) : "F");
+    coreRank = getRankWithClaimed("core", coreStats.totalReps > 0 ? repsToRank(coreStats.averageReps) : "F");
+    legsRank = getRankWithClaimed("legs", legsStats.totalReps > 0 ? repsToRank(legsStats.averageReps) : "F");
   }
 
   const result: EnhancedRanks = {

@@ -9,16 +9,11 @@ import ExerciseCard from "@/components/ExerciseCard";
 import ExerciseModal from "@/components/ExerciseModal";
 import ExerciseAnimation from "@/components/ExerciseAnimation";
 import SetLogCard from "@/components/SetLogCard";
-import YogaActiveScreen from "@/components/YogaActiveScreen";
-import FollowAlongCarousel from "@/components/FollowAlongCarousel";
-import MesocycleCalendarView from "@/components/MesocycleCalendarView";
-import YogaPlanCalendarView from "@/components/YogaPlanCalendarView";
-import WeekExerciseModal from "@/components/WeekExerciseModal";
 import Timer from "@/components/Timer";
 import RestTimer from "@/components/RestTimer";
 import { useCoachToast } from "@/components/CoachToast";
 import ScheduleOverrideModal from "@/components/ScheduleOverrideModal";
-import { Exercise, DayWorkout } from "@/lib/types";
+import { Exercise } from "@/lib/types";
 import { isScheduledForToday, getDayOfWeekName } from "@/lib/storage";
 import Link from "next/link";
 
@@ -31,7 +26,6 @@ function PlanContent() {
 
   const plan = savedPlans.find((p) => p.id === planId);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
-  const [showCalendarView, setShowCalendarView] = useState(false);
   const [isActive, setIsActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [activeDayIndex, setActiveDayIndex] = useState(0);
@@ -44,10 +38,7 @@ function PlanContent() {
   const [pendingDayIndex, setPendingDayIndex] = useState<number | null>(null);
   const [showOverrideModal, setShowOverrideModal] = useState(false);
   const [scheduleOverride, setScheduleOverride] = useState(false);
-  const [useCarouselMode, setUseCarouselMode] = useState(false);
   const [pendingOverrideDayIndex, setPendingOverrideDayIndex] = useState<number | null>(null);
-  const [rerender, setRerender] = useState(0); // Force re-renders on level adjustments
-  const [weekViewModal, setWeekViewModal] = useState<{ visible: boolean; day: DayWorkout | null }>({ visible: false, day: null });
   const sessionRestoreKey = useRef<string | null>(null);
 
   useEffect(() => {
@@ -99,15 +90,6 @@ function PlanContent() {
   const curYogaPose = curWE ? getYogaPoseById(curWE.exerciseId) : null;
   const curName = curExData?.name || curYogaPose?.name || curWE?.progressionLevel || "Exercise";
   const curImage = curExData?.image || curYogaPose?.image || "💪";
-
-  // Calculate current week (0-indexed) - when plan started
-  const planStartDate = new Date(plan.createdAt || Date.now());
-  const now = new Date();
-  const daysElapsed = Math.floor((now.getTime() - planStartDate.getTime()) / (1000 * 60 * 60 * 24));
-  const currentWeek = Math.floor(daysElapsed / 7);
-  const currentWeekStartIndex = currentWeek * 7;
-  const currentWeekEndIndex = Math.min(currentWeekStartIndex + 7, plan.days.length);
-  const currentWeekDays = plan.days.slice(currentWeekStartIndex, currentWeekEndIndex);
 
   const handleStart = (dayIndex: number) => {
     const day = plan.days[dayIndex];
@@ -183,20 +165,6 @@ function PlanContent() {
     }
   };
 
-  // Helper to detect if workout is yoga-based
-  const isYogaWorkout = () => {
-    if (!activeDay) return false;
-    return activeDay.exercises.some((ex) => getYogaPoseById(ex.exerciseId));
-  };
-
-  // For yoga workouts, we don't manually log - just advance automatically
-  const handleYogaPoseComplete = () => {
-    if (!activeDay || !curWE) return;
-    // Mark as completed automatically
-    completeSet(curEx, curSet, null, curWE.holdSeconds, null);
-    advance();
-  };
-
   const handleCancel = () => { cancelWorkout(); setIsActive(false); sessionRestoreKey.current = null; };
 
   const handlePauseExplore = () => {
@@ -210,73 +178,16 @@ function PlanContent() {
       showRest,
       isPaused: true,
     });
-    // Stay on the plan page showing the workout overview with the resume bar
-    setIsActive(false);
+    router.push("/");
   };
 
   // Helper to render an exercise row (handles both real exercises and conditioning)
-  const renderExerciseRow = (we: typeof plan.days[0]["exercises"][0], dayIdx: number, idx: number, showManualEntry?: boolean) => {
+  const renderExerciseRow = (we: typeof plan.days[0]["exercises"][0], idx: number, showManualEntry?: boolean) => {
     const ex = getExerciseById(we.exerciseId);
     const yoga = getYogaPoseById(we.exerciseId);
     const isCond = we.exerciseId.startsWith("cond-");
     const name = ex?.name || yoga?.name || we.progressionLevel?.replace("🔧 ", "") || "Exercise";
     const image = ex?.image || yoga?.image || "🔧";
-
-    // Check if exercise can be leveled up/down
-    const canLevelUp = ex && ex.progressionTo;
-    const canLevelDown = ex && ex.progressionFrom;
-
-    const handleProgressionSwap = (e: React.MouseEvent, direction: "up" | "down") => {
-      // CRITICAL: Stop event bubbling to prevent parent accordion from collapsing
-      e.stopPropagation();
-
-      if (!plan || !ex) return;
-
-      // Determine the new exercise ID based on direction
-      let newExerciseId: string | null = null;
-      if (direction === "up" && ex.progressionTo) {
-        newExerciseId = ex.progressionTo;
-      } else if (direction === "down" && ex.progressionFrom) {
-        newExerciseId = ex.progressionFrom;
-      } else {
-        return; // Can't progress in this direction
-      }
-
-      if (!newExerciseId) return;
-
-      // Update plan, swapping exercise ID while maintaining sets/reps/rest
-      const updatedPlan = { ...plan };
-      updatedPlan.days = updatedPlan.days.map((d, i) =>
-        i === dayIdx
-          ? {
-              ...d,
-              exercises: d.exercises.map((e, j) =>
-                j === idx
-                  ? {
-                      ...e,
-                      exerciseId: newExerciseId,
-                      // Keep sets, reps, holdSeconds, restSeconds unchanged
-                    }
-                  : e
-              ),
-            }
-          : d
-      );
-
-      // Update the saved plan
-      window.localStorage.setItem(`plan_${plan.id}`, JSON.stringify(updatedPlan));
-
-      // Trigger re-render by updating savedPlans
-      const allPlans = JSON.parse(window.localStorage.getItem("saved_plans") || "[]");
-      const planIdx = allPlans.findIndex((p: any) => p.id === plan.id);
-      if (planIdx >= 0) {
-        allPlans[planIdx] = updatedPlan;
-        window.localStorage.setItem("saved_plans", JSON.stringify(allPlans));
-      }
-
-      // Trigger local re-render immediately
-      setRerender((r) => r + 1);
-    };
 
     return (
       <div key={`${we.exerciseId}-${idx}`} className="glass rounded-xl p-3 mb-2">
@@ -295,37 +206,9 @@ function PlanContent() {
               </div>
             </div>
           )}
-          <div className="text-right text-xs text-gray-400 flex-shrink-0 ml-auto flex items-center gap-2">
-            <div>
-              <p className="text-white font-semibold">{we.sets} × {we.holdSeconds ? `${we.holdSeconds}s` : we.reps}</p>
-              {we.progressionLevel && <p className="text-brand-400 text-[10px]">{we.progressionLevel}</p>}
-            </div>
-            <div className="flex gap-1 flex-shrink-0">
-              <button
-                onClick={(e) => handleProgressionSwap(e, "down")}
-                disabled={!canLevelDown}
-                className={`px-2 py-1 rounded text-xs font-bold transition-all ${
-                  canLevelDown
-                    ? "bg-red-500/20 hover:bg-red-500/40 text-red-400 cursor-pointer"
-                    : "bg-red-500/10 text-red-600/50 cursor-not-allowed opacity-50"
-                }`}
-                title={canLevelDown ? "Make easier" : "Already at baseline"}
-              >
-                ↓
-              </button>
-              <button
-                onClick={(e) => handleProgressionSwap(e, "up")}
-                disabled={!canLevelUp}
-                className={`px-2 py-1 rounded text-xs font-bold transition-all ${
-                  canLevelUp
-                    ? "bg-green-500/20 hover:bg-green-500/40 text-green-400 cursor-pointer"
-                    : "bg-green-500/10 text-green-600/50 cursor-not-allowed opacity-50"
-                }`}
-                title={canLevelUp ? "Make harder" : "Already at elite level"}
-              >
-                ↑
-              </button>
-            </div>
+          <div className="text-right text-xs text-gray-400 flex-shrink-0 ml-auto">
+            <p className="text-white font-semibold">{we.sets} × {we.holdSeconds ? `${we.holdSeconds}s` : we.reps}</p>
+            {we.progressionLevel && <p className="text-brand-400 text-[10px]">{we.progressionLevel}</p>}
           </div>
         </div>
       </div>
@@ -363,74 +246,16 @@ function PlanContent() {
     );
   }
 
-  // Active workout (flexible set logging mode or yoga auto-timer)
+  // Active workout (flexible set logging mode)
   if (isActive && activeWorkout && activeDay) {
-    const yogaWorkout = isYogaWorkout();
-    
-    // YOGA WORKOUT SCREEN
-    if (yogaWorkout && curWE) {
-      const yogaPose = getYogaPoseById(curWE.exerciseId);
-      if (yogaPose) {
-        const totalPoses = activeDay.exercises.reduce((sum, ex) => sum + ex.sets, 0);
-        const completedPoses = activeWorkout.exercises.reduce((sum, ex) => sum + ex.sets.filter(s => s.completed).length, 0);
-        const currentPoseIndex = completedPoses + 1;
-
-        return (
-          <YogaActiveScreen
-            currentPose={yogaPose}
-            currentSet={currentPoseIndex}
-            totalSets={totalPoses}
-            onPoseComplete={handleYogaPoseComplete}
-            onPause={handlePauseExplore}
-            imageUrl={yogaPose.imageUrl}
-          />
-        );
-      }
-    }
-
-    // CALISTHENICS WORKOUT SCREEN (existing logic)
     const totalSets = activeDay.exercises.reduce((s, e) => s + e.sets, 0);
     const doneSets = activeWorkout.exercises.reduce((s, e) => s + e.sets.filter((x) => x.completed).length, 0);
     const allExercisesLogged = activeWorkout.exercises.every(ex => ex.sets.every(s => s.completed));
 
-    // Show carousel mode if enabled and not yoga
-    if (useCarouselMode && !isYogaWorkout()) {
-      const handleCarouselComplete = (exerciseIndex: number, setIndex: number) => {
-        const curWECarousel = activeDay.exercises[exerciseIndex];
-        if (curWECarousel) {
-          completeSet(exerciseIndex, setIndex, curWECarousel.reps, curWECarousel.holdSeconds, null);
-        }
-      };
-
-      return (
-        <FollowAlongCarousel
-          exercises={activeDay.exercises}
-          onExerciseComplete={handleCarouselComplete}
-          onPause={handlePauseExplore}
-          currentExerciseIndex={curEx}
-          currentSetIndex={curSet}
-        />
-      );
-    }
-
     return (
       <div className="max-w-lg mx-auto px-4 pt-8 pb-20">
-        {/* Follow Along Toggle */}
-        <div className="mb-6 sticky top-0 bg-gray-900/95 py-4 -mx-4 px-4 z-10 flex gap-2">
-          <button
-            onClick={() => setUseCarouselMode(!useCarouselMode)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-              useCarouselMode
-                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                : "glass text-white hover:bg-white/10"
-            }`}
-          >
-            👀 Follow Along
-          </button>
-        </div>
-
         {/* Progress Bar */}
-        <div className="mb-6 sticky top-16 bg-gray-900/95 py-4 -mx-4 px-4 z-10">
+        <div className="mb-6 sticky top-0 bg-gray-900/95 py-4 -mx-4 px-4 z-10">
           <div className="flex justify-between text-sm text-gray-400 mb-2">
             <span>Workout Progress</span>
             <span>{doneSets}/{totalSets} sets logged</span>
@@ -571,104 +396,49 @@ function PlanContent() {
         </div>
       )}
 
-      {/* View Toggle */}
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => setShowCalendarView(false)}
-          className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-colors text-sm ${
-            !showCalendarView
-              ? "bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-900"
-              : "glass text-white hover:bg-white/10"
-          }`}
-        >
-          📅 Week View
-        </button>
-        <button
-          onClick={() => setShowCalendarView(true)}
-          className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-colors text-sm ${
-            showCalendarView
-              ? "bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-900"
-              : "glass text-white hover:bg-white/10"
-          }`}
-        >
-          📊 Full Schedule
-        </button>
-      </div>
-
-      {showCalendarView ? (
-        <>
-          {plan.days.some((d) => getYogaPoseById(d.exercises?.[0]?.exerciseId)) ? (
-            <YogaPlanCalendarView plan={plan} onSelectDay={(idx) => { setSelectedDay(idx); setShowCalendarView(false); }} />
-          ) : (
-            <MesocycleCalendarView plan={plan} onSelectDay={(idx, day) => { setWeekViewModal({ visible: true, day }); }} />
-          )}
-        </>
-      ) : (
-        <>
-          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">This Week</h3>
-          <div className="space-y-3 mb-8">
-        {currentWeekDays.map((day, i) => {
-          const actualIndex = currentWeekStartIndex + i;
-          return (
-            <div key={i} className={`rounded-xl border transition-all ${day.isRest ? "bg-gray-800/30 border-gray-700/30 p-4" : selectedDay === actualIndex ? "bg-gray-800 border-brand-500/50 p-4" : "bg-gray-800/50 border-gray-700/50 p-4 hover:bg-gray-800/70 cursor-pointer"}`} onClick={() => !day.isRest && setSelectedDay(selectedDay === actualIndex ? null : actualIndex)}>
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500 font-mono w-8">{day.day.slice(0, 3)}</span>
-                  <span className={`font-semibold ${day.isRest ? "text-gray-500" : "text-white"}`}>{day.name}</span>
-                </div>
-                {day.isRest ? <span className="text-xs text-gray-500">😴</span> : <span className="text-xs text-gray-400">{day.exercises.length} ex {selectedDay === actualIndex ? "▲" : "▼"}</span>}
+      <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Full Week</h3>
+      <div className="space-y-3 mb-8">
+        {plan.days.map((day, i) => (
+          <div key={i} className={`rounded-xl border transition-all ${day.isRest ? "bg-gray-800/30 border-gray-700/30 p-4" : selectedDay === i ? "bg-gray-800 border-brand-500/50 p-4" : "bg-gray-800/50 border-gray-700/50 p-4 hover:bg-gray-800/70 cursor-pointer"}`} onClick={() => !day.isRest && setSelectedDay(selectedDay === i ? null : i)}>
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 font-mono w-8">{day.day.slice(0, 3)}</span>
+                <span className={`font-semibold ${day.isRest ? "text-gray-500" : "text-white"}`}>{day.name}</span>
               </div>
-              {day.isRest && day.restDayActivities && (
-                <div className="mt-3 space-y-2">
-                  {day.restDayActivities.map((act, ai) => (
-                    <div key={ai} className="bg-gray-800/50 rounded-lg p-3">
-                      <p className="text-white text-xs font-semibold">{act.name}</p>
-                      <p className="text-gray-500 text-xs">{act.description} · {act.duration}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {selectedDay === actualIndex && !day.isRest && (
-                <div className="mt-4 pt-4 border-t border-gray-700/50">
-                  {day.focus && (
-                    <div className="mb-4 bg-blue-500/10 border border-blue-500/30 rounded-xl p-3">
-                      <p className="text-blue-300 text-xs font-bold mb-1">📊 Today&apos;s Focus</p>
-                      <p className="text-blue-200 text-sm font-semibold">{day.focus}</p>
-                    </div>
-                  )}
-                  {day.warmUp && (
-                    <div className="mb-4 bg-orange-500/10 border border-orange-500/20 rounded-xl p-3">
-                      <p className="text-orange-400 text-xs font-bold mb-1">🔥 {day.warmUp.name} ({day.warmUp.duration})</p>
-                      <ul className="space-y-1">
-                        {day.warmUp.exercises.map((w, wi) => <li key={wi} className="text-gray-400 text-xs">• {w}</li>)}
-                      </ul>
-                    </div>
-                  )}
-                  {/* Exercise list — no numbering */}
-                  <div className="mb-4">
-                    {day.exercises.map((we, ei) => renderExerciseRow(we, actualIndex, ei))}
-                  </div>
-                  {/* Only show start button if it's today's workout */}
-                  {selectedDay === todayIndex ? (
-                    <button onClick={(e) => { e.stopPropagation(); handleStart(actualIndex); }} className="w-full py-3 bg-brand-500 text-white rounded-xl font-bold hover:bg-brand-600">Start {day.name} 🚀</button>
-                  ) : (
-                    <button disabled className="w-full py-3 bg-gray-600/50 text-gray-400 rounded-xl font-bold cursor-not-allowed opacity-50">Locked &mdash; Not Today&apos;s Workout</button>
-                  )}
-                </div>
-              )}
+              {day.isRest ? <span className="text-xs text-gray-500">😴</span> : <span className="text-xs text-gray-400">{day.exercises.length} ex {selectedDay === i ? "▲" : "▼"}</span>}
             </div>
-          );
-        })}
+            {day.isRest && day.restDayActivities && (
+              <div className="mt-3 space-y-2">
+                {day.restDayActivities.map((act, ai) => (
+                  <div key={ai} className="bg-gray-800/50 rounded-lg p-3">
+                    <p className="text-white text-xs font-semibold">{act.name}</p>
+                    <p className="text-gray-500 text-xs">{act.description} · {act.duration}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {selectedDay === i && !day.isRest && (
+              <div className="mt-4 pt-4 border-t border-gray-700/50">
+                {day.warmUp && (
+                  <div className="mb-4 bg-orange-500/10 border border-orange-500/20 rounded-xl p-3">
+                    <p className="text-orange-400 text-xs font-bold mb-1">🔥 {day.warmUp.name} ({day.warmUp.duration})</p>
+                    <ul className="space-y-1">
+                      {day.warmUp.exercises.map((w, wi) => <li key={wi} className="text-gray-400 text-xs">• {w}</li>)}
+                    </ul>
+                  </div>
+                )}
+                {/* Exercise list — no numbering */}
+                <div className="mb-4">
+                  {day.exercises.map((we, ei) => renderExerciseRow(we, ei))}
+                </div>
+                <button onClick={(e) => { e.stopPropagation(); handleStart(i); }} className="w-full py-3 bg-brand-500 text-white rounded-xl font-bold hover:bg-brand-600">Start {day.name} 🚀</button>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
-        </>
-      )}
       {selectedExercise && <ExerciseModal exercise={selectedExercise} onClose={() => setSelectedExercise(null)} />}
-      <WeekExerciseModal 
-        day={weekViewModal.day} 
-        visible={weekViewModal.visible} 
-        onClose={() => setWeekViewModal({ visible: false, day: null })} 
-      />
       {CoachToastComponent}
     </div>
   );
