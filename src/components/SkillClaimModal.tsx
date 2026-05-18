@@ -75,10 +75,15 @@ export default function SkillClaimModal({ isOpen, onClose, plane }: SkillClaimMo
 
   const handleSave = () => {
     if (profile) {
-      const updatedClaimedSkills = {
-        ...profile.claimedSkills,
-        [plane]: Array.from(selectedSkills),
+      const updatedClaimedSkills: Record<"core" | "push" | "pull" | "legs" | "flexibility" | "balance", string[]> = {
+        core: profile.claimedSkills?.core || [],
+        push: profile.claimedSkills?.push || [],
+        pull: profile.claimedSkills?.pull || [],
+        legs: profile.claimedSkills?.legs || [],
+        flexibility: profile.claimedSkills?.flexibility || [],
+        balance: profile.claimedSkills?.balance || [],
       };
+      updatedClaimedSkills[plane as keyof typeof updatedClaimedSkills] = Array.from(selectedSkills);
       setProfile({
         ...profile,
         claimedSkills: updatedClaimedSkills,

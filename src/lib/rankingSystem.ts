@@ -1,4 +1,4 @@
-import { Rank, UserProfile, WorkoutLog, TrainingMode, RankingDecision } from "./types";
+import { Rank, UserProfile, WorkoutLog, TrainingMode, RankingDecision, Difficulty } from "./types";
 import { exercises, getExerciseById } from "@/data/exercises";
 import { getYogaPoseById } from "@/data/yoga";
 
