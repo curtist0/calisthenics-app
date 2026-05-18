@@ -1,10 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { useWorkout } from "@/context/WorkoutContext";
-import { exercises, getExerciseById } from "@/data/exercises";
-import { getYogaPoseById } from "@/data/yoga";
-import { Difficulty } from "@/lib/types";
+import { exercises } from "@/data/exercises";
 
 interface SkillClaimModalProps {
   isOpen: boolean;
@@ -21,89 +19,66 @@ const planeLabels: Record<string, string> = {
   balance: "⚖️ Balance",
 };
 
-const difficultyColors: Record<Difficulty, string> = {
-  beginner: "text-cyan-400 border-cyan-400/30 bg-cyan-400/10",
-  intermediate: "text-yellow-400 border-yellow-400/30 bg-yellow-400/10",
-  advanced: "text-orange-400 border-orange-400/30 bg-orange-400/10",
-  elite: "text-rose-400 border-rose-400/30 bg-rose-400/10",
-};
-
-const difficultyRank: Record<Difficulty, string> = {
-  beginner: "C",
-  intermediate: "B",
-  advanced: "A",
-  elite: "S",
-};
+const rankTiers = [
+  { rank: "S", label: "Elite", color: "from-rose-500 to-pink-500", bgColor: "bg-rose-500/10", borderColor: "border-rose-500/30" },
+  { rank: "A", label: "Advanced", color: "from-orange-500 to-amber-500", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/30" },
+  { rank: "B", label: "Intermediate", color: "from-yellow-500 to-amber-400", bgColor: "bg-yellow-500/10", borderColor: "border-yellow-500/30" },
+  { rank: "C", label: "Beginner", color: "from-cyan-500 to-blue-500", bgColor: "bg-cyan-500/10", borderColor: "border-cyan-500/30" },
+  { rank: "D", label: "Novice", color: "from-green-500 to-emerald-500", bgColor: "bg-green-500/10", borderColor: "border-green-500/30" },
+];
 
 export default function SkillClaimModal({ isOpen, onClose, plane }: SkillClaimModalProps) {
-  const { profile, setProfile } = useWorkout();
-  const [selectedSkills, setSelectedSkills] = useState<Set<string>>(
-    new Set(profile?.claimedSkills?.[plane] || [])
-  );
+  const { logs } = useWorkout();
 
-  // Get available skills for this plane
-  const availableSkills = useMemo(() => {
+  // Get exercises for this plane
+  const exercisesByDifficulty = useMemo(() => {
     if (plane === "flexibility" || plane === "balance") {
-      // Yoga poses
-      if (!profile?.yogaSetUp) return [];
-      // Import yoga poses and filter
-      // For now, return empty - will need yoga data
-      return [];
-    } else {
-      // Regular exercises in this category
-      return exercises.filter((ex) => {
-        if (plane === "push") return ex.category === "push";
-        if (plane === "pull") return ex.category === "pull";
-        if (plane === "core") return ex.category === "core";
-        if (plane === "legs") return ex.category === "legs";
-        return false;
-      });
-    }
-  }, [plane, profile?.yogaSetUp]);
-
-  const handleToggleSkill = (skillId: string) => {
-    setSelectedSkills((prev) => {
-      const next = new Set(prev);
-      if (next.has(skillId)) {
-        next.delete(skillId);
-      } else {
-        next.add(skillId);
-      }
-      return next;
-    });
-  };
-
-  const handleSave = () => {
-    if (profile) {
-      const updatedClaimedSkills: Record<"core" | "push" | "pull" | "legs" | "flexibility" | "balance", string[]> = {
-        core: profile.claimedSkills?.core || [],
-        push: profile.claimedSkills?.push || [],
-        pull: profile.claimedSkills?.pull || [],
-        legs: profile.claimedSkills?.legs || [],
-        flexibility: profile.claimedSkills?.flexibility || [],
-        balance: profile.claimedSkills?.balance || [],
+      // Yoga poses - for now return empty structure
+      return {
+        elite: [],
+        advanced: [],
+        intermediate: [],
+        beginner: [],
+        novice: [],
       };
-      updatedClaimedSkills[plane as keyof typeof updatedClaimedSkills] = Array.from(selectedSkills);
-      setProfile({
-        ...profile,
-        claimedSkills: updatedClaimedSkills,
-      });
-      onClose();
+    } else {
+      // Regular exercises
+      const categoryMap: Record<string, string> = {
+        push: "push",
+        pull: "pull",
+        core: "core",
+        legs: "legs",
+      };
+
+      const category = categoryMap[plane];
+      const categoryExercises = exercises.filter((ex) => ex.category === category);
+
+      return {
+        elite: categoryExercises.filter((e) => e.difficulty === "elite"),
+        advanced: categoryExercises.filter((e) => e.difficulty === "advanced"),
+        intermediate: categoryExercises.filter((e) => e.difficulty === "intermediate"),
+        beginner: categoryExercises.filter((e) => e.difficulty === "beginner"),
+        novice: [],
+      };
     }
-  };
+  }, [plane]);
+
+  // Get completed exercises in this plane from workout logs
+  const completedExercises = useMemo(() => {
+    const completed = new Set<string>();
+    for (const log of logs) {
+      if (log.completed) {
+        for (const ex of log.exercises) {
+          if (ex.sets.some((s) => s.completed)) {
+            completed.add(ex.exerciseId);
+          }
+        }
+      }
+    }
+    return completed;
+  }, [logs]);
 
   if (!isOpen) return null;
-
-  const highestRank = selectedSkills.size > 0
-    ? difficultyRank[
-        availableSkills
-          .filter((s) => selectedSkills.has(s.id))
-          .reduce((maxDiff: Difficulty, skill) => {
-            const diffScale = { beginner: 0, intermediate: 1, advanced: 2, elite: 3 };
-            return diffScale[skill.difficulty] > diffScale[maxDiff] ? skill.difficulty : maxDiff;
-          }, "beginner" as Difficulty)
-      ]
-    : "F";
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end">
@@ -112,7 +87,7 @@ export default function SkillClaimModal({ isOpen, onClose, plane }: SkillClaimMo
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl font-bold text-white">{planeLabels[plane]}</h2>
-            <p className="text-sm text-white/60 mt-1">Click to claim achievements you&apos;ve unlocked</p>
+            <p className="text-sm text-white/60 mt-1">Exercises required for each rank tier</p>
           </div>
           <button
             onClick={onClose}
@@ -122,94 +97,85 @@ export default function SkillClaimModal({ isOpen, onClose, plane }: SkillClaimMo
           </button>
         </div>
 
-        {/* Rank Preview */}
-        <div className="mb-6 p-4 glass-card rounded-2xl border border-white/10">
-          <p className="text-xs text-white/60 uppercase tracking-wider mb-2">Your Rank</p>
-          <div className="flex items-center gap-3">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 border-2 border-white/20 flex items-center justify-center">
-              <span className="text-2xl font-bold text-white">{highestRank}</span>
-            </div>
-            <div>
-              <p className="text-sm text-white/80">{selectedSkills.size} skills claimed</p>
-              <p className="text-xs text-white/60">Higher difficulty skills = higher rank</p>
-            </div>
-          </div>
+        {/* Info Text */}
+        <div className="mb-6 p-3 bg-white/5 border border-white/10 rounded-lg">
+          <p className="text-xs text-white/70">
+            🎯 Your rank automatically updates as you complete workouts and progress through exercises. Complete higher difficulty exercises to unlock higher ranks!
+          </p>
         </div>
 
-        {/* Skills List */}
-        <div className="space-y-2">
-          {availableSkills.length === 0 ? (
-            <div className="text-center py-12 text-white/60">
-              <p>No skills available for this category</p>
-              {(plane === "flexibility" || plane === "balance") && (
-                <p className="text-sm mt-2">Set up Yoga in settings to unlock</p>
-              )}
-            </div>
-          ) : (
-            availableSkills.map((skill) => {
-              const isClaimed = selectedSkills.has(skill.id);
-              return (
-                <button
-                  key={skill.id}
-                  onClick={() => handleToggleSkill(skill.id)}
-                  className={`w-full p-4 rounded-2xl border-2 transition-all text-left ${
-                    isClaimed
-                      ? "border-emerald-400 bg-emerald-400/10 glass-card"
-                      : "border-white/10 bg-white/5 hover:bg-white/8"
-                  }`}
-                >
+        {/* Rank Tiers */}
+        <div className="space-y-4">
+          {rankTiers.map((tier) => {
+            const tierKey = tier.rank.toLowerCase() === "s" ? "elite" : tier.rank.toLowerCase() === "a" ? "advanced" : tier.rank.toLowerCase() === "b" ? "intermediate" : tier.rank.toLowerCase() === "c" ? "beginner" : "novice";
+            const tierExercises = exercisesByDifficulty[tierKey as keyof typeof exercisesByDifficulty];
+            const completedCount = tierExercises.filter((ex) => completedExercises.has(ex.id)).length;
+
+            return (
+              <div
+                key={tier.rank}
+                className={`p-4 rounded-2xl border ${tier.borderColor} ${tier.bgColor} glass-card`}
+              >
+                {/* Tier Header */}
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    {/* Checkbox */}
-                    <div
-                      className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                        isClaimed ? "border-emerald-400 bg-emerald-400" : "border-white/30"
-                      }`}
-                    >
-                      {isClaimed && (
-                        <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                          <path
-                            d="M3 7L6 10L11 4"
-                            stroke="white"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      )}
+                    <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${tier.color} flex items-center justify-center`}>
+                      <span className="text-xl font-bold text-white">{tier.rank}</span>
                     </div>
-
-                    {/* Skill Info */}
-                    <div className="flex-1">
-                      <p className="font-bold text-white">{skill.name}</p>
-                      <p className="text-xs text-white/60">{skill.description}</p>
-                    </div>
-
-                    {/* Difficulty Badge */}
-                    <div
-                      className={`px-3 py-1 rounded-full text-xs font-bold border ${difficultyColors[skill.difficulty]}`}
-                    >
-                      {skill.difficulty.charAt(0).toUpperCase() + skill.difficulty.slice(1)}
+                    <div>
+                      <p className="font-bold text-white">{tier.label}</p>
+                      <p className="text-xs text-white/60">
+                        {tierExercises.length === 0
+                          ? "No exercises available"
+                          : `${completedCount}/${tierExercises.length} exercises completed`}
+                      </p>
                     </div>
                   </div>
-                </button>
-              );
-            })
-          )}
+                  {completedCount > 0 && (
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500">
+                      <span className="text-xs font-bold text-emerald-400">✓</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Exercises List */}
+                {tierExercises.length > 0 && (
+                  <div className="space-y-2 mt-3">
+                    {tierExercises.map((ex) => {
+                      const isCompleted = completedExercises.has(ex.id);
+                      return (
+                        <div
+                          key={ex.id}
+                          className={`p-2.5 rounded-lg flex items-center gap-2 text-sm transition-all ${
+                            isCompleted
+                              ? "bg-emerald-500/20 border border-emerald-500/30"
+                              : "bg-white/5 border border-white/10"
+                          }`}
+                        >
+                          <span className="text-lg">{isCompleted ? "✓" : "○"}</span>
+                          <div className="flex-1">
+                            <p className={isCompleted ? "text-emerald-300 font-semibold" : "text-white/80"}>
+                              {ex.name}
+                            </p>
+                            <p className="text-xs text-white/50">{ex.description}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-3 mt-8">
+        {/* Close Button */}
+        <div className="mt-6 flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-3 bg-white/10 hover:bg-white/15 text-white rounded-xl font-bold transition-colors border border-white/20"
+            className="flex-1 py-3 bg-white/10 hover:bg-white/15 text-white rounded-xl font-bold transition-colors"
           >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold transition-colors"
-          >
-            ✓ Save
+            Close
           </button>
         </div>
       </div>

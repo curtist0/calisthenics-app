@@ -166,7 +166,6 @@ export interface UserProfile {
   ranks?: any; // EnhancedRanks from rankingSystem.ts
   rankingDecision?: RankingDecision; // NEW: Training mode choice + 24-hour lock
   estimatedRankAtOnboarding?: Rank; // NEW: Initial rank estimate from onboarding
-  claimedSkills?: Record<"push" | "pull" | "core" | "legs" | "flexibility" | "balance", string[]>; // Track claimed skills per plane
 }
 
 export interface ProgressPhoto {
