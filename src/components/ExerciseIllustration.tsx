@@ -15,8 +15,9 @@ export default function ExerciseIllustration({ exerciseId, size = 200, className
 
   if (!imageUrl) {
     return (
-      <div className={`rounded-2xl bg-gray-800/60 flex items-center justify-center ${className || ""}`} style={{ width: s, height: s }}>
-        <span className="text-4xl">{exercise?.image || "💪"}</span>
+      <div className={`rounded-2xl bg-gray-800/60 flex flex-col items-center justify-center gap-1 p-2 text-center ${className || ""}`} style={{ width: s, height: s }}>
+        <span className="text-3xl">{exercise?.image || "💪"}</span>
+        <span className="text-[10px] font-semibold leading-tight text-gray-300">{exercise?.name || "Exercise"}</span>
       </div>
     );
   }

@@ -5,6 +5,11 @@ describe("Exercise data", () => {
     expect(exercises.length).toBeGreaterThan(0);
   });
 
+  it("does not reuse an exercise media URL", () => {
+    const mediaUrls = exercises.map((exercise) => exercise.imageUrl).filter(Boolean);
+    expect(new Set(mediaUrls).size).toBe(mediaUrls.length);
+  });
+
   it("each exercise has required fields", () => {
     exercises.forEach((ex) => {
       expect(ex.id).toBeTruthy();

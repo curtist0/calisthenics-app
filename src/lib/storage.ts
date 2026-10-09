@@ -37,8 +37,42 @@ export function saveWorkoutLog(log: WorkoutLog): void {
 
 export function getPersonalRecords(): PersonalRecord[] {
   if (!isBrowser()) return [];
-  const data = localStorage.getItem(PRS_KEY);
-  return data ? JSON.parse(data) : [];
+  const records = new Map<string, PersonalRecord>();
+  const logs = getWorkoutLogs()
+    .filter((log) => log.completed)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
+
+  for (const log of logs) {
+    const date = log.date.split("T")[0];
+    for (const exercise of log.exercises) {
+      for (const set of exercise.sets) {
+        if (!set.completed) continue;
+        const values: { type: PersonalRecord["type"]; value: number | null }[] = [
+          { type: "reps", value: set.reps },
+          { type: "hold", value: set.holdSeconds },
+          { type: "weight", value: set.weightKg },
+        ];
+        for (const { type, value } of values) {
+          if (value === null || value <= 0) continue;
+          const key = `${exercise.exerciseId}:${type}`;
+          const previous = records.get(key);
+          if (!previous || value > previous.value) {
+            records.set(key, {
+              exerciseId: exercise.exerciseId,
+              type,
+              value,
+              date,
+              previousValue: previous?.value ?? null,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  const personalRecords = [...records.values()];
+  savePRs(personalRecords);
+  return personalRecords;
 }
 
 function savePRs(prs: PersonalRecord[]): void {
@@ -183,8 +217,6 @@ export function getUserStats(): UserStats {
   if (!isBrowser()) {
     return { totalWorkouts: 0, totalExercises: 0, currentStreak: 0, longestStreak: 0, lastWorkoutDate: null };
   }
-  const data = localStorage.getItem(STATS_KEY);
-  if (data) return JSON.parse(data);
   return recalculateStats();
 }
 

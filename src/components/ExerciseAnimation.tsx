@@ -1,6 +1,7 @@
 "use client";
 
 import { getExerciseById } from "@/data/exercises";
+import ExerciseIllustration from "./ExerciseIllustration";
 
 interface Props {
   exerciseId: string;
@@ -27,11 +28,5 @@ export default function ExerciseAnimation({ exerciseId, size = 140 }: Props) {
     );
   }
 
-  return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="rounded-xl bg-gray-800/50 flex items-center justify-center" style={{ width: s, height: s }}>
-        <span className="text-5xl">{ex.image}</span>
-      </div>
-    </div>
-  );
+  return <ExerciseIllustration exerciseId={exerciseId} size={s} />;
 }

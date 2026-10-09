@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useWorkout } from "@/context/WorkoutContext";
 import { getExerciseById } from "@/data/exercises";
 import PageBackground from "@/components/PageBackground";
+import { formatDisplayDate } from "@/lib/formatDate";
 
 export default function ProgressPage() {
   const { personalRecords, photos, addPhoto, removePhoto } = useWorkout();
@@ -39,11 +40,11 @@ export default function ProgressPage() {
             <span className="text-2xl">{ex.image}</span>
             <div>
               <p className="font-semibold text-white text-sm">{ex.name}</p>
-              <p className="text-xs text-gray-400">{new Date(pr.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
+              <p className="text-xs text-gray-400">{formatDisplayDate(pr.date)}</p>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-xl font-bold text-brand-400">
+            <p className="text-xl font-bold text-brand-400 whitespace-nowrap">
               {pr.value}{pr.type === "hold" ? "s" : pr.type === "weight" ? "kg" : ""}
             </p>
             <p className="text-xs text-gray-400">{pr.type === "hold" ? "hold" : pr.type === "weight" ? "weight" : "reps"}</p>
@@ -141,7 +142,7 @@ export default function ProgressPage() {
                 <img src={photo.dataUrl} alt={photo.note || "Progress photo"} className="w-full aspect-[3/4] object-cover rounded-xl" />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 rounded-b-xl">
                   <p className="text-white text-xs font-medium truncate">{photo.note || "No note"}</p>
-                  <p className="text-gray-400 text-xs">{new Date(photo.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
+                  <p className="text-gray-400 text-xs">{formatDisplayDate(photo.date)}</p>
                 </div>
                 <button onClick={() => removePhoto(photo.id)} className="absolute top-2 right-2 w-7 h-7 bg-black/60 rounded-full text-gray-300 hover:text-red-400 text-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
               </div>

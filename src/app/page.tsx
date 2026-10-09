@@ -4,16 +4,15 @@ import { useWorkout } from "@/context/WorkoutContext";
 import { getExerciseById } from "@/data/exercises";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import PageBackground from "@/components/PageBackground";
-import { getRandomQuote } from "@/data/quotes";
+import { getDailyQuote } from "@/data/quotes";
+import { formatDisplayDate } from "@/lib/formatDate";
 
 export default function Home() {
   const router = useRouter();
-  const { stats, recentPRs, savedPlans, profile } = useWorkout();
+  const { stats, recentPRs, personalRecords, savedPlans, profile } = useWorkout();
   const activePlan = savedPlans.length > 0 ? savedPlans[0] : null;
-  const [quote, setQuote] = useState("");
-  useEffect(() => { setQuote(getRandomQuote()); }, []);
 
   useEffect(() => {
     if (profile === null && typeof window !== "undefined") {
@@ -21,8 +20,6 @@ export default function Home() {
       if (!stored) router.push("/onboarding");
     }
   }, [profile, router]);
-  // quote is set via useEffect above
-
   return (
     <div className="max-w-lg mx-auto px-4 pt-6">
       <PageBackground variant="home" />
@@ -39,7 +36,7 @@ export default function Home() {
               <p className="text-brand-300 text-xs font-medium">Master your bodyweight</p>
             </div>
           </div>
-          <p className="text-gray-300/90 text-sm italic leading-relaxed">&ldquo;{quote}&rdquo;</p>
+          <p className="text-gray-300/90 text-sm italic leading-relaxed">&ldquo;{getDailyQuote()}&rdquo;</p>
         </div>
       </div>
 
@@ -54,7 +51,7 @@ export default function Home() {
           <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mt-1">Streak 🔥</p>
         </div>
         <div className="glass rounded-2xl p-4 text-center animate-count-up" style={{ animationDelay: "0.2s" }}>
-          <p className="text-3xl font-black text-purple-400">{recentPRs.length}</p>
+          <p className="text-3xl font-black text-purple-400">{personalRecords.length}</p>
           <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mt-1">Records</p>
         </div>
       </div>
@@ -145,15 +142,6 @@ export default function Home() {
         </Link>
       )}
 
-      {/* Apple Watch Banner */}
-      <div className="mb-6 glass rounded-2xl p-4 flex items-center gap-3 border border-gray-700/50">
-        <span className="text-2xl">⌚</span>
-        <div>
-          <p className="text-white font-bold text-sm">Apple Watch Integration</p>
-          <p className="text-gray-400 text-xs">Coming soon — auto-track reps, heart rate, and workout duration from your wrist.</p>
-        </div>
-      </div>
-
       <div className="mb-8">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-extrabold text-white">Recent Records 🏆</h2>
@@ -176,11 +164,11 @@ export default function Home() {
                     <span className="text-xl">{ex.image}</span>
                     <div>
                       <p className="font-bold text-white text-sm">{ex.name}</p>
-                      <p className="text-xs text-gray-500">{new Date(pr.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })} · {pr.type}</p>
+                      <p className="text-xs text-gray-500">{formatDisplayDate(pr.date)} · {pr.type}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-black text-brand-400">{pr.value}{pr.type === "hold" ? "s" : pr.type === "weight" ? "kg" : ""}</p>
+                    <p className="font-black text-brand-400 whitespace-nowrap">{pr.value}{pr.type === "hold" ? "s" : pr.type === "weight" ? "kg" : ""}</p>
                     {improved !== null && improved > 0 && <p className="text-xs text-green-400 font-bold">+{improved}</p>}
                   </div>
                 </div>

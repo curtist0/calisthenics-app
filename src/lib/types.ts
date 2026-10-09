@@ -15,7 +15,7 @@ export interface Exercise {
   isHold: boolean;
   supportsWeight: boolean;
   videoUrl: string;
-  imageUrl: string;
+  imageUrl: string | null;
   progressionFrom?: string;
   progressionTo?: string;
 }
