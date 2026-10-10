@@ -3,6 +3,8 @@
 @tailwind utilities;
 
 :root {
+  --accent-rgb: 190, 242, 0;
+  --accent-color: rgb(var(--accent-rgb));
   --foreground-rgb: 255, 255, 255;
   --background-rgb: 3, 7, 18;
 }
@@ -61,4 +63,15 @@ body {
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
   background-size: 200% 100%;
   animation: shimmer 3s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

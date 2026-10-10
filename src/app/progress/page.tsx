@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useWorkout } from "@/context/WorkoutContext";
 import { getExerciseById } from "@/data/exercises";
 import PageBackground from "@/components/PageBackground";
+import WorkoutIcon from "@/components/WorkoutIcon";
 import { formatDisplayDate } from "@/lib/formatDate";
 
 export default function ProgressPage() {
@@ -13,7 +14,7 @@ export default function ProgressPage() {
   const [showPhotoForm, setShowPhotoForm] = useState(false);
   const [tab, setTab] = useState<"prs" | "photos">("prs");
 
-  const repPRs = personalRecords.filter((p) => p.type === "reps");
+  const repPRs = personalRecords.filter((p) => p.type === "reps" || p.type === "weighted-reps");
   const holdPRs = personalRecords.filter((p) => p.type === "hold");
   const weightPRs = personalRecords.filter((p) => p.type === "weight");
 
@@ -37,7 +38,7 @@ export default function ProgressPage() {
       <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">{ex.image}</span>
+            <WorkoutIcon name="dumbbell" className="h-6 w-6 text-brand-300" />
             <div>
               <p className="font-semibold text-white text-sm">{ex.name}</p>
               <p className="text-xs text-gray-400">{formatDisplayDate(pr.date)}</p>
@@ -47,7 +48,9 @@ export default function ProgressPage() {
             <p className="text-xl font-bold text-brand-400 whitespace-nowrap">
               {pr.value}{pr.type === "hold" ? "s" : pr.type === "weight" ? "kg" : ""}
             </p>
-            <p className="text-xs text-gray-400">{pr.type === "hold" ? "hold" : pr.type === "weight" ? "weight" : "reps"}</p>
+            <p className="text-xs text-gray-400">
+              {pr.type === "hold" ? "hold" : pr.type === "weight" ? "weight" : pr.type === "weighted-reps" ? `reps · ${pr.weightKg}kg` : "reps"}
+            </p>
             {improved !== null && improved > 0 && (
               <p className="text-xs text-green-400 font-medium">↑ +{improved}{pr.type === "hold" ? "s" : pr.type === "weight" ? "kg" : ""}</p>
             )}
@@ -65,11 +68,11 @@ export default function ProgressPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6">
-        <button onClick={() => setTab("prs")} className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${tab === "prs" ? "bg-brand-500 text-white" : "bg-gray-800 text-gray-300"}`}>
-          🏆 Personal Records
+        <button onClick={() => setTab("prs")} className={`flex min-h-11 items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-colors ${tab === "prs" ? "bg-brand-500 text-white" : "bg-gray-800 text-gray-300"}`}>
+          <WorkoutIcon name="trophy" className="h-4 w-4" /> Personal Records
         </button>
-        <button onClick={() => setTab("photos")} className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${tab === "photos" ? "bg-brand-500 text-white" : "bg-gray-800 text-gray-300"}`}>
-          📸 Body Progress
+        <button onClick={() => setTab("photos")} className={`flex min-h-11 items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-colors ${tab === "photos" ? "bg-brand-500 text-white" : "bg-gray-800 text-gray-300"}`}>
+          <WorkoutIcon name="camera" className="h-4 w-4" /> Body Progress
         </button>
       </div>
 
@@ -77,7 +80,7 @@ export default function ProgressPage() {
         <>
           {personalRecords.length === 0 ? (
             <div className="text-center py-16 bg-gray-800/30 rounded-2xl border border-gray-700/50">
-              <p className="text-4xl mb-3">🏆</p>
+              <WorkoutIcon name="trophy" className="mx-auto mb-3 h-10 w-10 text-gray-500" />
               <p className="text-gray-300 font-semibold mb-1">No records yet</p>
               <p className="text-gray-500 text-sm">Complete workouts to start setting personal records</p>
             </div>
@@ -86,7 +89,7 @@ export default function ProgressPage() {
               {/* Rep PRs */}
               {repPRs.length > 0 && (
                 <div className="mb-6">
-                  <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">💪 Max Reps</h2>
+                  <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2"><WorkoutIcon name="dumbbell" className="h-5 w-5 text-brand-300" />Max Reps</h2>
                   <div className="space-y-2">{repPRs.map((pr) => <PRCard key={`${pr.exerciseId}-reps`} pr={pr} />)}</div>
                 </div>
               )}
@@ -94,7 +97,7 @@ export default function ProgressPage() {
               {/* Hold PRs */}
               {holdPRs.length > 0 && (
                 <div className="mb-6">
-                  <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">⏱️ Max Holds</h2>
+                  <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2"><WorkoutIcon name="clock" className="h-5 w-5 text-brand-300" />Max Holds</h2>
                   <div className="space-y-2">{holdPRs.map((pr) => <PRCard key={`${pr.exerciseId}-hold`} pr={pr} />)}</div>
                 </div>
               )}
@@ -102,7 +105,7 @@ export default function ProgressPage() {
               {/* Weight PRs */}
               {weightPRs.length > 0 && (
                 <div className="mb-6">
-                  <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">🏋️ Max Weight</h2>
+                  <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2"><WorkoutIcon name="bar" className="h-5 w-5 text-brand-300" />Max Weight</h2>
                   <div className="space-y-2">{weightPRs.map((pr) => <PRCard key={`${pr.exerciseId}-weight`} pr={pr} />)}</div>
                 </div>
               )}
@@ -113,23 +116,23 @@ export default function ProgressPage() {
 
       {tab === "photos" && (
         <>
-          <button onClick={() => setShowPhotoForm(!showPhotoForm)} className="w-full py-3 mb-4 bg-gray-800 text-gray-300 rounded-2xl font-medium hover:bg-gray-700 transition-colors border border-gray-700/50 border-dashed">
-            {showPhotoForm ? "Cancel" : "📸 Add Progress Photo"}
+          <button onClick={() => setShowPhotoForm(!showPhotoForm)} className="mb-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-gray-700/50 bg-gray-800 py-3 font-medium text-gray-300 transition-colors hover:bg-gray-700">
+            {!showPhotoForm && <WorkoutIcon name="camera" className="h-5 w-5" />}{showPhotoForm ? "Cancel" : "Add Progress Photo"}
           </button>
 
           {showPhotoForm && (
             <div className="bg-gray-800/50 rounded-2xl p-5 border border-gray-700/50 mb-6">
               <input type="text" value={photoNote} onChange={(e) => setPhotoNote(e.target.value)} placeholder="Add a note (e.g. Week 4, front pose)" className="w-full p-3 mb-3 bg-gray-900 border border-gray-700 rounded-xl text-white text-sm focus:border-brand-500 focus:outline-none" />
               <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handlePhoto} className="hidden" />
-              <button onClick={() => fileRef.current?.click()} className="w-full py-3 bg-brand-500 text-white rounded-xl font-semibold hover:bg-brand-600 transition-colors">
-                📷 Take Photo / Choose from Gallery
+              <button onClick={() => fileRef.current?.click()} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-500 py-3 font-semibold text-white transition-colors hover:bg-brand-600">
+                <WorkoutIcon name="camera" className="h-5 w-5" /> Take Photo / Choose from Gallery
               </button>
             </div>
           )}
 
           {photos.length === 0 && !showPhotoForm && (
             <div className="text-center py-16 bg-gray-800/30 rounded-2xl border border-gray-700/50">
-              <p className="text-4xl mb-3">📸</p>
+              <WorkoutIcon name="camera" className="mx-auto mb-3 h-10 w-10 text-gray-500" />
               <p className="text-gray-300 font-semibold mb-1">No progress photos</p>
               <p className="text-gray-500 text-sm">Track your physical transformation over time</p>
             </div>
@@ -144,7 +147,9 @@ export default function ProgressPage() {
                   <p className="text-white text-xs font-medium truncate">{photo.note || "No note"}</p>
                   <p className="text-gray-400 text-xs">{formatDisplayDate(photo.date)}</p>
                 </div>
-                <button onClick={() => removePhoto(photo.id)} className="absolute top-2 right-2 w-7 h-7 bg-black/60 rounded-full text-gray-300 hover:text-red-400 text-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+                <button onClick={() => removePhoto(photo.id)} aria-label="Delete progress photo" className="absolute top-2 right-2 flex h-11 w-11 items-center justify-center rounded-full bg-black/60 text-gray-300 opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100">
+                  <WorkoutIcon name="close" className="h-5 w-5" />
+                </button>
               </div>
             ))}
           </div>

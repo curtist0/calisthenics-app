@@ -1,4 +1,5 @@
 import { exercises, getExerciseById, getExercisesByCategory } from "@/data/exercises";
+import { ANATOMY_EXERCISE_IDS, isAnatomyExerciseId } from "@/lib/anatomyIllustrations";
 
 describe("Exercise data", () => {
   it("has exercises loaded", () => {
@@ -8,6 +9,15 @@ describe("Exercise data", () => {
   it("does not reuse an exercise media URL", () => {
     const mediaUrls = exercises.map((exercise) => exercise.imageUrl).filter(Boolean);
     expect(new Set(mediaUrls).size).toBe(mediaUrls.length);
+  });
+
+  it("renders offline anatomical illustrations for every exercise previously missing media", () => {
+    for (const id of ANATOMY_EXERCISE_IDS) {
+      expect(getExerciseById(id)?.imageUrl).toBeNull();
+      expect(isAnatomyExerciseId(id)).toBe(true);
+    }
+    expect(exercises.filter((exercise) => exercise.imageUrl === null)).toHaveLength(ANATOMY_EXERCISE_IDS.length);
+    expect(exercises.filter((exercise) => exercise.imageUrl === null).every((exercise) => isAnatomyExerciseId(exercise.id))).toBe(true);
   });
 
   it("each exercise has required fields", () => {

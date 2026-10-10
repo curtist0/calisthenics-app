@@ -1,4 +1,4 @@
-import { Exercise, WeeklyPlan, DayWorkout, WorkoutExercise, TrainingGoal, WarmUp, RestDayActivity } from "./types";
+import { Exercise, WeeklyPlan, DayWorkout, WorkoutExercise, TrainingGoal, WarmUp, RestDayActivity, Difficulty } from "./types";
 import { exercises, getExerciseById } from "@/data/exercises";
 import { yogaPoses, getYogaPoseById } from "@/data/yoga";
 import { getUserProfile } from "./storage";
@@ -126,7 +126,7 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
         if (usedIds.has(ex.id)) return;
         usedIds.add(ex.id);
         const isLast = i === progressions.length - 1;
-        const label = isLast ? `⬆ Level up → ${target.name}` : undefined;
+        const label = isLast ? `Level up → ${target.name}` : undefined;
         workoutExercises.push(makeEx(ex, isLast ? 4 : 3, goal, label));
       });
     }
@@ -139,7 +139,7 @@ export function generateWeeklyPlan(selectedSkillIds: string[], goal: TrainingGoa
         exerciseId: `cond-${targetId}-0`, sets: top.sets,
         reps: isHold ? null : parseInt(top.reps) || 8,
         holdSeconds: isHold ? parseInt(top.reps) || 15 : null,
-        restSeconds: 60, progressionLevel: `🔧 ${top.name}`,
+        restSeconds: 60, progressionLevel: `Suggested: ${top.name}`,
       });
     }
   }
@@ -304,7 +304,7 @@ function generateYogaPlanInternal(goalText: string, duration: number, specificPo
         return {
           exerciseId: id, sets: twoSided.has(id) ? 2 : 1, reps: null,
           holdSeconds: Math.round((pose?.holdSeconds || 30) * session.holdMult),
-          restSeconds: 5, progressionLevel: specificPoseIds?.includes(id) ? "🎯 Target" : undefined,
+          restSeconds: 5, progressionLevel: specificPoseIds?.includes(id) ? "Target" : undefined,
         };
       }),
     };
@@ -320,5 +320,196 @@ function generateYogaPlanInternal(goalText: string, duration: number, specificPo
     difficulty: "intermediate", goal: goalDesc,
     trainingGoal: "balanced", targetSkills: specificPoseIds || [], days,
     estimatedWeeklyMinutes: dur * 5, createdAt: new Date().toISOString(),
+  };
+}
+
+export type GuidedEquipment = "pull-up-bar" | "pull-up-bar-and-dip-bars";
+
+export interface GuidedPlanInput {
+  goalSkillId: string;
+  daysPerWeek: number;
+  equipment: GuidedEquipment;
+  level: Difficulty;
+  id?: string;
+  createdAt?: string;
+}
+
+export interface QuickWorkoutInput {
+  durationMinutes: 15 | 30 | 45;
+  equipment: GuidedEquipment;
+  level: Difficulty;
+  dayIndex: number;
+  id?: string;
+  createdAt?: string;
+}
+
+export const guidedGoalSkills = [
+  { id: "pull-up", label: "First pull-up" },
+  { id: "muscle-up", label: "Muscle-up" },
+  { id: "handstand-push-up", label: "Handstand" },
+  { id: "full-planche", label: "Planche" },
+  { id: "front-lever", label: "Front lever" },
+  { id: "pistol-squat", label: "Pistol squat" },
+] as const;
+
+const guidedDifficultyRank: Record<Difficulty, number> = {
+  beginner: 0,
+  intermediate: 1,
+  advanced: 2,
+  elite: 3,
+};
+
+const pullUpBarExercises = new Set([
+  "australian-pull-up", "back-lever", "chin-up", "dead-hang", "front-lever",
+  "hanging-leg-raise", "muscle-up", "negative-pull-up", "pull-up", "skin-the-cat",
+  "tuck-fl-raise", "tuck-front-lever",
+]);
+const dipBarExercises = new Set(["dips"]);
+const guidedDayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+function hasGuidedEquipment(exerciseId: string, equipment: GuidedEquipment): boolean {
+  if (pullUpBarExercises.has(exerciseId)) return true;
+  if (dipBarExercises.has(exerciseId)) return equipment === "pull-up-bar-and-dip-bars";
+  return true;
+}
+
+function getGuidedSkillPath(goalSkill: Exercise): Exercise[] {
+  const path = [goalSkill];
+  const visited = new Set([goalSkill.id]);
+  let current = goalSkill;
+  while (current.progressionFrom && !visited.has(current.progressionFrom)) {
+    const previous = getExerciseById(current.progressionFrom);
+    if (!previous) break;
+    path.unshift(previous);
+    visited.add(previous.id);
+    current = previous;
+  }
+  return path;
+}
+
+function chooseGuidedSkillWork(goalSkill: Exercise, level: Difficulty, equipment: GuidedEquipment): Exercise {
+  const accessible = getGuidedSkillPath(goalSkill).filter(
+    (exercise) => guidedDifficultyRank[exercise.difficulty] <= guidedDifficultyRank[level]
+      && hasGuidedEquipment(exercise.id, equipment),
+  );
+  return accessible[accessible.length - 1] ?? goalSkill;
+}
+
+function chooseGuidedExercise(
+  category: Exercise["category"],
+  level: Difficulty,
+  equipment: GuidedEquipment,
+  excludedId: string,
+): Exercise | undefined {
+  const candidates = exercises.filter(
+    (exercise) => exercise.id !== excludedId
+      && exercise.category === category
+      && guidedDifficultyRank[exercise.difficulty] <= guidedDifficultyRank[level]
+      && hasGuidedEquipment(exercise.id, equipment),
+  );
+  if (category === "push" && equipment === "pull-up-bar-and-dip-bars") {
+    const dips = candidates.find((exercise) => exercise.id === "dips");
+    if (dips) return dips;
+  }
+  return candidates[0];
+}
+
+function makeGuidedPrescription(exercise: Exercise, level: Difficulty, sets: number, restSeconds: number): WorkoutExercise {
+  const targets: Record<Difficulty, { reps: number; holdSeconds: number }> = {
+    beginner: { reps: 10, holdSeconds: 20 },
+    intermediate: { reps: 8, holdSeconds: 15 },
+    advanced: { reps: 6, holdSeconds: 10 },
+    elite: { reps: 4, holdSeconds: 8 },
+  };
+  return {
+    exerciseId: exercise.id,
+    sets,
+    reps: exercise.isHold ? null : targets[level].reps,
+    holdSeconds: exercise.isHold ? targets[level].holdSeconds : null,
+    restSeconds,
+  };
+}
+
+function buildGuidedSession(
+  goalSkillId: string,
+  level: Difficulty,
+  equipment: GuidedEquipment,
+  restSeconds: number,
+  sets: number,
+): WorkoutExercise[] {
+  const goalSkill = getExerciseById(goalSkillId);
+  if (!goalSkill) throw new Error("Choose a goal skill from the exercise library.");
+  if (!hasGuidedEquipment(goalSkill.id, equipment)) {
+    throw new Error(`${goalSkill.name} requires equipment that is not selected.`);
+  }
+
+  const skillWork = chooseGuidedSkillWork(goalSkill, level, equipment);
+  const session = [makeGuidedPrescription(skillWork, level, sets, restSeconds)];
+  for (const category of ["pull", "push", "legs", "core"] as const) {
+    const exercise = chooseGuidedExercise(category, level, equipment, skillWork.id);
+    if (!exercise) throw new Error(`The exercise library has no ${category} movement for this equipment and level.`);
+    session.push(makeGuidedPrescription(exercise, level, sets, restSeconds));
+  }
+  if (session.length < 4 || session.length > 6) {
+    throw new Error("The exercise library cannot build a balanced session for these settings.");
+  }
+  return session;
+}
+
+function makeGuidedWeek(exercisesForSession: WorkoutExercise[], daysPerWeek: number, sessionName: string): DayWorkout[] {
+  const trainingSlots = new Set(Array.from({ length: daysPerWeek }, (_, index) => Math.floor(index * 7 / daysPerWeek)));
+  return guidedDayNames.map((day, index) => trainingSlots.has(index)
+    ? { day, name: sessionName, isRest: false, focus: "Skill, strength, and control", exercises: exercisesForSession.map((exercise) => ({ ...exercise })) }
+    : { day, name: "Rest & Recovery", isRest: true, exercises: [] });
+}
+
+function getGuidedGoalName(goalSkillId: string): string {
+  return guidedGoalSkills.find((goal) => goal.id === goalSkillId)?.label
+    ?? getExerciseById(goalSkillId)?.name
+    ?? "Your goal";
+}
+
+export function generateGuidedPlan(input: GuidedPlanInput): WeeklyPlan {
+  if (!Number.isInteger(input.daysPerWeek) || input.daysPerWeek < 2 || input.daysPerWeek > 6) {
+    throw new Error("Choose between 2 and 6 training days per week.");
+  }
+  if (!getExerciseById(input.goalSkillId)) throw new Error("Choose a goal skill from the exercise library.");
+
+  const goalName = getGuidedGoalName(input.goalSkillId);
+  return {
+    id: input.id ?? `guided-${input.goalSkillId}-${input.daysPerWeek}-${input.level}`,
+    name: `Road to ${goalName}`,
+    description: `${input.daysPerWeek} training days each week · Pull-up bar${input.equipment === "pull-up-bar-and-dip-bars" ? " + dip bars" : ""}`,
+    difficulty: input.level,
+    goal: goalName,
+    trainingGoal: "skills",
+    targetSkills: [input.goalSkillId],
+    days: makeGuidedWeek(buildGuidedSession(input.goalSkillId, input.level, input.equipment, 75, 3), input.daysPerWeek, "Skill + strength"),
+    estimatedWeeklyMinutes: input.daysPerWeek * 25,
+    createdAt: input.createdAt ?? new Date().toISOString(),
+  };
+}
+
+export function generateQuickWorkout(input: QuickWorkoutInput): WeeklyPlan {
+  if (!Number.isInteger(input.dayIndex) || input.dayIndex < 0 || input.dayIndex > 6) {
+    throw new Error("Choose a day of the week.");
+  }
+  const sets = input.durationMinutes === 15 ? 2 : input.durationMinutes === 30 ? 3 : 4;
+  const restSeconds = input.durationMinutes === 15 ? 45 : input.durationMinutes === 30 ? 60 : 75;
+  const exercisesForSession = buildGuidedSession("pull-up", input.level, input.equipment, restSeconds, sets);
+  const days = guidedDayNames.map((day, index) => index === input.dayIndex
+    ? { day, name: `${input.durationMinutes}-Minute Full-Body`, isRest: false, focus: "A quick full-body session", exercises: exercisesForSession }
+    : { day, name: "Rest & Recovery", isRest: true, exercises: [] });
+  return {
+    id: input.id ?? `quick-${input.durationMinutes}-${input.dayIndex}`,
+    name: `${input.durationMinutes}-Minute Quick Workout`,
+    description: `A focused, full-body session · Pull-up bar${input.equipment === "pull-up-bar-and-dip-bars" ? " + dip bars" : ""}`,
+    difficulty: input.level,
+    goal: "Full-body strength",
+    trainingGoal: "balanced",
+    targetSkills: ["pull-up"],
+    days,
+    estimatedWeeklyMinutes: input.durationMinutes,
+    createdAt: input.createdAt ?? new Date().toISOString(),
   };
 }

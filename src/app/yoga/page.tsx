@@ -4,6 +4,7 @@ import { useState } from "react";
 import { yogaPoses } from "@/data/yoga";
 import { YogaPose } from "@/lib/types";
 import PageBackground from "@/components/PageBackground";
+import WorkoutIcon from "@/components/WorkoutIcon";
 
 const categories = [
   { value: "all", label: "All" },
@@ -46,7 +47,7 @@ export default function YogaPage() {
           <button key={pose.id} onClick={() => setSelected(pose)}
             className="w-full glass rounded-2xl p-4 text-left hover:scale-[1.02] transition-all">
             <div className="flex items-center gap-4">
-              <span className="text-3xl">{pose.image}</span>
+              <WorkoutIcon name="yoga" className="h-8 w-8 flex-shrink-0 text-brand-300" />
               <div className="flex-1">
                 <h3 className="font-bold text-white">{pose.name}</h3>
                 <p className="text-gray-500 text-xs italic">{pose.sanskrit}</p>
@@ -73,7 +74,7 @@ export default function YogaPage() {
               </div>
               <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-white text-2xl">✕</button>
             </div>
-            <div className="text-center text-6xl mb-4">{selected.image}</div>
+            <div className="mb-4 flex justify-center"><WorkoutIcon name="yoga" className="h-12 w-12 text-brand-300" /></div>
             <p className="text-gray-300 mb-4">{selected.description}</p>
             <div className="glass rounded-xl p-4 mb-4 text-center">
               <p className="text-3xl font-black text-brand-400">{selected.holdSeconds}s</p>

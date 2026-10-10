@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useWorkout } from "@/context/WorkoutContext";
 import { Difficulty, UserProfile, SkillLevels } from "@/lib/types";
 import PageBackground from "@/components/PageBackground";
+import WorkoutIcon from "@/components/WorkoutIcon";
 
 const assessmentQuestions = [
   // PUSH STRENGTH
@@ -41,6 +42,9 @@ export default function OnboardingPage() {
   const [phase, setPhase] = useState<Phase>("assess");
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [displayName, setDisplayName] = useState("");
+  const [finishError, setFinishError] = useState<string | null>(null);
+  const [isFinishing, setIsFinishing] = useState(false);
 
   const totalSteps = assessmentQuestions.length + 1;
   const currentStep = phase === "assess" ? step + 1 : totalSteps;
@@ -53,41 +57,49 @@ export default function OnboardingPage() {
   };
 
   const finish = (wantsYoga: boolean) => {
-    const catScores: Record<string, number> = {};
-    for (const q of assessmentQuestions) {
-      catScores[q.category] = answers[q.id] ?? 0;
+    if (isFinishing) return;
+    setIsFinishing(true);
+    setFinishError(null);
+    try {
+      const catScores: Record<string, number> = {};
+      for (const q of assessmentQuestions) {
+        catScores[q.category] = answers[q.id] ?? 0;
+      }
+
+      const skillLevels: SkillLevels = {
+        push: scoreToLevel(catScores["push"] ?? 0),
+        pull: scoreToLevel(catScores["pull"] ?? 0),
+        legs: scoreToLevel(catScores["legs"] ?? 0),
+        core: scoreToLevel(catScores["core"] ?? 0),
+        balance: scoreToLevel(catScores["balance"] ?? 0),
+        flexibility: scoreToLevel(catScores["flexibility"] ?? 0),
+      };
+
+      const allScores = Object.values(catScores);
+      const avgScore = allScores.reduce((s, v) => s + v, 0) / allScores.length;
+      const overallLevel: Difficulty = avgScore >= 2.5 ? "advanced" : avgScore >= 1.5 ? "intermediate" : "beginner";
+
+      const exerciseLevels = assessmentQuestions.filter((q) => q.category !== "balance" && q.category !== "flexibility").map((q) => ({
+        exerciseId: q.id,
+        level: scoreToLevel(answers[q.id] ?? 0),
+        bestReps: q.id === "plank" ? 0 : ([3, 10, 25, 35][answers[q.id] ?? 0]),
+        bestHold: q.id === "plank" ? ([10, 22, 45, 75][answers[q.id] ?? 0]) : 0,
+        lastUpdated: new Date().toISOString(),
+      }));
+
+      const profile: UserProfile = {
+        ...(displayName.trim() ? { displayName: displayName.trim() } : {}),
+        onboarded: true, overallLevel, skillLevels, exerciseLevels,
+        trainingGoal: "balanced",
+        yogaSetUp: wantsYoga, yogaLevel: skillLevels.flexibility,
+        createdAt: new Date().toISOString(),
+      };
+      setProfile(profile);
+      router.replace(wantsYoga ? "/yoga-setup" : "/");
+    } catch (error) {
+      setFinishError(error instanceof Error ? error.message : "Unable to save your profile. Please try again.");
+      setIsFinishing(false);
     }
-
-    const skillLevels: SkillLevels = {
-      push: scoreToLevel(catScores["push"] ?? 0),
-      pull: scoreToLevel(catScores["pull"] ?? 0),
-      legs: scoreToLevel(catScores["legs"] ?? 0),
-      core: scoreToLevel(catScores["core"] ?? 0),
-      balance: scoreToLevel(catScores["balance"] ?? 0),
-      flexibility: scoreToLevel(catScores["flexibility"] ?? 0),
-    };
-
-    const allScores = Object.values(catScores);
-    const avgScore = allScores.reduce((s, v) => s + v, 0) / allScores.length;
-    const overallLevel: Difficulty = avgScore >= 2.5 ? "advanced" : avgScore >= 1.5 ? "intermediate" : "beginner";
-
-    const exerciseLevels = assessmentQuestions.filter((q) => q.category !== "balance" && q.category !== "flexibility").map((q) => ({
-      exerciseId: q.id,
-      level: scoreToLevel(answers[q.id] ?? 0),
-      bestReps: q.id === "plank" ? 0 : ([3, 10, 25, 35][answers[q.id] ?? 0]),
-      bestHold: q.id === "plank" ? ([10, 22, 45, 75][answers[q.id] ?? 0]) : 0,
-      lastUpdated: new Date().toISOString(),
-    }));
-
-    const profile: UserProfile = {
-      onboarded: true, overallLevel, skillLevels, exerciseLevels,
-      trainingGoal: "balanced",
-      yogaSetUp: wantsYoga, yogaLevel: skillLevels.flexibility,
-      createdAt: new Date().toISOString(),
-    };
-    setProfile(profile);
-    if (wantsYoga) router.push("/yoga-setup");
-    else router.push("/");
   };
 
   const current = phase === "assess" && step < assessmentQuestions.length ? assessmentQuestions[step] : null;
@@ -121,12 +133,30 @@ export default function OnboardingPage() {
 
         {phase === "yoga-ask" && (
           <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <div className="text-5xl mb-6">🧘</div>
+            <WorkoutIcon name="yoga" className="mb-6 h-12 w-12 text-brand-300" />
             <h2 className="text-2xl font-extrabold text-white mb-3">Set up Yoga & Flexibility?</h2>
             <p className="text-gray-400 mb-8 max-w-xs">Unlock yoga workouts and rest day recovery flows.</p>
+            <div className="mb-6 w-full max-w-xs text-left">
+              <label htmlFor="display-name" className="mb-2 block text-sm font-semibold text-gray-200">What should we call you? <span className="font-normal text-gray-400">(optional)</span></label>
+              <input
+                id="display-name"
+                type="text"
+                autoComplete="given-name"
+                maxLength={40}
+                value={displayName}
+                onChange={(event) => setDisplayName(event.target.value)}
+                className="min-h-12 w-full rounded-xl border border-gray-700 bg-gray-900 px-4 text-white placeholder:text-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-400"
+                placeholder="Your name"
+              />
+            </div>
             <div className="space-y-3 w-full max-w-xs">
-              <button onClick={() => finish(true)} className="w-full py-4 bg-brand-500 text-white rounded-2xl font-bold text-lg hover:bg-brand-600">Yes, set it up 🧘</button>
-              <button onClick={() => finish(false)} className="w-full py-4 bg-gray-800 text-gray-300 rounded-2xl font-bold hover:bg-gray-700">Skip for now</button>
+              <button disabled={isFinishing} onClick={() => finish(true)} className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-brand-500 py-4 text-lg font-bold text-white hover:bg-brand-600 disabled:cursor-wait disabled:opacity-60">
+                <WorkoutIcon name="yoga" className="h-5 w-5" /> Yes, set it up
+              </button>
+              <button disabled={isFinishing} onClick={() => finish(false)} className="min-h-14 w-full rounded-2xl bg-gray-800 py-4 font-bold text-gray-300 hover:bg-gray-700 disabled:cursor-wait disabled:opacity-60">
+                {isFinishing ? "Saving profile…" : "Skip for now"}
+              </button>
+              {finishError && <p role="alert" className="text-sm text-red-300">{finishError}</p>}
             </div>
           </div>
         )}

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { playTimerBeep } from "@/lib/audio";
 
 interface TimerProps {
   targetSeconds: number;
@@ -13,7 +12,7 @@ interface TimerProps {
 export default function Timer({ targetSeconds, onComplete, label, setNumber }: TimerProps) {
   const [seconds, setSeconds] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const startedAtRef = useRef<number | null>(null);
   const onCompleteRef = useRef(onComplete);
   const autoFinishedRef = useRef(false);
 
@@ -21,105 +20,69 @@ export default function Timer({ targetSeconds, onComplete, label, setNumber }: T
     onCompleteRef.current = onComplete;
   }, [onComplete]);
 
-  // Reset timer when setNumber changes
   useEffect(() => {
     setSeconds(0);
     setIsRunning(false);
+    startedAtRef.current = null;
     autoFinishedRef.current = false;
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
   }, [setNumber]);
 
-  const progress = targetSeconds <= 0 ? 100 : Math.min((seconds / targetSeconds) * 100, 100);
+  const complete = useCallback((actualSeconds: number) => {
+    if (autoFinishedRef.current) return;
+    autoFinishedRef.current = true;
+    setIsRunning(false);
+    onCompleteRef.current(actualSeconds);
+  }, []);
 
   const startTimer = useCallback(() => {
-    autoFinishedRef.current = false;
+    startedAtRef.current = Date.now();
     setIsRunning(true);
   }, []);
 
   const stopAndRecord = useCallback(() => {
+    const elapsed = startedAtRef.current === null ? seconds : Math.max(seconds, Math.floor((Date.now() - startedAtRef.current) / 1000));
+    setSeconds(elapsed);
     setIsRunning(false);
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    playTimerBeep();
-    onCompleteRef.current(seconds);
-  }, [seconds]);
+    complete(elapsed);
+  }, [complete, seconds]);
 
   useEffect(() => {
-    if (isRunning) {
-      intervalRef.current = setInterval(() => {
-        setSeconds((s) => s + 1);
-      }, 1000);
-    }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+    if (!isRunning) return;
+    const update = () => {
+      if (startedAtRef.current === null) return;
+      const elapsed = Math.floor((Date.now() - startedAtRef.current) / 1000);
+      setSeconds(elapsed);
+      if (targetSeconds > 0 && elapsed >= targetSeconds) complete(targetSeconds);
     };
-  }, [isRunning]);
+    update();
+    const interval = window.setInterval(update, 250);
+    return () => window.clearInterval(interval);
+  }, [complete, isRunning, targetSeconds]);
 
-  // When the hold reaches the target time, finish automatically (rest → next exercise follows from parent).
-  useEffect(() => {
-    if (!isRunning || autoFinishedRef.current) return;
-    if (seconds < targetSeconds) return;
-    autoFinishedRef.current = true;
-    setIsRunning(false);
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    playTimerBeep();
-    onCompleteRef.current(targetSeconds);
-  }, [seconds, targetSeconds, isRunning]);
-
-  const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
+  const progress = targetSeconds <= 0 ? 100 : Math.min((seconds / targetSeconds) * 100, 100);
+  const formatTime = (value: number) => `${Math.floor(value / 60)}:${(value % 60).toString().padStart(2, "0")}`;
 
   return (
     <div className="flex flex-col items-center gap-4">
-      {label && <p className="text-gray-400 text-sm">{label}</p>}
-
-      <div className="relative w-36 h-36">
-        <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
+      {label && <p className="text-sm text-gray-400">{label}</p>}
+      <div className="relative h-36 w-36">
+        <svg aria-hidden="true" className="h-full w-full -rotate-90" viewBox="0 0 120 120">
           <circle cx="60" cy="60" r="52" fill="none" stroke="#374151" strokeWidth="8" />
-          <circle
-            cx="60"
-            cy="60"
-            r="52"
-            fill="none"
-            stroke={seconds >= targetSeconds ? "#22c55e" : "#4ade80"}
-            strokeWidth="8"
-            strokeLinecap="round"
-            strokeDasharray={`${2 * Math.PI * 52}`}
-            strokeDashoffset={`${2 * Math.PI * 52 * (1 - progress / 100)}`}
-            className="transition-all duration-1000"
-          />
+          <circle cx="60" cy="60" r="52" fill="none" stroke="var(--accent-color)" strokeWidth="8" strokeLinecap="round" strokeDasharray={2 * Math.PI * 52} strokeDashoffset={2 * Math.PI * 52 * (1 - progress / 100)} className="transition-[stroke-dashoffset] duration-200 motion-reduce:transition-none" />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-3xl font-bold text-white font-mono">{formatTime(seconds)}</span>
+          <span role="timer" aria-live="off" className="font-mono text-3xl font-bold text-white">{formatTime(seconds)}</span>
           <span className="text-xs text-gray-400">target {formatTime(targetSeconds)}</span>
         </div>
       </div>
-
       {!isRunning ? (
-        <button
-          onClick={startTimer}
-          className="px-8 py-3 bg-brand-500 text-white rounded-full font-semibold hover:bg-brand-600 transition-colors text-lg"
-        >
-          {seconds > 0 ? "Resume" : "Start"}
+        <button type="button" onClick={startTimer} className="min-h-14 rounded-2xl bg-brand-500 px-8 text-lg font-bold text-gray-950 hover:bg-brand-400">
+          {seconds > 0 ? "Resume hold" : "Start hold"}
         </button>
       ) : (
-        <button
-          onClick={stopAndRecord}
-          className="px-8 py-3 bg-red-500 text-white rounded-full font-semibold hover:bg-red-600 transition-colors text-lg"
-        >
-          Stop & Record ({seconds}s)
+        <button type="button" onClick={stopAndRecord} className="min-h-14 rounded-2xl bg-gray-800 px-8 text-base font-bold text-white hover:bg-gray-700">
+          Complete hold · {seconds}s
         </button>
-      )}
-
-      {seconds > 0 && !isRunning && (
-        <p className="text-sm text-brand-400 font-medium">Recorded: {seconds}s</p>
       )}
     </div>
   );

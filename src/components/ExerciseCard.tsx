@@ -2,6 +2,7 @@
 
 import { Exercise } from "@/lib/types";
 import ExerciseIllustration from "./ExerciseIllustration";
+import WorkoutIcon from "./WorkoutIcon";
 
 interface ExerciseCardProps {
   exercise: Exercise;
@@ -29,7 +30,7 @@ export default function ExerciseCard({ exercise, onClick, compact }: ExerciseCar
   if (compact) {
     return (
       <button onClick={onClick} className="flex items-center gap-3 w-full p-2 rounded-xl hover:bg-gray-800/50 transition-colors text-left">
-        <span className="text-xl">{exercise.image}</span>
+        <WorkoutIcon name="dumbbell" className="h-6 w-6 flex-shrink-0 text-brand-300" />
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-white text-sm truncate">{exercise.name}</h3>
           <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${categoryColors[exercise.category]}`}>{exercise.category}</span>

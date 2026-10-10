@@ -3,6 +3,7 @@
 import { Exercise } from "@/lib/types";
 import ExerciseIllustration from "./ExerciseIllustration";
 import { getExerciseById } from "@/data/exercises";
+import WorkoutIcon from "./WorkoutIcon";
 
 interface ExerciseModalProps {
   exercise: Exercise;
@@ -21,7 +22,7 @@ export default function ExerciseModal({ exercise, onClose }: ExerciseModalProps)
             <h2 className="text-xl font-extrabold text-white">{exercise.name}</h2>
             <p className="text-sm text-gray-400 capitalize">{exercise.category} · {exercise.difficulty}</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl">✕</button>
+          <button onClick={onClose} aria-label="Close exercise details" className="flex min-h-11 min-w-11 items-center justify-center text-gray-400 hover:text-white"><WorkoutIcon name="close" /></button>
         </div>
 
         <div className="flex justify-center mb-5">
@@ -32,7 +33,7 @@ export default function ExerciseModal({ exercise, onClose }: ExerciseModalProps)
 
         {exercise.supportsWeight && (
           <div className="flex items-center gap-2 mb-5 bg-blue-500/10 border border-blue-500/30 rounded-xl p-3">
-            <span className="text-lg">🏋️</span>
+            <WorkoutIcon name="dumbbell" className="h-5 w-5 text-blue-400" />
             <p className="text-blue-400 text-sm font-medium">Supports added weight for progressive overload</p>
           </div>
         )}

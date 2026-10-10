@@ -2,6 +2,7 @@
 
 import { WeeklyPlan } from "@/lib/types";
 import Link from "next/link";
+import WorkoutIcon from "./WorkoutIcon";
 
 interface WorkoutCardProps {
   plan: WeeklyPlan;
@@ -47,9 +48,9 @@ export default function WorkoutCard({ plan }: WorkoutCardProps) {
         Goal: {plan.goal}
       </p>
       <div className="flex gap-4 text-sm text-gray-300">
-        <span>📅 {trainingDays} days/wk</span>
-        <span>😴 {restDays} rest</span>
-        <span>⏱ ~{plan.estimatedWeeklyMinutes} min/wk</span>
+        <span className="flex items-center gap-1"><WorkoutIcon name="calendar" className="h-4 w-4" />{trainingDays} days/wk</span>
+        <span className="flex items-center gap-1"><WorkoutIcon name="moon" className="h-4 w-4" />{restDays} rest</span>
+        <span className="flex items-center gap-1"><WorkoutIcon name="clock" className="h-4 w-4" />~{plan.estimatedWeeklyMinutes} min/wk</span>
       </div>
     </Link>
   );

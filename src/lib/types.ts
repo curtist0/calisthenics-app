@@ -80,6 +80,13 @@ export interface WeeklyPlan {
   createdAt: string;
 }
 
+export interface TrainingReminder {
+  enabled: boolean;
+  time: string;
+  snoozedDate: string | null;
+  lastSentDate: string | null;
+}
+
 /** Persisted UI state when pausing an in-progress day workout (e.g. to browse the app). */
 export interface WorkoutSessionUIState {
   planId: string;
@@ -88,12 +95,17 @@ export interface WorkoutSessionUIState {
   curSet: number;
   showRest: boolean;
   isPaused: boolean;
+  restStartedAt?: string | null;
+  restDurationSeconds?: number;
+  addedExercises?: WorkoutExercise[];
 }
 
 export interface CompletedSet {
   reps: number | null;
   holdSeconds: number | null;
   weightKg: number | null;
+  bandAssistance?: string | null;
+  tempoNote?: string | null;
   completed: boolean;
 }
 
@@ -111,14 +123,18 @@ export interface WorkoutLog {
   endTime: string | null;
   exercises: CompletedExercise[];
   completed: boolean;
+  xpEarned?: number;
+  personalRecordsEarned?: number;
+  masteredSkills?: { exerciseId: string; fromLevel: Difficulty; toLevel: Difficulty }[];
 }
 
 export interface PersonalRecord {
   exerciseId: string;
-  type: "reps" | "hold" | "weight";
+  type: "reps" | "hold" | "weight" | "weighted-reps";
   value: number;
   date: string;
   previousValue: number | null;
+  weightKg?: number;
 }
 
 export interface ExerciseLevel {
@@ -139,6 +155,7 @@ export interface SkillLevels {
 }
 
 export interface UserProfile {
+  displayName?: string;
   onboarded: boolean;
   overallLevel: Difficulty;
   skillLevels: SkillLevels;
